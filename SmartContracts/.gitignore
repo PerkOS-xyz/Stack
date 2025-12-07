@@ -1,0 +1,19 @@
+# Foundry
+cache/
+out/
+broadcast/
+
+# Environment variables (NEVER commit)
+.env
+.env.local
+.env*.local
+
+# Dependencies (managed by foundry)
+lib/
+
+# Build artifacts
+*.abi
+*.bin
+
+# OS files
+.DS_Store

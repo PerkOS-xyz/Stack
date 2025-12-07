@@ -1,0 +1,58 @@
+{
+  "name": "x402-multichain-facilitator-nextjs",
+  "version": "1.0.0",
+  "description": "Standards-compliant x402 Payment Facilitator with Next.js App Router supporting Avalanche, Celo, and Base",
+  "scripts": {
+    "dev": "next dev -p 3402",
+    "build": "next build",
+    "start": "next start -p 3402",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "compile": "hardhat compile",
+    "deploy:avalanche-fuji": "hardhat run scripts/deploy-upgradeable.ts --network avalanche-fuji",
+    "deploy:celo-sepolia": "hardhat run scripts/deploy-upgradeable.ts --network celo-sepolia",
+    "deploy:base-sepolia": "hardhat run scripts/deploy-upgradeable.ts --network base-sepolia",
+    "deploy:avalanche": "hardhat run scripts/deploy-upgradeable.ts --network avalanche",
+    "deploy:celo": "hardhat run scripts/deploy-upgradeable.ts --network celo",
+    "deploy:base": "hardhat run scripts/deploy-upgradeable.ts --network base",
+    "upgrade:avalanche-fuji": "hardhat run scripts/upgrade.ts --network avalanche-fuji",
+    "upgrade:celo-sepolia": "hardhat run scripts/upgrade.ts --network celo-sepolia",
+    "upgrade:base-sepolia": "hardhat run scripts/upgrade.ts --network base-sepolia",
+    "upgrade:avalanche": "hardhat run scripts/upgrade.ts --network avalanche",
+    "upgrade:celo": "hardhat run scripts/upgrade.ts --network celo",
+    "upgrade:base": "hardhat run scripts/upgrade.ts --network base"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "next": "15.5.7",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "thirdweb": "^5.115.2",
+    "viem": "^2.40.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^15.0.3",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "keywords": [
+    "x402",
+    "payment",
+    "facilitator",
+    "avalanche",
+    "celo",
+    "base",
+    "multichain",
+    "nextjs",
+    "app-router"
+  ],
+  "author": "",
+  "license": "MIT"
+}
