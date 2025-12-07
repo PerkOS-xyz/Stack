@@ -66,22 +66,39 @@ export default function Home() {
 
   const activeNetworks = networks[activeTab];
 
-  // Transaction volume chart data (mock)
-  const chartData = Array.from({ length: 30 }, (_, i) => ({
-    day: i,
-    height: Math.random() * 80 + 20,
-    value: Math.floor(Math.random() * 500 + 100),
-  }));
+  // Chart data - initialized in useEffect to avoid hydration mismatch
+  const [chartData, setChartData] = useState<Array<{ day: number; height: number; value: number }>>([]);
+  const [networkActivityData, setNetworkActivityData] = useState<number[]>([]);
+  const [agentGrowthData, setAgentGrowthData] = useState<number[]>([]);
+  const [volumeTrendData, setVolumeTrendData] = useState<number[]>([]);
+  const [networkCharts, setNetworkCharts] = useState<Record<string, number[]>>({});
+
+  // Generate chart data on client-side only
+  useEffect(() => {
+    setChartData(
+      Array.from({ length: 30 }, (_, i) => ({
+        day: i,
+        height: Math.random() * 80 + 20,
+        value: Math.floor(Math.random() * 500 + 100),
+      }))
+    );
+    setNetworkActivityData(Array.from({ length: 12 }, () => Math.random() * 100));
+    setAgentGrowthData(Array.from({ length: 12 }, () => Math.random() * 100));
+    setVolumeTrendData(Array.from({ length: 12 }, () => Math.random() * 100));
+
+    // Pre-generate network charts for all networks
+    const charts: Record<string, number[]> = {};
+    [...networks.mainnet, ...networks.testnet].forEach((network) => {
+      charts[network.network] = Array.from({ length: 24 }, () => Math.random() * 100);
+    });
+    setNetworkCharts(charts);
+  }, []);
 
   // Small charts data
   const schemeDistributionData = [
     { name: "Exact", value: 65, color: "from-green-500/60 to-green-400/60" },
     { name: "Deferred", value: 35, color: "from-blue-500/60 to-blue-400/60" },
   ];
-
-  const networkActivityData = Array.from({ length: 12 }, () => Math.random() * 100);
-  const agentGrowthData = Array.from({ length: 12 }, () => Math.random() * 100);
-  const volumeTrendData = Array.from({ length: 12 }, () => Math.random() * 100);
 
   // Recent transactions (mock)
   const recentTransactions = [
@@ -441,7 +458,7 @@ export default function Home() {
               </div>
               {/* Network Performance Charts */}
               {activeNetworks.map((network, idx) => {
-                const networkChart = Array.from({ length: 24 }, () => Math.random() * 100);
+                const networkChart = networkCharts[network.network] || [];
                 return (
                   <div
                     key={network.network}
