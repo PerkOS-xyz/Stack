@@ -1,4 +1,10 @@
-# PerkOS Stack — The Infrastructure Behind the Spark
+<div align="center">
+
+<img src="Media/Stack.png" alt="Spark Logo" height="256" />
+
+ </div>
+
+# Stack — The Infrastructure Behind the Spark
 
 **PerkOS Stack** is enterprise-grade agent infrastructure that provides everything you need to build agent-powered applications: REST APIs, x402 micropayments, agent discovery, and ERC-8004 identity. One integration. Complete infrastructure.
 
