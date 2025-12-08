@@ -206,8 +206,8 @@ export default function Home() {
                     size: "wide",
                     title: "Sign In to PerkOS x402",
                     welcomeScreen: {
-                      title: "PerkOS x402 Facilitator",
-                      subtitle: "Multi-chain payment infrastructure for Web3 agents",
+                      title: "PerkOS x402 Middleware",
+                      subtitle: "Middleware for the PerkOS x402 network",
                     },
                     showThirdwebBranding: false,
                   }}

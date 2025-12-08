@@ -293,7 +293,7 @@ Returns agent metadata with payment capabilities:
   "@context": "https://www.w3.org/ns/activitystreams",
   "id": "0x...",
   "type": "Agent",
-  "name": "PerkOS x402 Facilitator",
+  "name": "PerkOS x402 Middleware",
   "description": "Community-friendly multi-chain payment facilitator",
   "url": "https://x402.perkos.io",
   "capabilities": [
@@ -326,7 +326,7 @@ Returns ERC-8004 compliant agent registration:
 
 ```json
 {
-  "name": "PerkOS x402 Facilitator",
+  "name": "PerkOS x402 Middleware",
   "description": "Community-friendly multi-chain payment facilitator",
   "image": "https://x402.perkos.io/logo.png",
   "agentId": "0x...",
@@ -523,7 +523,7 @@ NEXT_PUBLIC_BASE_RPC=https://mainnet.base.org
 NEXT_PUBLIC_CELO_RPC=https://forno.celo.org
 
 # Facilitator Configuration
-NEXT_PUBLIC_FACILITATOR_NAME="PerkOS x402 Facilitator"
+NEXT_PUBLIC_FACILITATOR_NAME="PerkOS x402 Middleware"
 NEXT_PUBLIC_FACILITATOR_DESCRIPTION="Community-friendly multi-chain payment facilitator"
 NEXT_PUBLIC_FACILITATOR_URL=https://x402.perkos.io
 NEXT_PUBLIC_PAYMENT_RECEIVER=0x...  # Facilitator wallet address
