@@ -7,6 +7,20 @@ import { client, chains } from "@/lib/config/thirdweb";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from "react";
 
+// Define wallets outside component to avoid hoisting issues
+const supportedWallets = [
+  createWallet("io.metamask"),
+  createWallet("com.coinbase.wallet"),
+  createWallet("me.rainbow"),
+  createWallet("app.phantom"),
+  createWallet("walletConnect"),
+  inAppWallet({
+    auth: {
+      options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
+    },
+  }),
+].filter(wallet => wallet && typeof wallet === 'object');
+
 export default function Home() {
   const account = useActiveAccount();
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
@@ -119,72 +133,71 @@ export default function Home() {
         <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-8">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl">⚡</span>
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                      PerkOS x402
-                    </h1>
-                    <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
-                  </div>
+              {/* Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">⚡</span>
                 </div>
-
-                {/* Navigation Menu */}
-                <nav className="hidden md:flex items-center space-x-6">
-                  <a
-                    href="/networks"
-                    className="text-sm text-gray-300 hover:text-cyan-400 transition-colors flex items-center space-x-1"
-                  >
-                    <span>🌐</span>
-                    <span>Networks</span>
-                  </a>
-                  <a
-                    href="/transactions"
-                    className="text-sm text-gray-300 hover:text-cyan-400 transition-colors flex items-center space-x-1"
-                  >
-                    <span>💸</span>
-                    <span>Transactions</span>
-                  </a>
-                  <a
-                    href="/marketplace"
-                    className="text-sm text-gray-300 hover:text-cyan-400 transition-colors flex items-center space-x-1"
-                  >
-                    <span>🏪</span>
-                    <span>Marketplace</span>
-                  </a>
-                  <a
-                    href="/agents"
-                    className="text-sm text-gray-300 hover:text-cyan-400 transition-colors flex items-center space-x-1"
-                  >
-                    <span>👥</span>
-                    <span>Agents</span>
-                  </a>
-                </nav>
+                <div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    PerkOS x402
+                  </h1>
+                  <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-4">
-                <span className="px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-medium">
-                  ● Operational
+              {/* Navigation Menu - Centered */}
+              <nav className="hidden lg:flex items-center space-x-1">
+                {account && (
+                  <a
+                    href="/dashboard"
+                    className="px-4 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2 font-medium"
+                  >
+                    <span>📊</span>
+                    <span>Dashboard</span>
+                  </a>
+                )}
+                <a
+                  href="/networks"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
+                >
+                  <span>🌐</span>
+                  <span>Networks</span>
+                </a>
+                <a
+                  href="/transactions"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
+                >
+                  <span>💸</span>
+                  <span>Transactions</span>
+                </a>
+                <a
+                  href="/marketplace"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
+                >
+                  <span>🏪</span>
+                  <span>Marketplace</span>
+                </a>
+                <a
+                  href="/agents"
+                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
+                >
+                  <span>👥</span>
+                  <span>Agents</span>
+                </a>
+              </nav>
+
+              {/* Right Side - Status & Connect */}
+              <div className="flex items-center space-x-3">
+                <span className="hidden sm:flex px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-xs font-medium items-center space-x-1.5">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                  <span>Operational</span>
                 </span>
 
                 <ConnectButton
                   client={client}
                   chains={chains}
-                  wallets={[
-                    createWallet("io.metamask"),
-                    createWallet("com.coinbase.wallet"),
-                    createWallet("me.rainbow"),
-                    createWallet("app.phantom"),
-                    createWallet("walletConnect"),
-                    inAppWallet({
-                      auth: {
-                        options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
-                      },
-                    }),
-                  ]}
+                  wallets={supportedWallets}
                   connectButton={{
                     label: "Sign In",
                     className: "!bg-gradient-to-r !from-blue-500 !to-cyan-500 hover:!from-blue-600 hover:!to-cyan-600 !text-white !font-semibold !py-2 !px-6 !rounded-lg !transition-all !shadow-lg hover:!shadow-xl",
