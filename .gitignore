@@ -67,11 +67,11 @@ cache/
 artifacts/
 typechain-types/
 
-# Foundry
-cache_forge/
-out/
-broadcast/
-lib/
+# Foundry (Contracts folder only)
+Contracts/cache_forge/
+Contracts/out/
+Contracts/broadcast/
+Contracts/lib/
 
 # Contracts (Keep source, ignore build artifacts)
 *.abi
