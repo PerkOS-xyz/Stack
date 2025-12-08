@@ -22,7 +22,7 @@ export async function GET() {
     paymentMethods: x402Service.getSupported().kinds.map((kind) => ({
       scheme: kind.scheme,
       network: kind.network,
-      asset: config.paymentToken,
+      asset: config.paymentTokens[kind.network],
     })),
     endpoints: {
       x402: `${config.facilitatorUrl}/api/v2/x402`,

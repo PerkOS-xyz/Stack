@@ -22,7 +22,18 @@ export default function AgentsPage() {
     totalVolume: "$1.2M",
   };
 
-  const topMembers = [
+  type Member = {
+    address: string;
+    transactions: number;
+    volume: string;
+    network: string;
+  };
+
+  type Provider = Member & {
+    name: string;
+  };
+
+  const topMembers: Member[] = [
     { address: "0x742d...35Ab", transactions: 234, volume: "$45.2K", network: "avalanche" },
     { address: "0x8f3c...92Cd", transactions: 189, volume: "$38.7K", network: "base" },
     { address: "0x1a2b...47Ef", transactions: 167, volume: "$32.1K", network: "base" },
@@ -30,7 +41,7 @@ export default function AgentsPage() {
     { address: "0x9f0a...21Ij", transactions: 128, volume: "$24.3K", network: "avalanche" },
   ];
 
-  const topProviders = [
+  const topProviders: Provider[] = [
     { name: "Community DAO", address: "0x123a...45Bc", transactions: 1234, volume: "$234.5K", network: "avalanche" },
     { name: "Local NFT Hub", address: "0x456d...78Ef", transactions: 987, volume: "$189.2K", network: "base" },
     { name: "Community Swap", address: "0xdef5...67Lm", transactions: 621, volume: "$118.9K", network: "base" },
@@ -208,7 +219,7 @@ export default function AgentsPage() {
                         </td>
                         {activeTab === "providers" && "name" in agent && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-200">{agent.name}</div>
+                            <div className="text-sm font-medium text-gray-200">{(agent as Provider).name}</div>
                           </td>
                         )}
                         <td className="px-6 py-4 whitespace-nowrap">
