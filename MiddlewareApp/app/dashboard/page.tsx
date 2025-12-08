@@ -5,6 +5,8 @@ import { client, chains } from "@/lib/config/thirdweb";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from 'react';
 import { toast, Toaster } from 'sonner';
+import { AddressDisplay } from '@/components/AddressDisplay';
+import type { Address } from 'viem';
 
 interface SponsorWallet {
   id: string;
@@ -784,7 +786,9 @@ export default function DashboardPage() {
                             <div className="flex items-center space-x-3 flex-1">
                               <div className={`w-2 h-2 rounded-full ${rule.enabled ? 'bg-green-400' : 'bg-gray-500'}`} />
                               <div className="flex-1">
-                                <p className="text-gray-200 font-mono text-sm">{rule.agent_address}</p>
+                                <div className="text-sm">
+                                  <AddressDisplay address={rule.agent_address as Address} />
+                                </div>
                                 {rule.description && (
                                   <p className="text-xs text-gray-400 mt-1">{rule.description}</p>
                                 )}
