@@ -1,6 +1,6 @@
 # x402 Middleware
 
-A **multi-chain x402 facilitator**, discovery service, and **ERC-8004 reputation agent system** that enables seamless Web3 payments across Avalanche, Base, and Celo networks.
+A **multi-chain x402 facilitator**, discovery service, and **ERC-8004 reputation agent system** that enables seamless Web3 payments on Avalanche network.
 
 ## Protocol Compatibility
 
@@ -21,8 +21,6 @@ Standards-compliant payment facilitator supporting:
 | Network | Chain ID | Mainnet | Testnet |
 |---------|----------|---------|---------|
 | Avalanche C-Chain | 43114 | ✅ | ✅ Fuji (43113) |
-| Base | 8453 | ✅ | ✅ Sepolia (84532) |
-| Celo | 42220 | 🔧 Infrastructure | 🔧 Sepolia (11142220) |
 
 **Payment Schemes:**
 - **Exact** (`exact`): Immediate settlement via EIP-3009 `transferWithAuthorization` - ✅ Production
@@ -334,27 +332,14 @@ graph TB
         INDEXER --> SUPABASE
     end
 
-    subgraph "Multi-Chain Infrastructure"
+    subgraph "Blockchain Infrastructure"
         AVAX[Avalanche 43114<br/>USDC + Escrow]
-        BASE[Base 8453<br/>USDC + Escrow]
-        CELO[Celo 42220<br/>USDC + Infrastructure]
-
         AVAX_TEST[Fuji 43113<br/>Testnet]
-        BASE_TEST[Base Sepolia 84532<br/>Testnet]
-        CELO_TEST[Celo Sepolia 11142220<br/>Testnet]
     end
 
     EXACT --> AVAX
-    EXACT --> BASE
-    EXACT --> CELO
-
     DEFERRED --> AVAX
-    DEFERRED --> BASE
-    DEFERRED --> CELO
-
     AVAX -.-> AVAX_TEST
-    BASE -.-> BASE_TEST
-    CELO -.-> CELO_TEST
 
     style X402SVC fill:#4CAF50
     style EXACT fill:#2196F3
@@ -483,7 +468,7 @@ sequenceDiagram
     Middleware-->>NewAgent: Enhanced trust level
 ```
 
-## Supported Tokens (Multi-Chain)
+## Supported Tokens
 
 ### Avalanche (43114)
 | Token | Address | Decimals |
@@ -491,16 +476,6 @@ sequenceDiagram
 | USDC | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` | 6 |
 | USDC.e | `0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664` | 6 |
 | USDT | `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` | 6 |
-
-### Base (8453)
-| Token | Address | Decimals |
-|-------|---------|----------|
-| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
-
-### Celo (42220)
-| Token | Address | Decimals |
-|-------|---------|----------|
-| USDC | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` | 6 |
 
 ## Development
 
