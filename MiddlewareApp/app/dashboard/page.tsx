@@ -4,6 +4,7 @@ import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client, chains } from "@/lib/config/thirdweb";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from 'react';
+import { toast, Toaster } from 'sonner';
 
 interface SponsorWallet {
   id: string;
@@ -105,7 +106,18 @@ export default function DashboardPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Address copied to clipboard!');
+    toast.success('Address copied to clipboard!');
+  };
+
+  const refreshBalance = async (walletId: string) => {
+    try {
+      const response = await fetch(`/api/sponsor/wallets/${walletId}/balance`);
+      if (response.ok) {
+        await loadWallets(); // Reload all wallets to get updated balance
+      }
+    } catch (error) {
+      console.error('Failed to refresh balance:', error);
+    }
   };
 
   if (!isConnected) {
@@ -118,7 +130,7 @@ export default function DashboardPage() {
           <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
             <div className="mb-6">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-                PerkOS x402 Facilitator
+                PerkOS x402 Middleware
               </h1>
               <p className="text-gray-300">
                 Connect your wallet to access the gas sponsorship dashboard
@@ -137,8 +149,8 @@ export default function DashboardPage() {
                 size: "wide",
                 title: "Sign In",
                 welcomeScreen: {
-                  title: "PerkOS x402 Facilitator",
-                  subtitle: "Automated gas sponsorship for your Web3 agents",
+                  title: "PerkOS x402 Middleware",
+                  subtitle: "Middleware for the PerkOS x402 network",
                 },
                 showThirdwebBranding: false,
               }}
@@ -168,6 +180,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+      <Toaster position="top-right" richColors />
       {/* Animated Background Grid */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
@@ -316,33 +329,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Create Wallet Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Create Wallet Button - Avalanche Only */}
+          <div className="max-w-md mb-6">
             <button
               onClick={() => createWallet('avalanche')}
               disabled={loading || wallets.some(w => w.network === 'avalanche')}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center border border-red-500/20 disabled:border-slate-600"
+              className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-red-500/20 disabled:border-slate-600"
             >
               <span className="mr-2">🔺</span>
-              {wallets.some(w => w.network === 'avalanche') ? 'Avalanche Wallet Created' : 'Create Avalanche Wallet'}
-            </button>
-
-            <button
-              onClick={() => createWallet('base')}
-              disabled={loading || wallets.some(w => w.network === 'base')}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
-            >
-              <span className="mr-2">🔵</span>
-              {wallets.some(w => w.network === 'base') ? 'Base Wallet Created' : 'Create Base Wallet'}
-            </button>
-
-            <button
-              onClick={() => createWallet('celo')}
-              disabled={loading || wallets.some(w => w.network === 'celo')}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center border border-green-500/20 disabled:border-slate-600"
-            >
-              <span className="mr-2">🟢</span>
-              {wallets.some(w => w.network === 'celo') ? 'Celo Wallet Created' : 'Create Celo Wallet'}
+              {wallets.some(w => w.network === 'avalanche') ? 'Avalanche Wallet Created' : 'Create Sponsor Wallet (Avalanche)'}
             </button>
           </div>
 
@@ -364,10 +359,23 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-400">Balance</p>
-                      <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                        {(Number(wallet.balance) / 1e18).toFixed(4)} {wallet.network === 'avalanche' ? 'AVAX' : wallet.network === 'base' ? 'ETH' : 'CELO'}
-                      </p>
+                      <div className="flex items-center justify-end gap-2">
+                        <div>
+                          <p className="text-sm text-gray-400">Balance</p>
+                          <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                            {(Number(wallet.balance) / 1e18).toFixed(4)} {wallet.network === 'avalanche' ? 'AVAX' : wallet.network === 'base' ? 'ETH' : 'CELO'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => refreshBalance(wallet.id)}
+                          className="text-cyan-400 hover:text-cyan-300 transition-colors p-1"
+                          title="Refresh balance"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
