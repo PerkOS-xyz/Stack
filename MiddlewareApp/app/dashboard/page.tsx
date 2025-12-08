@@ -2,7 +2,7 @@
 
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client, chains } from "@/lib/config/thirdweb";
-import { inAppWallet } from "thirdweb/wallets";
+import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from 'react';
 
 interface SponsorWallet {
@@ -111,6 +111,11 @@ export default function DashboardPage() {
             client={client}
             chains={chains}
             wallets={[
+              createWallet("io.metamask"),
+              createWallet("com.coinbase.wallet"),
+              createWallet("me.rainbow"),
+              createWallet("app.phantom"),
+              createWallet("walletConnect"),
               inAppWallet({
                 auth: {
                   options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
@@ -128,19 +133,24 @@ export default function DashboardPage() {
                 title: "PerkOS x402 Facilitator",
                 subtitle: "Automated gas sponsorship for your Web3 agents",
               },
+              showThirdwebBranding: false,
             }}
           />
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 mb-3">Connect with:</p>
             <div className="flex flex-wrap gap-2 justify-center text-xs text-gray-600">
+              <span className="bg-purple-100 px-3 py-1 rounded-full font-medium">MetaMask</span>
+              <span className="bg-purple-100 px-3 py-1 rounded-full font-medium">Coinbase Wallet</span>
+              <span className="bg-purple-100 px-3 py-1 rounded-full font-medium">Rainbow</span>
+              <span className="bg-purple-100 px-3 py-1 rounded-full font-medium">Phantom</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Email</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Google</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Apple</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Discord</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Telegram</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full">Phone</span>
-              <span className="bg-gray-100 px-3 py-1 rounded-full">350+ Wallets</span>
+              <span className="bg-blue-100 px-3 py-1 rounded-full font-medium">350+ More</span>
             </div>
           </div>
         </div>
@@ -166,6 +176,11 @@ export default function DashboardPage() {
               client={client}
               chains={chains}
               wallets={[
+                createWallet("io.metamask"),
+                createWallet("com.coinbase.wallet"),
+                createWallet("me.rainbow"),
+                createWallet("app.phantom"),
+                createWallet("walletConnect"),
                 inAppWallet({
                   auth: {
                     options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],

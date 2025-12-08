@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function NetworksPage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
+  const [chartData, setChartData] = useState<Record<string, Array<{ height: number; value: number }>>>({});
 
   // Mock data - replace with actual API calls from your server
   const overallStats = {
@@ -37,13 +38,20 @@ export default function NetworksPage() {
     },
   ];
 
-  // Mock chart data - bars for visual representation
-  const generateChartBars = (count: number) => {
-    return Array.from({ length: 48 }, (_, i) => ({
-      height: Math.floor(Math.random() * 60) + 20,
-      value: Math.floor((count / 48) * (0.8 + Math.random() * 0.4)),
-    }));
-  };
+  useEffect(() => {
+    const generateChartBars = (count: number) => {
+      return Array.from({ length: 48 }, () => ({
+        height: Math.floor(Math.random() * 60) + 20,
+        value: Math.floor((count / 48) * (0.8 + Math.random() * 0.4)),
+      }));
+    };
+
+    const data: Record<string, Array<{ height: number; value: number }>> = {};
+    networkStats.forEach((network) => {
+      data[network.network] = generateChartBars(network.transactions);
+    });
+    setChartData(data);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
@@ -146,7 +154,7 @@ export default function NetworksPage() {
             {/* Network Cards with Charts */}
             <div className="space-y-6">
               {networkStats.map((network) => {
-                const chartData = generateChartBars(network.transactions);
+                const networkChartData = chartData[network.network] || [];
                 return (
                   <div
                     key={network.network}
@@ -170,7 +178,7 @@ export default function NetworksPage() {
                       {/* Mini Chart */}
                       <div className="mb-6">
                         <div className="h-32 flex items-end space-x-1">
-                          {chartData.map((bar, i) => (
+                          {networkChartData.map((bar, i) => (
                             <div
                               key={i}
                               className="flex-1 bg-gradient-to-t from-blue-500/40 to-cyan-400/40 rounded-t-sm hover:from-blue-500/60 hover:to-cyan-400/60 transition-all duration-200"

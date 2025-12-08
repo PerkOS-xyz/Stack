@@ -4,7 +4,7 @@ import { config } from "@/lib/utils/config";
 import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client, chains } from "@/lib/config/thirdweb";
-import { inAppWallet } from "thirdweb/wallets";
+import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -174,6 +174,11 @@ export default function Home() {
                   client={client}
                   chains={chains}
                   wallets={[
+                    createWallet("io.metamask"),
+                    createWallet("com.coinbase.wallet"),
+                    createWallet("me.rainbow"),
+                    createWallet("app.phantom"),
+                    createWallet("walletConnect"),
                     inAppWallet({
                       auth: {
                         options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
@@ -191,6 +196,7 @@ export default function Home() {
                       title: "PerkOS x402 Facilitator",
                       subtitle: "Multi-chain payment infrastructure for Web3 agents",
                     },
+                    showThirdwebBranding: false,
                   }}
                 />
               </div>

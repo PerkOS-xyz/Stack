@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function TransactionsPage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [schemeFilter, setSchemeFilter] = useState<"all" | "exact" | "deferred">("all");
+  const [chartData, setChartData] = useState<Array<{ height: number }>>([]);
+
+  useEffect(() => {
+    setChartData(
+      Array.from({ length: 48 }, () => ({
+        height: Math.floor(Math.random() * 60) + 20,
+      }))
+    );
+  }, []);
 
   // Mock data - replace with actual API calls
   const overallStats = {
@@ -26,15 +35,6 @@ export default function TransactionsPage() {
     celo: "🌿",
     base: "🔵",
   };
-
-  // Mock chart data
-  const generateChartBars = (count: number) => {
-    return Array.from({ length: 48 }, (_, i) => ({
-      height: Math.floor(Math.random() * 60) + 20,
-    }));
-  };
-
-  const chartData = generateChartBars(100);
 
   const filteredTransactions = schemeFilter === "all"
     ? recentTransactions
