@@ -6,7 +6,7 @@
     "dev": "next dev -p 3402",
     "build": "node scripts/build-wrapper.js",
     "build:original": "next build",
-    "start": "next start -p 3402",
+    "start": "next start -p ${PORT:-3402}",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
