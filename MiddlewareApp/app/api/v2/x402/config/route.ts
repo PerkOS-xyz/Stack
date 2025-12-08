@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { X402Service } from "@/lib/services/X402Service";
 import { config } from "@/lib/utils/config";
 
-const x402Service = new X402Service();
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const x402Service = new X402Service();
   return NextResponse.json({
     name: config.facilitatorName,
     description: config.facilitatorDescription,

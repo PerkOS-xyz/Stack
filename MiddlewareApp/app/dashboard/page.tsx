@@ -16,6 +16,26 @@ interface SponsorWallet {
   created_at: string;
 }
 
+interface SpendingTransaction {
+  id: string;
+  amount_wei: string;
+  agent_address: string | null;
+  transaction_hash: string | null;
+  server_domain: string | null;
+  server_endpoint: string | null;
+  chain_id: string | null;
+  network_name: string | null;
+  spent_at: string;
+  sponsor_wallet_id: string;
+}
+
+interface AnalyticsSummary {
+  totalGasPaidWei: string;
+  totalTransactions: number;
+  period: string;
+  chainId: string;
+}
+
 // Define wallets outside component to avoid hoisting issues
 const supportedWallets = [
   createWallet("io.metamask"),
@@ -43,8 +63,16 @@ export default function DashboardPage() {
     activeAgents: 0,
   });
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<SponsorWallet | null>(null);
   const [rules, setRules] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<SpendingTransaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [filterPeriod, setFilterPeriod] = useState<'24h' | 'week' | '3months' | 'all'>('all');
+  const [filterChainId, setFilterChainId] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [newAgentAddress, setNewAgentAddress] = useState('');
   const [newDomain, setNewDomain] = useState('');
   const [addingRule, setAddingRule] = useState(false);
@@ -257,6 +285,55 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Failed to toggle rule:', error);
       toast.error('Failed to update agent');
+    }
+  };
+
+  const loadAnalytics = async (walletId: string, page: number = 0) => {
+    setLoadingTransactions(true);
+    try {
+      const limit = 20;
+      const offset = page * limit;
+      const chainParam = filterChainId !== 'all' ? `&chain_id=${filterChainId}` : '';
+      const response = await fetch(
+        `/api/sponsor/analytics?wallet_id=${walletId}&period=${filterPeriod}${chainParam}&limit=${limit}&offset=${offset}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.transactions || []);
+        setSummary(data.summary);
+        setTotalPages(Math.ceil((data.pagination.total || 0) / limit));
+      } else {
+        toast.error('Failed to load analytics');
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      toast.error('Failed to load analytics');
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  const openAnalyticsModal = async (wallet: SponsorWallet) => {
+    setSelectedWallet(wallet);
+    setShowAnalyticsModal(true);
+    setCurrentPage(0);
+    setFilterPeriod('all');
+    setFilterChainId('all');
+    await loadAnalytics(wallet.id, 0);
+  };
+
+  const handleFilterChange = async () => {
+    if (selectedWallet) {
+      setCurrentPage(0);
+      await loadAnalytics(selectedWallet.id, 0);
+    }
+  };
+
+  const handlePageChange = async (newPage: number) => {
+    if (selectedWallet && newPage >= 0 && newPage < totalPages) {
+      setCurrentPage(newPage);
+      await loadAnalytics(selectedWallet.id, newPage);
     }
   };
 
@@ -547,7 +624,10 @@ export default function DashboardPage() {
                     >
                       Configure Rules
                     </button>
-                    <button className="flex-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-all">
+                    <button
+                      onClick={() => openAnalyticsModal(wallet)}
+                      className="flex-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-all"
+                    >
                       View Analytics
                     </button>
                   </div>
@@ -1165,6 +1245,223 @@ export default function DashboardPage() {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Modal */}
+        {showAnalyticsModal && selectedWallet && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 border border-blue-500/30 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-b border-blue-500/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      Gas Payment Analytics
+                    </h2>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Network: <span className="text-cyan-400 font-medium">{selectedWallet.network}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowAnalyticsModal(false);
+                      setSelectedWallet(null);
+                      setTransactions([]);
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters and Summary */}
+              <div className="border-b border-blue-500/20 p-6 space-y-4">
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Time Period Filter */}
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-2">Time Period</label>
+                    <select
+                      value={filterPeriod}
+                      onChange={(e) => {
+                        setFilterPeriod(e.target.value as any);
+                        setTimeout(handleFilterChange, 100);
+                      }}
+                      className="w-full bg-slate-700 border border-slate-600 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    >
+                      <option value="24h">Last 24 Hours</option>
+                      <option value="week">Last Week</option>
+                      <option value="3months">Last 3 Months</option>
+                      <option value="all">All Time</option>
+                    </select>
+                  </div>
+
+                  {/* Chain Filter */}
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-2">Blockchain</label>
+                    <select
+                      value={filterChainId}
+                      onChange={(e) => {
+                        setFilterChainId(e.target.value);
+                        setTimeout(handleFilterChange, 100);
+                      }}
+                      className="w-full bg-slate-700 border border-slate-600 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    >
+                      <option value="all">All Chains</option>
+                      <option value="43114">Avalanche C-Chain</option>
+                      <option value="43113">Avalanche Fuji</option>
+                      <option value="8453">Base</option>
+                      <option value="84532">Base Sepolia</option>
+                    </select>
+                  </div>
+
+                  {/* Summary Stats */}
+                  <div className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 rounded-lg p-3">
+                    <p className="text-xs text-gray-400 mb-1">Total Gas Paid</p>
+                    {summary && (
+                      <p className="text-lg font-bold text-cyan-400">
+                        {(Number(summary.totalGasPaidWei) / 1e18).toFixed(6)} ETH
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {summary?.totalTransactions || 0} transaction{(summary?.totalTransactions || 0) !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {loadingTransactions ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-cyan-400 border-r-transparent"></div>
+                    <p className="text-gray-400 mt-4">Loading transactions...</p>
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-lg">No transactions yet</p>
+                    <p className="text-sm mt-2 text-gray-500">Sponsored transactions will appear here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4 hover:bg-slate-700/50 transition-all"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* Agent Wallet */}
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">Agent Wallet</p>
+                            {tx.agent_address ? (
+                              <AddressDisplay address={tx.agent_address as Address} />
+                            ) : (
+                              <p className="text-gray-500 text-sm">N/A</p>
+                            )}
+                          </div>
+
+                          {/* Amount */}
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">Gas Fee Paid</p>
+                            <p className="text-cyan-400 font-mono text-sm">
+                              {(BigInt(tx.amount_wei) / BigInt(10 ** 18)).toString()} ETH
+                            </p>
+                          </div>
+
+                          {/* Server & Endpoint */}
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">Server</p>
+                            <p className="text-gray-200 text-sm font-mono truncate">
+                              {tx.server_domain || 'N/A'}
+                            </p>
+                            {tx.server_endpoint && (
+                              <p className="text-gray-500 text-xs mt-1 truncate">{tx.server_endpoint}</p>
+                            )}
+                          </div>
+
+                          {/* Chain & Time */}
+                          <div>
+                            <p className="text-xs text-gray-400 mb-1">Chain & Time</p>
+                            <p className="text-gray-200 text-sm">
+                              {tx.network_name || `Chain ${tx.chain_id || 'Unknown'}`}
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              {new Date(tx.spent_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Transaction Hash */}
+                        {tx.transaction_hash && (
+                          <div className="mt-3 pt-3 border-t border-slate-600/30">
+                            <p className="text-xs text-gray-400 mb-1">Transaction Hash</p>
+                            <a
+                              href={`https://snowtrace.io/tx/${tx.transaction_hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-cyan-400 hover:text-cyan-300 font-mono text-xs break-all transition-colors"
+                            >
+                              {tx.transaction_hash}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer with Pagination */}
+              <div className="sticky bottom-0 bg-slate-800 border-t border-blue-500/20 p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  {/* Pagination Info */}
+                  <div className="flex items-center space-x-4">
+                    <p className="text-sm text-gray-400">
+                      Page <span className="text-cyan-400 font-medium">{currentPage + 1}</span> of <span className="text-cyan-400 font-medium">{totalPages || 1}</span>
+                    </p>
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 0}
+                          className="px-3 py-1 bg-slate-700 border border-slate-600 text-gray-300 rounded-lg text-sm hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage >= totalPages - 1}
+                          className="px-3 py-1 bg-slate-700 border border-slate-600 text-gray-300 rounded-lg text-sm hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Close Button */}
+                  <button
+                    onClick={() => {
+                      setShowAnalyticsModal(false);
+                      setSelectedWallet(null);
+                      setTransactions([]);
+                      setSummary(null);
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium py-3 px-8 rounded-lg transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
