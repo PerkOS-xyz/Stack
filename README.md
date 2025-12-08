@@ -1,6 +1,6 @@
-# x402 Middleware
+# PerkOS x402 - Multi-Chain Payment Facilitator
 
-A **multi-chain x402 facilitator**, discovery service, and **ERC-8004 reputation agent system** that enables seamless Web3 payments on Avalanche network.
+A **community-friendly multi-chain x402 facilitator** that implements the x402 protocol for seamless Web3 agent payments. Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across **Avalanche, Base, and Celo** networks with full **ERC-8004** agent discovery and reputation tracking.
 
 ## Protocol Compatibility
 
@@ -12,19 +12,30 @@ This facilitator implements the **official x402 standard** as defined by:
 
 All API endpoints use the **exact same request/response format** as the CDP facilitator.
 
-## Core Capabilities
+## ✨ Key Features
 
-### 1. Multi-Chain x402 Facilitator
+- ✅ **Multi-Chain Support**: Avalanche (43114), Base (8453), Celo (42220) + testnets
+- ✅ **Dual Payment Schemes**: Exact (EIP-3009) and Deferred (EIP-712) payments
+- ✅ **ERC-8004 Compliance**: Trustless agent discovery and reputation tracking
+- ✅ **Gasless Transactions**: Zero gas fees for users via Thirdweb sponsorship
+- ✅ **Upgradeable Contracts**: UUPS proxy pattern for bug fixes and feature additions
+- ✅ **Community Focus**: Built for community adoption with easy onboarding
+- ✅ **Modern Stack**: Next.js 15, React 19, TypeScript, Viem 2.40+, Thirdweb 5.114+
 
-Standards-compliant payment facilitator supporting:
+## 🌐 Supported Networks
 
-| Network | Chain ID | Mainnet | Testnet |
-|---------|----------|---------|---------|
-| Avalanche C-Chain | 43114 | ✅ | ✅ Fuji (43113) |
+| Network | Chain ID | Type | USDC Address | Status |
+|---------|----------|------|--------------|--------|
+| **Avalanche C-Chain** | 43114 | Mainnet | `0xB97EF...c48a6E` | ✅ Active |
+| **Base** | 8453 | Mainnet | `0x83358...dA02913` | ✅ Active |
+| **Celo** | 42220 | Mainnet | `0xcebA9...2118C` | 🔧 Infrastructure |
+| **Avalanche Fuji** | 43113 | Testnet | `0x54258...31Bc65` | ✅ Active |
+| **Base Sepolia** | 84532 | Testnet | `0x036Cb...3dCF7e` | ✅ Active |
+| **Celo Sepolia** | 11142220 | Testnet | TBD | 🔧 Infrastructure |
 
 **Payment Schemes:**
 - **Exact** (`exact`): Immediate settlement via EIP-3009 `transferWithAuthorization` - ✅ Production
-- **Deferred** (`deferred`): Off-chain voucher aggregation with batch settlement ([PR #426](https://github.com/coinbase/x402/pull/426)) - ✅ Implemented
+- **Deferred** (`deferred`): Off-chain voucher aggregation with UUPS upgradeable escrow - ✅ Production
 
 ### 2. Discovery Service
 
@@ -39,39 +50,74 @@ Standards-compliant payment facilitator supporting:
 - **Trust Models**: Reputation-based (active), crypto-economic validation (planned), TEE attestation (planned)
 - **A2A Protocol**: Agent-to-agent communication support
 
-## Quick Start
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ (recommend 20+)
+- npm, yarn, or pnpm
+- Wallet with testnet tokens (Fuji AVAX, Base Sepolia ETH)
 
 ### 1. Install
 
 ```bash
+cd MiddlewareApp
 npm install
 cp .env.example .env
 ```
 
-### 2. Configure
+### 2. Configure Environment
 
 ```bash
-# Required
-PRIVATE_KEY=0x...
-AVALANCHE_RPC_URL=https://api.avax.network/ext/bc/C/rpc
-X402_PAYMENT_TOKEN=0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E
-X402_PAYMENT_RECEIVER=0x...
+# Network Configuration
+NEXT_PUBLIC_AVALANCHE_RPC=https://api.avax.network/ext/bc/C/rpc
+NEXT_PUBLIC_BASE_RPC=https://mainnet.base.org
+NEXT_PUBLIC_CELO_RPC=https://forno.celo.org
 
-# Optional (enables deferred scheme)
-DEFERRED_ESCROW_ADDRESS=0x...
+# Thirdweb Configuration
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_client_id_here
+
+# Facilitator Configuration
+NEXT_PUBLIC_FACILITATOR_NAME="PerkOS x402 Facilitator"
+NEXT_PUBLIC_FACILITATOR_URL=https://x402.perkos.io
+NEXT_PUBLIC_PAYMENT_RECEIVER=0x...  # Your wallet address
+
+# Private Keys (Server-side only)
+PRIVATE_KEY=0x...  # For settlement transactions
+
+# Supabase (for database)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 ```
 
-### 3. Deploy Contracts
+### 3. Deploy Upgradeable Contracts
 
 ```bash
-npx hardhat compile
-npm run deploy:contracts -- fuji
+# Deploy to testnet (recommended first)
+npm run deploy:avalanche-fuji
+npm run deploy:base-sepolia
+
+# Deploy to mainnet
+npm run deploy:avalanche
+npm run deploy:base
+
+# Update .env with deployed proxy addresses
+NEXT_PUBLIC_AVALANCHE_ESCROW_ADDRESS=0x...
+NEXT_PUBLIC_BASE_ESCROW_ADDRESS=0x...
 ```
 
-### 4. Start Server
+### 4. Start Development Server
 
 ```bash
 npm run dev
+# Server runs on http://localhost:3402
+```
+
+### 5. Build for Production
+
+```bash
+npm run build
+npm start
 ```
 
 ## Standard Facilitator API
@@ -156,52 +202,101 @@ Lists supported scheme/network combinations.
 }
 ```
 
-## All API Endpoints
+## 🔗 API Endpoints Reference
 
-### Standard x402 Facilitator
+The MiddlewareApp provides **15+ API endpoints** organized by functionality:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v2/x402/verify` | Verify payment payload |
-| POST | `/api/v2/x402/settle` | Settle payment on-chain |
-| GET | `/api/v2/x402/supported` | Supported schemes/networks |
-| GET | `/api/v2/x402/health` | Health check |
-| GET | `/api/v2/x402/config` | Configuration |
+### 1. Core x402 Protocol (`/api/v2/x402/`)
 
-### Deferred Scheme Extensions
+Standards-compliant x402 facilitator endpoints:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/deferred/info` | Scheme configuration |
-| GET | `/deferred/vouchers` | List stored vouchers |
-| POST | `/deferred/vouchers` | Store a voucher |
-| POST | `/deferred/vouchers/:id/:nonce/settle` | Settle specific voucher |
-| POST | `/deferred/settle-batch` | Batch settle vouchers |
-| GET | `/deferred/escrow/balance` | Query escrow balance |
+| Method | Endpoint | Description | Response |
+|--------|----------|-------------|----------|
+| POST | `/api/v2/x402/verify` | Verify payment payload without settlement | `{isValid, invalidReason, payer}` |
+| POST | `/api/v2/x402/settle` | Verify and settle payment on-chain | `{success, error, payer, transaction, network}` |
+| GET | `/api/v2/x402/supported` | List supported scheme/network combinations | `{kinds: [{scheme, network}]}` |
+| GET | `/api/v2/x402/config` | Get facilitator configuration | `{name, url, networks, schemes}` |
+| GET | `/api/v2/x402/health` | Health check endpoint | `{status, timestamp, networks}` |
 
-### Bazaar Discovery
+### 2. Discovery Endpoints (`/.well-known/`)
+
+ERC-8004 and x402 discovery:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/bazaar/list` | List discoverable services |
-| GET | `/bazaar/services/:id` | Service details |
-| GET | `/bazaar/search` | Search by capability/price |
+| GET | `/.well-known/agent-card.json` | ActivityPub-style agent metadata |
+| GET | `/.well-known/erc-8004.json` | ERC-8004 agent registration info |
+| GET | `/.well-known/x402-payment.json` | x402 payment configuration |
 
-### ERC-8004 Discovery
+**Example Response** (`/.well-known/agent-card.json`):
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "id": "0x...",
+  "type": "Agent",
+  "name": "PerkOS x402 Facilitator",
+  "capabilities": ["x402-payment-exact", "x402-payment-deferred", "erc-8004-discovery"],
+  "paymentMethods": [
+    {"scheme": "exact", "network": "avalanche", "asset": "0x..."},
+    {"scheme": "deferred", "network": "avalanche", "asset": "0x..."}
+  ]
+}
+```
+
+### 3. Deferred Payment Scheme (`/api/deferred/`)
+
+Off-chain voucher aggregation and batch settlement:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/discovery/agents` | List registered agents |
-| GET | `/discovery/agents/:id` | Agent details |
-| GET | `/discovery/agents/:id/reputation` | Agent reputation |
+| GET | `/api/deferred/info` | Deferred scheme configuration and escrow addresses |
+| GET | `/api/deferred/vouchers` | List all stored vouchers (paginated) |
+| GET | `/api/deferred/vouchers?buyer=0x...` | Filter vouchers by buyer address |
+| GET | `/api/deferred/vouchers?seller=0x...` | Filter vouchers by seller address |
+| POST | `/api/deferred/vouchers/{id}/{nonce}/settle` | Settle a specific voucher on-chain |
+| POST | `/api/deferred/settle-batch` | Batch settle multiple vouchers |
+| GET | `/api/deferred/escrow/balance` | Query escrow balance for buyer/seller pair |
 
-### Well-Known
+### 4. Dashboard & Analytics (`/api/dashboard/`)
+
+Real-time analytics and statistics:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/.well-known/agent-card.json` | A2A Agent Card |
-| GET | `/.well-known/x402-payment.json` | x402 Payment Config |
-| GET | `/.well-known/erc-8004.json` | ERC-8004 Registry Info |
+| GET | `/api/dashboard/stats` | Aggregated statistics (transactions, volume, networks) |
+| GET | `/api/dashboard/stats?network=avalanche` | Network-specific statistics |
+| GET | `/api/dashboard/stats?period=24h` | Time-filtered statistics (24h, 7d, 30d) |
+
+**Response Example**:
+```json
+{
+  "totalTransactions": 1234,
+  "totalVolume": "1234567890",
+  "activeNetworks": 3,
+  "networkStats": {
+    "avalanche": {"count": 800, "volume": "800000000"},
+    "base": {"count": 400, "volume": "400000000"}
+  }
+}
+```
+
+### 5. Sponsorship (`/api/sponsor/`)
+
+Gasless transaction management:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sponsor/wallets` | List sponsored wallet addresses |
+| POST | `/api/sponsor/wallets` | Add wallet to sponsorship list |
+
+### 6. Additional Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/networks` | List all supported networks with RPC and contract info |
+| GET | `/api/transactions` | Query transaction history (paginated) |
+| GET | `/api/agents` | List registered agents |
+| GET | `/api/marketplace` | Service marketplace listings |
 
 ## Deferred Payment Scheme
 
@@ -468,7 +563,88 @@ sequenceDiagram
     Middleware-->>NewAgent: Enhanced trust level
 ```
 
-## Supported Tokens
+## 📂 Project Structure
+
+```
+x402-Facilitator/
+├── CLAUDE.md                    # Main project documentation
+├── Documents/                   # Detailed guides
+│   ├── SUPABASE_SETUP.md       # Database setup
+│   ├── DEPLOYMENT_CHECKLIST.md # Production deployment
+│   ├── UPGRADEABLE_CONTRACTS_GUIDE.md # UUPS contracts guide
+│   ├── X402_DEFERRED_SCHEME.md # Deferred payments
+│   └── MULTI_CHAIN_GUIDE.md    # Multi-chain config
+├── Contracts/                   # Smart contracts (Hardhat 3.x)
+│   ├── contracts/
+│   │   └── DeferredPaymentEscrowUpgradeable.sol # UUPS proxy
+│   └── scripts/
+│       └── deploy-upgradeable.ts # Deployment script
+└── MiddlewareApp/              # Next.js 15 App (port 3402)
+    ├── app/                    # App Router
+    │   ├── page.tsx            # Landing page
+    │   ├── dashboard/          # Analytics dashboard
+    │   ├── networks/           # Network stats
+    │   ├── transactions/       # Transaction history
+    │   ├── marketplace/        # Service marketplace
+    │   ├── agents/             # Community agents
+    │   └── api/                # API routes (15+ endpoints)
+    │       ├── v2/x402/        # x402 protocol endpoints
+    │       ├── .well-known/    # Discovery endpoints
+    │       ├── deferred/       # Deferred scheme API
+    │       └── sponsor/        # Sponsorship endpoints
+    ├── lib/                    # Core business logic
+    │   ├── services/           # 6 core services
+    │   │   ├── X402Service.ts         # Main orchestrator
+    │   │   ├── ExactSchemeService.ts  # EIP-3009 payments
+    │   │   ├── DeferredSchemeService.ts # EIP-712 payments
+    │   │   ├── EventIndexer.ts        # Blockchain events
+    │   │   ├── ThirdwebService.ts     # Wallet integration
+    │   │   └── TurnkeyService.ts      # Wallet management
+    │   ├── db/                 # Database (Supabase)
+    │   ├── utils/              # Utilities
+    │   │   └── chains.ts       # Multi-chain config (6 networks)
+    │   └── types/              # TypeScript types
+    └── DATABASE_TABLES.md      # Database schema (5 tables)
+```
+
+## 🛠 Technology Stack
+
+### Frontend
+- **Next.js 15.2.6** - React framework with App Router
+- **React 19** - UI library with latest features
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Radix UI** - Accessible components
+
+### Blockchain & Web3
+- **Viem 2.40+** - Lightweight Ethereum library
+- **Thirdweb 5.114+** - Web3 SDK with sponsorship
+- **Hardhat 3.x** - Smart contract development
+- **OpenZeppelin** - Upgradeable contracts (UUPS)
+
+### Backend & Database
+- **Supabase** - PostgreSQL database with 5 tables
+- **Next.js API Routes** - Serverless functions
+- **Event Indexer** - Real-time blockchain monitoring
+
+### Payment Protocols
+- **EIP-3009** - Transfer with authorization (exact)
+- **EIP-712** - Typed structured data (deferred)
+- **UUPS Proxy** - Upgradeable contract pattern
+
+## 📊 Database Schema
+
+The system uses 5 core tables (all prefixed with `perkos_`):
+
+1. **perkos_transactions** - Payment transactions (exact + deferred)
+2. **perkos_vouchers** - Deferred payment vouchers
+3. **perkos_agents** - Agent reputation and metadata
+4. **perkos_reviews** - Community reviews and ratings
+5. **perkos_network_stats** - Daily aggregated statistics
+
+See [MiddlewareApp/DATABASE_TABLES.md](MiddlewareApp/DATABASE_TABLES.md) for complete schema.
+
+## 💰 Supported Tokens
 
 ### Avalanche (43114)
 | Token | Address | Decimals |
@@ -476,6 +652,16 @@ sequenceDiagram
 | USDC | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` | 6 |
 | USDC.e | `0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664` | 6 |
 | USDT | `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` | 6 |
+
+### Base (8453)
+| Token | Address | Decimals |
+|-------|---------|----------|
+| USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 |
+
+### Celo (42220)
+| Token | Address | Decimals |
+|-------|---------|----------|
+| USDC | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` | 6 |
 
 ## Development
 
