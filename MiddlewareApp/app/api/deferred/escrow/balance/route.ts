@@ -3,9 +3,11 @@ import type { Address } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 
-const x402Service = new X402Service();
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  // Initialize service at runtime, not build time
+  const x402Service = new X402Service();
   try {
     const { searchParams } = new URL(request.url);
     const network = (searchParams.get("network") || config.defaultNetwork) as SupportedNetwork;

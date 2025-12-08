@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { config } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 
-const x402Service = new X402Service();
+export const dynamic = 'force-dynamic';
 
 /**
  * ERC-8004: Trustless Agent Discovery
@@ -10,6 +10,7 @@ const x402Service = new X402Service();
  * Provides agent metadata, capabilities, and trust mechanisms
  */
 export async function GET() {
+  const x402Service = new X402Service();
   const agentRegistration = {
     // Basic metadata
     name: config.facilitatorName,

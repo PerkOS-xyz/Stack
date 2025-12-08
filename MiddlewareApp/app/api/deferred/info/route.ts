@@ -3,9 +3,10 @@ import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { CHAIN_IDS } from "@/lib/utils/chains";
 
-const x402Service = new X402Service();
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const x402Service = new X402Service();
   const { searchParams } = new URL(request.url);
   const network = (searchParams.get("network") || config.defaultNetwork) as SupportedNetwork;
 

@@ -3,9 +3,10 @@ import type { AgentCard } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { config } from "@/lib/utils/config";
 
-const x402Service = new X402Service();
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const x402Service = new X402Service();
   const agentCard: AgentCard = {
     "@context": "https://www.w3.org/ns/activitystreams",
     id: config.paymentReceiver,

@@ -3,6 +3,7 @@ import { supabase } from "@/lib/db/supabase";
 import { createPublicClient, http, type Address } from "viem";
 import { avalanche, avalancheFuji, base, baseSepolia, celo } from "viem/chains";
 
+export const runtime = 'nodejs';
 export const dynamic = "force-dynamic";
 
 // Chain configurations

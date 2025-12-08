@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Hex } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 
-const x402Service = new X402Service();
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; nonce: string }> }
 ) {
+  // Initialize service at runtime
+  const x402Service = new X402Service();
   const deferredScheme = x402Service.getDeferredScheme();
 
   if (!deferredScheme) {

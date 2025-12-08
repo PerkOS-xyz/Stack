@@ -4,7 +4,8 @@
   "description": "Standards-compliant x402 Payment Facilitator with Next.js App Router supporting Avalanche, Celo, and Base",
   "scripts": {
     "dev": "next dev -p 3402",
-    "build": "next build",
+    "build": "node scripts/build-wrapper.js",
+    "build:original": "next build",
     "start": "next start -p 3402",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -16,7 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "next": "15.2.0-canary.30",
+    "next": "15.2.6",
     "postcss": "^8.4.49",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
