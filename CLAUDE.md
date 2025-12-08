@@ -1,22 +1,24 @@
-# PerkOS x402 - Multi-Chain Payment Facilitator
+# PerkOS Stack — Infrastructure Middleware
 
 ## Project Overview
 
-**PerkOS x402** is a community-friendly, multi-chain payment facilitator that implements the x402 protocol for seamless Web3 agent payments. It supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across multiple blockchain networks.
+**PerkOS Stack** is enterprise-grade agent infrastructure that provides the complete backbone for building agent-powered applications. Built on the x402 protocol, PerkOS Stack delivers production-ready REST APIs, micropayment infrastructure, agent discovery, and ERC-8004 identity management in one unified platform.
+
+Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across multiple blockchain networks with native multi-chain support.
 
 ### Key Features
 
-- ✅ **Multi-Chain Support**: Avalanche (43114), Base (8453), and Celo (42220) with testnet support
-- ✅ **Dual Payment Schemes**: Exact payments (EIP-3009) and Deferred payments (EIP-712)
-- ✅ **ERC-8004 Compliance**: Trustless agent discovery via standardized endpoints
-- ✅ **Gasless Transactions**: Zero gas fees for users through meta-transactions
-- ✅ **Community Focus**: Built for community adoption with easy onboarding
-- ✅ **Agent Discovery**: Auto-discovery endpoints for seamless wallet integration
+- 🔌 **REST APIs**: Standards-compliant x402 facilitator endpoints for payment verification and settlement
+- 💰 **x402 Micropayments**: Dual payment schemes (exact + deferred) with gasless transactions
+- 🔍 **Agent Discovery**: ERC-8004 compliant identity and reputation system
+- ⛓️ **Multi-Chain**: Avalanche (43114), Base (8453), and Celo (42220) with testnet support
+- 🔐 **Production-Ready**: Upgradeable contracts, event indexing, and enterprise security
+- 📊 **Analytics & Monitoring**: Real-time dashboards and network statistics
 
 ## Project Structure
 
 ```
-x402-Facilitator/
+PerkOS-Stack/
 ├── CLAUDE.md                     # This file - Main project documentation
 ├── Documents/                    # Detailed guides and documentation
 │   ├── SUPABASE_SETUP.md        # Database setup guide
@@ -32,7 +34,7 @@ x402-Facilitator/
 │   │   └── deploy-upgradeable.ts # UUPS proxy deployment
 │   ├── hardhat.config.ts         # Hardhat configuration
 │   └── package.json              # Contract dependencies
-└── ServerApp/                    # Main Next.js middleware server (port 3402)
+└── MiddlewareApp/                # PerkOS Stack middleware server (port 3402)
     ├── app/                      # Next.js 15 App Router
     │   ├── page.tsx              # Landing page with analytics
     │   ├── dashboard/            # Admin dashboard
@@ -93,7 +95,7 @@ x402-Facilitator/
 
 ### Middleware Server Overview
 
-The **ServerApp** is a Next.js 15 middleware server that acts as a payment facilitator:
+The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack infrastructure:
 
 **Primary Functions:**
 - 🔄 **Protocol Orchestration**: Routes x402 payment requests between wallets and services
@@ -121,7 +123,7 @@ The **ServerApp** is a Next.js 15 middleware server that acts as a payment facil
 
 ### Middleware Server Architecture
 
-The **ServerApp** is the main middleware server that:
+The **MiddlewareApp** is the main middleware server that:
 - Runs on port **3402** (configurable)
 - Orchestrates x402 payment protocol between wallets and services
 - Manages 6 blockchain networks (3 mainnet + 3 testnet)
@@ -175,7 +177,7 @@ All tables use `perkos_` prefix for shared database deployments:
 4. **perkos_reviews** - Community reviews and ratings
 5. **perkos_network_stats** - Daily aggregated network statistics
 
-See [DATABASE_TABLES.md](ServerApp/DATABASE_TABLES.md) for complete schema reference.
+See [DATABASE_TABLES.md](MiddlewareApp/DATABASE_TABLES.md) for complete schema reference.
 
 ## x402 Protocol Implementation
 
@@ -538,7 +540,7 @@ PRIVATE_KEY=0x...                   # Facilitator private key for settlements
 
 ### Chain Configuration
 
-The middleware supports 6 networks defined in [ServerApp/lib/utils/chains.ts](ServerApp/lib/utils/chains.ts):
+The middleware supports 6 networks defined in [MiddlewareApp/lib/utils/chains.ts](MiddlewareApp/lib/utils/chains.ts):
 
 ```typescript
 // Supported networks array
@@ -590,7 +592,7 @@ To add new networks:
 ### Installation
 
 ```bash
-cd ServerApp
+cd MiddlewareApp
 npm install
 ```
 
@@ -661,7 +663,7 @@ PerkOS x402 uses **UUPS (Universal Upgradeable Proxy Standard)** for smart contr
 
 ```bash
 # 1. Deploy to testnet first
-cd ServerApp
+cd MiddlewareApp
 npm run compile
 npm run deploy:avalanche-fuji
 
@@ -815,11 +817,11 @@ All detailed documentation is located in the `/Documents` folder:
 - **[MULTI_CHAIN_GUIDE.md](Documents/MULTI_CHAIN_GUIDE.md)** - Multi-chain configuration and deployment
 - **[COMPARISON.md](Documents/COMPARISON.md)** - Comparison with other payment solutions
 
-### Additional Resources (ServerApp)
+### Additional Resources (MiddlewareApp)
 
-- **[DATABASE_TABLES.md](ServerApp/DATABASE_TABLES.md)** - Complete database schema reference
-- **[README_PRODUCTION.md](ServerApp/README_PRODUCTION.md)** - Production setup summary
-- **[package.json](ServerApp/package.json)** - Dependencies and scripts
+- **[DATABASE_TABLES.md](MiddlewareApp/DATABASE_TABLES.md)** - Complete database schema reference
+- **[README_PRODUCTION.md](MiddlewareApp/README_PRODUCTION.md)** - Production setup summary
+- **[package.json](MiddlewareApp/package.json)** - Dependencies and scripts
 
 ### External Documentation
 
@@ -828,12 +830,12 @@ All detailed documentation is located in the `/Documents` folder:
 - [EIP-3009: Transfer With Authorization](https://eips.ethereum.org/EIPS/eip-3009)
 - [EIP-712: Typed Structured Data](https://eips.ethereum.org/EIPS/eip-712)
 
-### Community
+### Built on PerkOS Stack
 
-- Website: https://x402.perkos.io
-- Discord: [Join our community](#)
-- Twitter: [@PerkOS_x402](#)
-- GitHub: https://github.com/perkos/x402-facilitator
+- Website: https://perkos.io
+- Discord: [PerkOS Stack Community](#)
+- Twitter: [@PerkOS](#)
+- GitHub: https://github.com/perkos/PerkOS-Stack
 
 ## License
 
@@ -841,11 +843,16 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For questions and support:
+Need help? We're here for you:
 - 📧 Email: support@perkos.io
-- 💬 Discord: [PerkOS Community](#)
-- 🐛 Issues: [GitHub Issues](https://github.com/perkos/x402-facilitator/issues)
+- 💬 Discord: [PerkOS Stack Community](#)
+- 🐛 Issues: [GitHub Issues](#)
+- 📖 Docs: [PerkOS Stack Documentation](#)
 
 ---
 
-**Built with ❤️ for the Web3 community by PerkOS**
+**Stack it. Ship it. Scale it.** 🏗️
+
+*The infrastructure behind the spark*
+
+Built on x402 · Powered by PerkOS Stack

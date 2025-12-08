@@ -1,6 +1,8 @@
-# PerkOS x402 - Multi-Chain Payment Facilitator
+# PerkOS Stack — The Infrastructure Behind the Spark
 
-A **community-friendly multi-chain x402 facilitator** that implements the x402 protocol for seamless Web3 agent payments. Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across **Avalanche, Base, and Celo** networks with full **ERC-8004** agent discovery and reputation tracking.
+**PerkOS Stack** is enterprise-grade agent infrastructure that provides everything you need to build agent-powered applications: REST APIs, x402 micropayments, agent discovery, and ERC-8004 identity. One integration. Complete infrastructure.
+
+Built on **x402 protocol** for seamless Web3 agent payments with support for both exact (EIP-3009) and deferred (EIP-712) payment schemes across **Avalanche, Base, and Celo** networks.
 
 ## Protocol Compatibility
 
@@ -12,43 +14,57 @@ This facilitator implements the **official x402 standard** as defined by:
 
 All API endpoints use the **exact same request/response format** as the CDP facilitator.
 
-## ✨ Key Features
+## 🏗️ Why PerkOS Stack?
 
-- ✅ **Multi-Chain Support**: Avalanche (43114), Base (8453), Celo (42220) + testnets
-- ✅ **Dual Payment Schemes**: Exact (EIP-3009) and Deferred (EIP-712) payments
-- ✅ **ERC-8004 Compliance**: Trustless agent discovery and reputation tracking
-- ✅ **Gasless Transactions**: Zero gas fees for users via Thirdweb sponsorship
-- ✅ **Upgradeable Contracts**: UUPS proxy pattern for bug fixes and feature additions
-- ✅ **Community Focus**: Built for community adoption with easy onboarding
-- ✅ **Modern Stack**: Next.js 15, React 19, TypeScript, Viem 2.40+, Thirdweb 5.114+
+**Stack it. Ship it. Scale it.**
 
-## 🌐 Supported Networks
+PerkOS Stack provides the complete agent infrastructure backbone:
+
+- 🔌 **REST APIs** - Standards-compliant x402 facilitator endpoints for payment verification and settlement
+- 💰 **x402 Micropayments** - Dual payment schemes (exact + deferred) with gasless transactions
+- 🔍 **Agent Discovery** - ERC-8004 compliant identity and reputation system
+- ⛓️ **Multi-Chain** - Avalanche, Base, and Celo support (mainnet + testnet)
+- 🔐 **Production-Ready** - Upgradeable contracts, event indexing, and enterprise security
+- 📊 **Analytics & Monitoring** - Real-time dashboards and network statistics
+- 🚀 **Modern Stack** - Next.js 15, React 19, TypeScript, Viem 2.40+, Thirdweb 5.114+
+
+## 🌐 Multi-Chain Infrastructure
+
+PerkOS Stack supports 6 blockchain networks for maximum flexibility:
 
 | Network | Chain ID | Type | USDC Address | Status |
 |---------|----------|------|--------------|--------|
-| **Avalanche C-Chain** | 43114 | Mainnet | `0xB97EF...c48a6E` | ✅ Active |
-| **Base** | 8453 | Mainnet | `0x83358...dA02913` | ✅ Active |
+| **Avalanche C-Chain** | 43114 | Mainnet | `0xB97EF...c48a6E` | ✅ Production |
+| **Base** | 8453 | Mainnet | `0x83358...dA02913` | ✅ Production |
 | **Celo** | 42220 | Mainnet | `0xcebA9...2118C` | 🔧 Infrastructure |
 | **Avalanche Fuji** | 43113 | Testnet | `0x54258...31Bc65` | ✅ Active |
 | **Base Sepolia** | 84532 | Testnet | `0x036Cb...3dCF7e` | ✅ Active |
 | **Celo Sepolia** | 11142220 | Testnet | TBD | 🔧 Infrastructure |
 
-**Payment Schemes:**
-- **Exact** (`exact`): Immediate settlement via EIP-3009 `transferWithAuthorization` - ✅ Production
-- **Deferred** (`deferred`): Off-chain voucher aggregation with UUPS upgradeable escrow - ✅ Production
+### Payment Infrastructure
 
-### 2. Discovery Service
+**Dual Payment Schemes:**
+- **Exact** (`exact`): Immediate settlement via EIP-3009 `transferWithAuthorization`
+- **Deferred** (`deferred`): Off-chain voucher aggregation with UUPS upgradeable escrow
 
-- **Bazaar Discovery**: Service listing and discovery for AI agents
-- **Well-Known Endpoints**: `/.well-known/agent-card.json`, `/.well-known/x402-payment.json`
-- **Service Marketplace**: Browse and discover payment-enabled services
+**Key Capabilities:**
+- Gasless transactions via Thirdweb sponsorship
+- UUPS upgradeable contracts for continuous improvement
+- Real-time event indexing to Supabase database
+- Multi-wallet support (Thirdweb, Turnkey)
 
-### 3. ERC-8004 Reputation Agent System
+### Discovery Infrastructure
 
-- **Agent Identity**: On-chain agent registration and verification
-- **Reputation Tracking**: Transaction history, success rates, community ratings
-- **Trust Models**: Reputation-based (active), crypto-economic validation (planned), TEE attestation (planned)
-- **A2A Protocol**: Agent-to-agent communication support
+**Bazaar & Agent Discovery:**
+- `/.well-known/agent-card.json` - ActivityPub-style agent metadata
+- `/.well-known/erc-8004.json` - ERC-8004 agent registration
+- `/.well-known/x402-payment.json` - x402 payment configuration
+
+**ERC-8004 Reputation System:**
+- On-chain agent registration and verification
+- Transaction history and success rate tracking
+- Community ratings and reviews
+- Trust models: Reputation (active), crypto-economic validation (planned), TEE attestation (planned)
 
 ## 🚀 Quick Start
 
@@ -120,9 +136,9 @@ npm run build
 npm start
 ```
 
-## Standard Facilitator API
+## 🔌 PerkOS Stack API Reference
 
-These endpoints match the **CDP facilitator specification exactly**.
+Production-ready REST APIs for agent infrastructure. These endpoints are **fully compatible** with the CDP x402 facilitator specification.
 
 ### POST /verify
 
@@ -563,48 +579,50 @@ sequenceDiagram
     Middleware-->>NewAgent: Enhanced trust level
 ```
 
-## 📂 Project Structure
+## 📂 PerkOS Stack Architecture
 
 ```
-x402-Facilitator/
-├── CLAUDE.md                    # Main project documentation
-├── Documents/                   # Detailed guides
+PerkOS-Stack/
+├── README.md                    # This file - Getting started
+├── CLAUDE.md                    # Technical documentation
+├── Documents/                   # Implementation guides
 │   ├── SUPABASE_SETUP.md       # Database setup
 │   ├── DEPLOYMENT_CHECKLIST.md # Production deployment
-│   ├── UPGRADEABLE_CONTRACTS_GUIDE.md # UUPS contracts guide
-│   ├── X402_DEFERRED_SCHEME.md # Deferred payments
-│   └── MULTI_CHAIN_GUIDE.md    # Multi-chain config
+│   ├── UPGRADEABLE_CONTRACTS_GUIDE.md # Smart contract upgrades
+│   ├── X402_DEFERRED_SCHEME.md # Deferred payment scheme
+│   └── MULTI_CHAIN_GUIDE.md    # Multi-chain configuration
 ├── Contracts/                   # Smart contracts (Hardhat 3.x)
 │   ├── contracts/
-│   │   └── DeferredPaymentEscrowUpgradeable.sol # UUPS proxy
+│   │   └── DeferredPaymentEscrowUpgradeable.sol # UUPS upgradeable escrow
 │   └── scripts/
-│       └── deploy-upgradeable.ts # Deployment script
-└── MiddlewareApp/              # Next.js 15 App (port 3402)
+│       └── deploy-upgradeable.ts # UUPS deployment automation
+└── MiddlewareApp/              # PerkOS Stack middleware server (Next.js 15)
     ├── app/                    # App Router
     │   ├── page.tsx            # Landing page
-    │   ├── dashboard/          # Analytics dashboard
-    │   ├── networks/           # Network stats
-    │   ├── transactions/       # Transaction history
-    │   ├── marketplace/        # Service marketplace
-    │   ├── agents/             # Community agents
-    │   └── api/                # API routes (15+ endpoints)
-    │       ├── v2/x402/        # x402 protocol endpoints
-    │       ├── .well-known/    # Discovery endpoints
-    │       ├── deferred/       # Deferred scheme API
-    │       └── sponsor/        # Sponsorship endpoints
-    ├── lib/                    # Core business logic
-    │   ├── services/           # 6 core services
-    │   │   ├── X402Service.ts         # Main orchestrator
-    │   │   ├── ExactSchemeService.ts  # EIP-3009 payments
-    │   │   ├── DeferredSchemeService.ts # EIP-712 payments
-    │   │   ├── EventIndexer.ts        # Blockchain events
-    │   │   ├── ThirdwebService.ts     # Wallet integration
-    │   │   └── TurnkeyService.ts      # Wallet management
-    │   ├── db/                 # Database (Supabase)
-    │   ├── utils/              # Utilities
-    │   │   └── chains.ts       # Multi-chain config (6 networks)
-    │   └── types/              # TypeScript types
-    └── DATABASE_TABLES.md      # Database schema (5 tables)
+    │   ├── dashboard/          # Analytics & monitoring
+    │   ├── networks/           # Network statistics
+    │   ├── transactions/       # Transaction explorer
+    │   ├── marketplace/        # Service discovery
+    │   ├── agents/             # Agent directory
+    │   └── api/                # REST API endpoints (15+)
+    │       ├── v2/x402/        # x402 protocol (verify, settle, supported)
+    │       ├── .well-known/    # Discovery (agent-card, erc-8004, x402-payment)
+    │       ├── deferred/       # Deferred scheme (vouchers, settlement)
+    │       ├── dashboard/      # Analytics (stats, metrics)
+    │       └── sponsor/        # Sponsorship (wallets)
+    ├── lib/                    # Core infrastructure
+    │   ├── services/           # Business logic layer
+    │   │   ├── X402Service.ts         # Payment orchestration
+    │   │   ├── ExactSchemeService.ts  # EIP-3009 immediate payments
+    │   │   ├── DeferredSchemeService.ts # EIP-712 voucher aggregation
+    │   │   ├── EventIndexer.ts        # Blockchain event monitoring
+    │   │   ├── ThirdwebService.ts     # Wallet SDK integration
+    │   │   └── TurnkeyService.ts      # Secure wallet management
+    │   ├── db/                 # Database layer (Supabase)
+    │   ├── utils/              # Configuration utilities
+    │   │   └── chains.ts       # Multi-chain definitions (6 networks)
+    │   └── types/              # TypeScript interfaces
+    └── DATABASE_TABLES.md      # Schema reference (5 tables)
 ```
 
 ## 🛠 Technology Stack
@@ -680,16 +698,41 @@ npm run deploy:contracts -- fuji      # Testnet
 npm run deploy:contracts -- mainnet   # Mainnet
 ```
 
-## References
+## Resources
+
+### Built on PerkOS Stack
+
+PerkOS Stack is powered by x402 and designed for the agentic economy:
+
+- Protocol: [x402 Specification](https://github.com/coinbase/x402)
+- Infrastructure: Enterprise-grade, production-ready
+- Philosophy: One stack. Infinite possibilities.
+
+### Technical References
 
 - [x402 Protocol Specification](https://github.com/coinbase/x402)
 - [x402 GitBook](https://x402.gitbook.io/x402)
 - [CDP x402 Documentation](https://docs.cdp.coinbase.com/x402)
-- [Deferred Scheme PR #426](https://github.com/coinbase/x402/pull/426)
-- [ERC-8004 Specification](https://eips.ethereum.org/EIPS/eip-8004)
+- [ERC-8004: Trustless Agents](https://eips.ethereum.org/EIPS/eip-8004)
 - [EIP-712: Typed Data Signing](https://eips.ethereum.org/EIPS/eip-712)
 - [EIP-3009: Transfer With Authorization](https://eips.ethereum.org/EIPS/eip-3009)
 
+## Support
+
+Need help? We're here for you:
+- 📧 Email: support@perkos.io
+- 💬 Discord: [PerkOS Stack Community](#)
+- 🐛 Issues: [GitHub Issues](#)
+- 📖 Docs: [PerkOS Stack Documentation](#)
+
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+**Stack it. Ship it. Scale it.** 🏗️
+
+*The infrastructure behind the spark*
+
+Built on x402 · Powered by PerkOS Stack
