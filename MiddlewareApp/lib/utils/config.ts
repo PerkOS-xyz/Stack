@@ -44,8 +44,8 @@ export const config = {
   },
 
   // Facilitator Info
-  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "x402 Multi-Chain Facilitator",
-  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Standards-compliant x402 facilitator supporting Avalanche, Celo, and Base",
+  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
+  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
   facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "http://localhost:3402",
 } as const;
 
