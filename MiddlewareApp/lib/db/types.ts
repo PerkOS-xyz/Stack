@@ -226,6 +226,159 @@ export interface Database {
           created_at?: string
         }
       }
+      perkos_vendors: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          url: string
+          discovery_url: string
+          wallet_address: string
+          network: string
+          chain_id: number | null
+          price_usd: string | null
+          asset: string
+          facilitator_url: string | null
+          category: 'api' | 'nft' | 'defi' | 'gaming' | 'dao' | 'ai' | 'data' | 'other'
+          tags: string[]
+          status: 'pending' | 'active' | 'inactive' | 'suspended' | 'failed'
+          verification_status: 'unverified' | 'verified' | 'failed'
+          last_verified_at: string | null
+          last_error: string | null
+          total_transactions: number
+          total_volume: string
+          average_rating: number
+          icon_url: string | null
+          website_url: string | null
+          docs_url: string | null
+          discovery_metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          url: string
+          discovery_url: string
+          wallet_address: string
+          network: string
+          chain_id?: number | null
+          price_usd?: string | null
+          asset?: string
+          facilitator_url?: string | null
+          category?: 'api' | 'nft' | 'defi' | 'gaming' | 'dao' | 'ai' | 'data' | 'other'
+          tags?: string[]
+          status?: 'pending' | 'active' | 'inactive' | 'suspended' | 'failed'
+          verification_status?: 'unverified' | 'verified' | 'failed'
+          last_verified_at?: string | null
+          last_error?: string | null
+          total_transactions?: number
+          total_volume?: string
+          average_rating?: number
+          icon_url?: string | null
+          website_url?: string | null
+          docs_url?: string | null
+          discovery_metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          url?: string
+          discovery_url?: string
+          wallet_address?: string
+          network?: string
+          chain_id?: number | null
+          price_usd?: string | null
+          asset?: string
+          facilitator_url?: string | null
+          category?: 'api' | 'nft' | 'defi' | 'gaming' | 'dao' | 'ai' | 'data' | 'other'
+          tags?: string[]
+          status?: 'pending' | 'active' | 'inactive' | 'suspended' | 'failed'
+          verification_status?: 'unverified' | 'verified' | 'failed'
+          last_verified_at?: string | null
+          last_error?: string | null
+          total_transactions?: number
+          total_volume?: string
+          average_rating?: number
+          icon_url?: string | null
+          website_url?: string | null
+          docs_url?: string | null
+          discovery_metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      perkos_vendor_endpoints: {
+        Row: {
+          id: string
+          vendor_id: string
+          path: string
+          method: string
+          description: string | null
+          price_usd: string
+          request_schema: Json | null
+          response_schema: Json | null
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: string
+          path: string
+          method?: string
+          description?: string | null
+          price_usd: string
+          request_schema?: Json | null
+          response_schema?: Json | null
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: string
+          path?: string
+          method?: string
+          description?: string | null
+          price_usd?: string
+          request_schema?: Json | null
+          response_schema?: Json | null
+          is_active?: boolean
+          created_at?: string
+        }
+      }
+      perkos_vendor_verifications: {
+        Row: {
+          id: string
+          vendor_id: string
+          success: boolean
+          response_time_ms: number | null
+          error_message: string | null
+          discovery_data: Json | null
+          verified_at: string
+        }
+        Insert: {
+          id?: string
+          vendor_id: string
+          success: boolean
+          response_time_ms?: number | null
+          error_message?: string | null
+          discovery_data?: Json | null
+          verified_at?: string
+        }
+        Update: {
+          id?: string
+          vendor_id?: string
+          success?: boolean
+          response_time_ms?: number | null
+          error_message?: string | null
+          discovery_data?: Json | null
+          verified_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
