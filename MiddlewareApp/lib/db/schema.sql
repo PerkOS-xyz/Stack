@@ -1,5 +1,5 @@
 -- ============================================
--- PerkOS x402 Database Schema for Supabase
+-- Stack x402 Database Schema for Supabase
 -- ============================================
 
 -- Enable UUID extension
@@ -287,7 +287,7 @@ CREATE POLICY "Anyone can insert reviews" ON perkos_reviews FOR INSERT WITH CHEC
 
 -- Insert initial agent for the facilitator
 INSERT INTO perkos_agents (address, name, description, url, capabilities) VALUES
-('0x0000000000000000000000000000000000000000', 'PerkOS x402 Facilitator', 'Community-friendly multi-chain payment facilitator', 'https://x402.perkos.io', ARRAY['x402-payment-exact', 'x402-payment-deferred', 'erc-8004-discovery']);
+('0x0000000000000000000000000000000000000000', 'Stack Facilitator', 'Multi-chain x402 payment infrastructure for Web3 agents', 'https://stack.x402.io', ARRAY['x402-payment-exact', 'x402-payment-deferred', 'erc-8004-discovery']);
 
 -- Insert sample network stats for the last 30 days (for testing)
 -- Uncomment and adjust as needed:

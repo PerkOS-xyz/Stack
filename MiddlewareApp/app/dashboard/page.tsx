@@ -1,6 +1,6 @@
 'use client';
 
-import { ConnectButton, useActiveAccount } from "thirdweb/react";
+import { ConnectButton, useActiveAccount, darkTheme } from "thirdweb/react";
 import { client, chains } from "@/lib/config/thirdweb";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from 'react';
@@ -347,7 +347,7 @@ export default function DashboardPage() {
           <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
             <div className="mb-6">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-                PerkOS x402 Middleware
+                Stack Middleware
               </h1>
               <p className="text-gray-300">
                 Connect your wallet to access the gas sponsorship dashboard
@@ -358,16 +358,27 @@ export default function DashboardPage() {
               client={client}
               chains={chains}
               wallets={supportedWallets}
+              theme={darkTheme({
+                colors: {
+                  primaryButtonBg: "linear-gradient(to right, #3b82f6, #06b6d4)",
+                  primaryButtonText: "#ffffff",
+                },
+              })}
               connectButton={{
                 label: "Connect Wallet",
-                className: "!w-full !bg-gradient-to-r !from-blue-500 !to-cyan-500 hover:!from-blue-600 hover:!to-cyan-600 !text-white !font-semibold !py-3 !px-6 !rounded-lg !transition-all !shadow-lg hover:!shadow-xl",
+                style: {
+                  width: "100%",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                  padding: "12px 24px",
+                },
               }}
               connectModal={{
                 size: "wide",
                 title: "Sign In",
                 welcomeScreen: {
-                  title: "PerkOS x402 Middleware",
-                  subtitle: "Middleware for the PerkOS x402 network",
+                  title: "Stack Middleware",
+                  subtitle: "Multi-chain x402 payment infrastructure",
                 },
                 showThirdwebBranding: false,
               }}
@@ -408,12 +419,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">⚡</span>
-                </div>
+                <img src="/logo.png" alt="Stack" className="w-10 h-10 rounded-lg" />
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                    PerkOS x402
+                    Stack
                   </h1>
                   <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
                 </div>

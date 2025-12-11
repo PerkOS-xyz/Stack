@@ -1,5 +1,5 @@
 -- ============================================
--- PerkOS x402 Database Schema for Supabase
+-- Stack x402 Database Schema for Supabase
 -- CLEAN INSTALL - Drops existing tables first
 -- ============================================
 
@@ -301,4 +301,4 @@ CREATE POLICY "Anyone can insert reviews" ON perkos_reviews FOR INSERT WITH CHEC
 
 -- Insert initial agent for the facilitator
 INSERT INTO perkos_agents (address, name, description, url, capabilities) VALUES
-('0x499D377eF114cC1BF7798cECBB38412701400daF', 'PerkOS x402 Facilitator', 'Community-friendly multi-chain payment facilitator', 'https://x402.perkos.io', ARRAY['x402-payment-exact', 'x402-payment-deferred', 'erc-8004-discovery']);
+('0x499D377eF114cC1BF7798cECBB38412701400daF', 'Stack Facilitator', 'Multi-chain x402 payment infrastructure for Web3 agents', 'https://stack.x402.io', ARRAY['x402-payment-exact', 'x402-payment-deferred', 'erc-8004-discovery']);
