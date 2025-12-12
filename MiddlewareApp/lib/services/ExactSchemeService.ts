@@ -1,13 +1,9 @@
 import {
   createPublicClient,
-  createWalletClient,
   http,
-  type PublicClient,
-  type WalletClient,
   type Hex,
   recoverTypedDataAddress,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import type {
   ExactPayload,
   VerifyResponse,
@@ -16,34 +12,14 @@ import type {
   Address,
 } from "../types/x402";
 import { config, type SupportedNetwork } from "../utils/config";
-import { getChainById, CHAIN_IDS, USDC_ADDRESSES } from "../utils/chains";
+import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
-
-// EIP-3009 ABI for transferWithAuthorization
-const TRANSFER_WITH_AUTHORIZATION_ABI = [
-  {
-    name: "transferWithAuthorization",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "from", type: "address" },
-      { name: "to", type: "address" },
-      { name: "value", type: "uint256" },
-      { name: "validAfter", type: "uint256" },
-      { name: "validBefore", type: "uint256" },
-      { name: "nonce", type: "bytes32" },
-      { name: "v", type: "uint8" },
-      { name: "r", type: "bytes32" },
-      { name: "s", type: "bytes32" },
-    ],
-    outputs: [],
-  },
-] as const;
+import { getThirdwebTransactionService } from "./ThirdwebTransactionService";
 
 export class ExactSchemeService {
   private network: SupportedNetwork;
-  private publicClient: PublicClient;
-  private walletClient?: WalletClient;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private publicClient: any;
 
   constructor(network: SupportedNetwork = config.defaultNetwork) {
     this.network = network;
@@ -56,15 +32,6 @@ export class ExactSchemeService {
       chain,
       transport: http(rpcUrl),
     });
-
-    if (config.privateKey) {
-      const account = privateKeyToAccount(config.privateKey);
-      this.walletClient = createWalletClient({
-        account,
-        chain,
-        transport: http(rpcUrl),
-      });
-    }
   }
 
   private getChainIdForNetwork(network: SupportedNetwork): number {
@@ -179,7 +146,14 @@ export class ExactSchemeService {
   }
 
   /**
-   * Settle exact scheme payment on-chain
+   * Settle exact scheme payment on-chain using Thirdweb server wallet
+   *
+   * Flow:
+   * 1. Verify the payment authorization
+   * 2. Look up the sponsor wallet for the payer (consumer/client)
+   * 3. Execute transferWithAuthorization via Thirdweb API
+   *    - The sponsor wallet pays gas fees
+   *    - USDC moves from payer to vendor
    */
   async settle(
     payload: ExactPayload,
@@ -191,17 +165,7 @@ export class ExactSchemeService {
       if (!verifyResult.isValid) {
         return {
           success: false,
-          error: verifyResult.invalidReason,
-          payer: null,
-          transaction: null,
-          network: this.network,
-        };
-      }
-
-      if (!this.walletClient) {
-        return {
-          success: false,
-          error: "Wallet client not configured",
+          errorReason: verifyResult.invalidReason || undefined,
           payer: null,
           transaction: null,
           network: this.network,
@@ -210,51 +174,69 @@ export class ExactSchemeService {
 
       const { authorization, signature } = payload;
 
+      // Look up sponsor wallet for the payer (consumer/client)
+      const thirdwebTxService = getThirdwebTransactionService();
+      const sponsorWallet = await thirdwebTxService.findSponsorWallet(authorization.from);
+
+      if (!sponsorWallet) {
+        logger.error("No sponsor wallet found for payer", {
+          payer: authorization.from,
+        });
+        return {
+          success: false,
+          errorReason: "No sponsor wallet configured for this payer",
+          payer: authorization.from,
+          transaction: null,
+          network: this.network,
+        };
+      }
+
+      logger.info("Found sponsor wallet for payer", {
+        payer: authorization.from,
+        sponsorWallet: sponsorWallet.sponsor_address,
+        smartWallet: sponsorWallet.smart_wallet_address,
+      });
+
       // Parse signature
       const sig = this.parseSignature(signature);
 
-      // Call transferWithAuthorization
-      const hash = await this.walletClient.writeContract({
-        address: requirements.asset,
-        abi: TRANSFER_WITH_AUTHORIZATION_ABI,
-        functionName: "transferWithAuthorization",
-        args: [
-          authorization.from,
-          authorization.to,
-          BigInt(authorization.value),
-          BigInt(authorization.validAfter),
-          BigInt(authorization.validBefore),
-          authorization.nonce,
-          sig.v,
-          sig.r,
-          sig.s,
-        ],
+      // Execute transferWithAuthorization via Thirdweb server wallet
+      const result = await thirdwebTxService.executeTransferWithAuthorization({
+        network: this.network,
+        tokenAddress: requirements.asset,
+        sponsorWalletAddress: sponsorWallet.sponsor_address,
+        from: authorization.from,
+        to: authorization.to,
+        value: BigInt(authorization.value),
+        validAfter: BigInt(authorization.validAfter),
+        validBefore: BigInt(authorization.validBefore),
+        nonce: authorization.nonce as Hex,
+        v: sig.v,
+        r: sig.r,
+        s: sig.s,
       });
 
-      // Wait for confirmation
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
-
-      if (receipt.status === "success") {
-        logger.info("Exact scheme payment settled", {
-          txHash: hash,
+      if (result.success && result.transactionHash) {
+        logger.info("Exact scheme payment settled via Thirdweb", {
+          txHash: result.transactionHash,
           from: authorization.from,
           to: authorization.to,
           value: authorization.value,
+          sponsorWallet: sponsorWallet.sponsor_address,
         });
 
         return {
           success: true,
-          error: null,
           payer: authorization.from,
-          transaction: hash,
+          transaction: result.transactionHash,
           network: this.network,
         };
       } else {
         return {
           success: false,
-          error: "Transaction reverted",
+          errorReason: result.error || "Transaction failed",
           payer: authorization.from,
-          transaction: hash,
+          transaction: null,
           network: this.network,
         };
       }
@@ -265,7 +247,7 @@ export class ExactSchemeService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Settlement failed",
+        errorReason: error instanceof Error ? error.message : "Settlement failed",
         payer: null,
         transaction: null,
         network: this.network,

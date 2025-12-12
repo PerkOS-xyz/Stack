@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     if (result.success) {
       console.log('   ✅ Transaction:', result.transaction);
     } else {
-      console.log('   ❌ Error:', result.error);
+      console.log('   ❌ Error Reason:', result.errorReason);
     }
     console.log('💰'.repeat(35) + '\n');
 
@@ -59,10 +59,11 @@ export async function POST(request: NextRequest) {
     console.log('\n❌ Settle Error:', error instanceof Error ? error.message : String(error));
     console.log('💰'.repeat(35) + '\n');
 
+    // x402 standard uses errorReason, not error
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Settlement failed",
+        errorReason: error instanceof Error ? error.message : "Settlement failed",
         payer: null,
         transaction: null,
         network: "avalanche",
