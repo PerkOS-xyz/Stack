@@ -177,7 +177,7 @@ export class DeferredSchemeService {
       if (!verifyResult.isValid) {
         return {
           success: false,
-          error: verifyResult.invalidReason,
+          errorReason: verifyResult.invalidReason || undefined,
           payer: null,
           transaction: null,
           network: this.network,
@@ -213,7 +213,6 @@ export class DeferredSchemeService {
 
       return {
         success: true,
-        error: null,
         payer: voucher.buyer,
         transaction: null, // No on-chain tx yet
         network: this.network,
@@ -225,7 +224,7 @@ export class DeferredSchemeService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Storage failed",
+        errorReason: error instanceof Error ? error.message : "Storage failed",
         payer: null,
         transaction: null,
         network: this.network,
@@ -241,7 +240,7 @@ export class DeferredSchemeService {
       if (!this.walletClient) {
         return {
           success: false,
-          error: "Wallet client not configured",
+          errorReason: "Wallet client not configured",
           payer: null,
           transaction: null,
           network: this.network,
@@ -254,7 +253,7 @@ export class DeferredSchemeService {
       if (!storedVoucher) {
         return {
           success: false,
-          error: "Voucher not found",
+          errorReason: "Voucher not found",
           payer: null,
           transaction: null,
           network: this.network,
@@ -264,7 +263,7 @@ export class DeferredSchemeService {
       if (storedVoucher.settled) {
         return {
           success: false,
-          error: "Voucher already settled",
+          errorReason: "Voucher already settled",
           payer: storedVoucher.buyer,
           transaction: storedVoucher.settledTxHash || null,
           network: this.network,
@@ -310,7 +309,6 @@ export class DeferredSchemeService {
 
         return {
           success: true,
-          error: null,
           payer: storedVoucher.buyer,
           transaction: hash,
           network: this.network,
@@ -318,7 +316,7 @@ export class DeferredSchemeService {
       } else {
         return {
           success: false,
-          error: "Transaction reverted",
+          errorReason: "Transaction reverted",
           payer: storedVoucher.buyer,
           transaction: hash,
           network: this.network,
@@ -331,7 +329,7 @@ export class DeferredSchemeService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Claim failed",
+        errorReason: error instanceof Error ? error.message : "Claim failed",
         payer: null,
         transaction: null,
         network: this.network,

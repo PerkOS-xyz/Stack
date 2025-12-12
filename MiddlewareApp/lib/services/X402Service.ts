@@ -143,7 +143,7 @@ export class X402Service {
     if (request.x402Version !== 1 || paymentPayload.x402Version !== 1) {
       return {
         success: false,
-        error: "Unsupported x402 version",
+        errorReason: "Unsupported x402 version",
         payer: null,
         transaction: null,
         network: paymentPayload.network || config.defaultNetwork,
@@ -154,7 +154,7 @@ export class X402Service {
     if (!this.isValidNetwork(paymentPayload.network)) {
       return {
         success: false,
-        error: `Unsupported network: ${paymentPayload.network}`,
+        errorReason: `Unsupported network: ${paymentPayload.network}`,
         payer: null,
         transaction: null,
         network: paymentPayload.network || config.defaultNetwork,
@@ -165,7 +165,7 @@ export class X402Service {
     if (paymentPayload.network !== paymentRequirements.network) {
       return {
         success: false,
-        error: "Network mismatch between payload and requirements",
+        errorReason: "Network mismatch between payload and requirements",
         payer: null,
         transaction: null,
         network: paymentPayload.network,
@@ -176,7 +176,7 @@ export class X402Service {
     if (paymentPayload.scheme !== paymentRequirements.scheme) {
       return {
         success: false,
-        error: "Scheme mismatch",
+        errorReason: "Scheme mismatch",
         payer: null,
         transaction: null,
         network: paymentPayload.network,
@@ -197,7 +197,7 @@ export class X402Service {
       if (!deferredScheme) {
         return {
           success: false,
-          error: `Deferred scheme not enabled for network: ${network}`,
+          errorReason: `Deferred scheme not enabled for network: ${network}`,
           payer: null,
           transaction: null,
           network,
@@ -211,7 +211,7 @@ export class X402Service {
     } else {
       return {
         success: false,
-        error: "Unsupported scheme",
+        errorReason: "Unsupported scheme",
         payer: null,
         transaction: null,
         network,

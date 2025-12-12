@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { X402SettleRequest } from "@/lib/types/x402";
+import type { X402VerifyRequest } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Root-level /verify endpoint for x402-express compatibility
+ * The x402 library expects endpoints at /verify and /settle on the facilitator URL
+ */
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = Math.random().toString(36).substring(7);
 
-  console.log('\n' + '💰'.repeat(35));
-  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
-  console.log('💰'.repeat(35));
+  console.log('\n' + '🔷'.repeat(35));
+  console.log(`🔵 [STACK] [${timestamp}] X402 VERIFY REQUEST ${requestId} (root /verify)`);
+  console.log('🔷'.repeat(35));
 
   try {
     const x402Service = new X402Service();
-    const body = await request.json() as X402SettleRequest;
+    const body = await request.json() as X402VerifyRequest;
 
     // Log request details
-    console.log('📥 Settle Request Details:');
+    console.log('📥 Verify Request Details:');
     console.log('   x402Version:', body.x402Version);
     console.log('   Payment Network:', body.paymentPayload?.network);
     console.log('   Payment Scheme:', body.paymentPayload?.scheme);
@@ -31,38 +35,27 @@ export async function POST(request: NextRequest) {
       console.log('   Payload Value:', payload.authorization?.value || payload.value || 'N/A');
     }
 
-    console.log('\n⏳ Executing settlement...');
-    const result = await x402Service.settle(body);
+    const result = await x402Service.verify(body);
 
     // Log result
-    console.log('\n📤 Settle Result:');
-    console.log('   Success:', result.success);
+    console.log('\n📤 Verify Result:');
+    console.log('   Is Valid:', result.isValid);
     console.log('   Payer:', result.payer);
-    console.log('   Network:', result.network);
-    if (result.success) {
-      console.log('   ✅ Transaction:', result.transaction);
-    } else {
-      console.log('   ❌ Error Reason:', result.errorReason);
+    if (!result.isValid) {
+      console.log('   ❌ Invalid Reason:', result.invalidReason);
     }
-    console.log('💰'.repeat(35) + '\n');
-
-    if (!result.success) {
-      return NextResponse.json(result, { status: 400 });
-    }
+    console.log('🔷'.repeat(35) + '\n');
 
     return NextResponse.json(result);
   } catch (error) {
-    console.log('\n❌ Settle Error:', error instanceof Error ? error.message : String(error));
-    console.log('💰'.repeat(35) + '\n');
+    console.log('\n❌ Verify Error:', error instanceof Error ? error.message : String(error));
+    console.log('🔷'.repeat(35) + '\n');
 
-    // x402 standard uses errorReason, not error
     return NextResponse.json(
       {
-        success: false,
-        errorReason: error instanceof Error ? error.message : "Settlement failed",
+        isValid: false,
+        invalidReason: error instanceof Error ? error.message : "Verification failed",
         payer: null,
-        transaction: null,
-        network: "avalanche",
       },
       { status: 400 }
     );

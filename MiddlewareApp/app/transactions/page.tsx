@@ -1,44 +1,108 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+
+interface Transaction {
+  hash: string;
+  fullHash: string;
+  from: string;
+  fullFrom: string;
+  to: string;
+  fullTo: string;
+  amount: string;
+  scheme: string;
+  network: string;
+  status: string;
+  timestamp: string;
+}
+
+interface Stats {
+  totalTransactions: string;
+  totalVolume: string;
+  avgTransaction: string;
+  successRate: string;
+}
+
+interface ApiResponse {
+  transactions: Transaction[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  stats: Stats;
+}
 
 export default function TransactionsPage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [schemeFilter, setSchemeFilter] = useState<"all" | "exact" | "deferred">("all");
   const [chartData, setChartData] = useState<Array<{ height: number }>>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalTransactions: "0",
+    totalVolume: "$0",
+    avgTransaction: "$0",
+    successRate: "0%",
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        period: timeRange,
+        limit: "50",
+        offset: "0",
+      });
+      if (schemeFilter !== "all") {
+        params.set("scheme", schemeFilter);
+      }
+
+      const response = await fetch(`/api/x402/transactions?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch transactions");
+      }
+
+      const data: ApiResponse = await response.json();
+      setTransactions(data.transactions);
+      setStats(data.stats);
+
+      // Generate chart data based on total transactions
+      const total = parseInt(data.stats.totalTransactions.replace(/[^0-9]/g, "")) || 0;
+      setChartData(
+        Array.from({ length: 48 }, () => ({
+          height: Math.max(5, Math.floor(Math.random() * 60) + (total > 0 ? 20 : 5)),
+        }))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load transactions");
+      // Set empty chart on error
+      setChartData(
+        Array.from({ length: 48 }, () => ({
+          height: 5,
+        }))
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [timeRange, schemeFilter]);
 
   useEffect(() => {
-    setChartData(
-      Array.from({ length: 48 }, () => ({
-        height: Math.floor(Math.random() * 60) + 20,
-      }))
-    );
-  }, []);
-
-  // Mock data - replace with actual API calls
-  const overallStats = {
-    totalTransactions: "12.4K",
-    totalVolume: "$2.8M",
-    avgTransactionSize: "$226",
-    successRate: "99.2%",
-  };
-
-  const recentTransactions = [
-    { hash: "0xf3c4...a21b", from: "0x742d...35Ab", to: "0x123a...45Bc", amount: "$125.50", scheme: "exact", network: "avalanche", status: "success", timestamp: "2m ago" },
-    { hash: "0x1b5e...4d3f", from: "0x1a2b...47Ef", to: "0x789g...01Hi", amount: "$234.00", scheme: "exact", network: "base", status: "success", timestamp: "8m ago" },
-    { hash: "0x9a7c...2e1d", from: "0x5d6e...83Gh", to: "0xabc2...34Jk", amount: "$45.75", scheme: "exact", network: "avalanche", status: "success", timestamp: "12m ago" },
-  ];
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const networkIcons: Record<string, string> = {
     avalanche: "🔺",
+    "avalanche-fuji": "🔺",
     celo: "🌿",
+    "celo-sepolia": "🌿",
     base: "🔵",
+    "base-sepolia": "🔵",
   };
-
-  const filteredTransactions = schemeFilter === "all"
-    ? recentTransactions
-    : recentTransactions.filter(tx => tx.scheme === schemeFilter);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
@@ -116,23 +180,38 @@ export default function TransactionsPage() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
+                {error}
+              </div>
+            )}
+
             {/* Overall Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Transactions</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.totalTransactions}</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : stats.totalTransactions}
+                </div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Volume</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.totalVolume}</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : stats.totalVolume}
+                </div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Avg Transaction</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.avgTransactionSize}</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : stats.avgTransaction}
+                </div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Success Rate</div>
-                <div className="text-2xl font-bold text-green-400">{overallStats.successRate}</div>
+                <div className="text-2xl font-bold text-green-400">
+                  {loading ? "..." : stats.successRate}
+                </div>
               </div>
             </div>
 
@@ -211,45 +290,65 @@ export default function TransactionsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
-                    {filteredTransactions.map((tx) => (
-                      <tr key={tx.hash} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-sm text-cyan-400 font-mono">{tx.hash}</code>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-xs text-gray-400 font-mono">{tx.from}</code>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-xs text-gray-400 font-mono">{tx.to}</code>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-green-400">{tx.amount}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                            tx.scheme === "exact"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-purple-500/20 text-purple-400"
-                          }`}>
-                            {tx.scheme}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{networkIcons[tx.network]}</span>
-                            <span className="text-xs text-gray-400 capitalize">{tx.network}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-md text-xs font-medium">
-                            {tx.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs text-gray-400">{tx.timestamp}</div>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-8 text-center text-gray-400">
+                          Loading transactions...
                         </td>
                       </tr>
-                    ))}
+                    ) : transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-8 text-center text-gray-400">
+                          No transactions found for this period
+                        </td>
+                      </tr>
+                    ) : (
+                      transactions.map((tx) => (
+                        <tr key={tx.fullHash} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-sm text-cyan-400 font-mono">{tx.hash}</code>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-xs text-gray-400 font-mono">{tx.from}</code>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-xs text-gray-400 font-mono">{tx.to}</code>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-green-400">{tx.amount}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                              tx.scheme === "exact"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-purple-500/20 text-purple-400"
+                            }`}>
+                              {tx.scheme}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{networkIcons[tx.network] || "🌐"}</span>
+                              <span className="text-xs text-gray-400 capitalize">{tx.network}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                              tx.status === "success"
+                                ? "bg-green-500/20 text-green-400"
+                                : tx.status === "pending"
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs text-gray-400">{tx.timestamp}</div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

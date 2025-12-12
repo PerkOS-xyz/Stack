@@ -4,12 +4,16 @@ import { X402Service } from "@/lib/services/X402Service";
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Root-level /settle endpoint for x402-express compatibility
+ * The x402 library expects endpoints at /verify and /settle on the facilitator URL
+ */
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = Math.random().toString(36).substring(7);
 
   console.log('\n' + '💰'.repeat(35));
-  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
+  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId} (root /settle)`);
   console.log('💰'.repeat(35));
 
   try {

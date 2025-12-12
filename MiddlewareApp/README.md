@@ -229,6 +229,114 @@ npm start
 | USDC.e | `0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664` | 6 |
 | USDT | `0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7` | 6 |
 
+## Gas Tracking & Analytics Workflow
+
+The system tracks both x402 USDC payments and native token gas costs paid by sponsor wallets.
+
+### Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        x402 Payment Transaction                         │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  1. Client signs EIP-3009 authorization (USDC payment)                  │
+│     - from: client wallet                                               │
+│     - to: vendor address                                                │
+│     - value: USDC amount                                                │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  2. Facilitator calls ExactSchemeService.settle()                       │
+│     - Looks up sponsor wallet for client                                │
+│     - Sponsor wallet pays gas in native token (AVAX/ETH/CELO)          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  3. ThirdwebTransactionService.executeTransferWithAuthorization()       │
+│     - Executes transferWithAuthorization via Thirdweb Engine            │
+│     - Polls for transaction hash                                        │
+│     - Fetches transaction receipt for gas info                          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  4. Transaction Receipt Processing                                      │
+│     ┌─────────────────────────────────────────────────────────────────┐ │
+│     │  gasUsed: actual gas units consumed                             │ │
+│     │  effectiveGasPrice: gas price in wei                            │ │
+│     │  gasCostWei: gasUsed × effectiveGasPrice (native token)         │ │
+│     └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+┌───────────────────────────────────┐ ┌───────────────────────────────────┐
+│  5a. Log x402 Transaction (USDC)  │ │  5b. Log Sponsor Spending (Gas)   │
+│  ─────────────────────────────────│ │  ─────────────────────────────────│
+│  Table: perkos_x402_transactions  │ │  Table: perkos_sponsor_spending   │
+│  ─────────────────────────────────│ │  ─────────────────────────────────│
+│  • transaction_hash               │ │  • sponsor_wallet_id              │
+│  • payer_address (client)         │ │  • amount_wei (gas cost)          │
+│  • recipient_address (vendor)     │ │  • agent_address                  │
+│  • amount_wei (USDC)              │ │  • transaction_hash               │
+│  • network, chain_id              │ │  • chain_id, network_name         │
+│  • scheme: "exact"                │ │  • created_at                     │
+└───────────────────────────────────┘ └───────────────────────────────────┘
+                    │                               │
+                    ▼                               ▼
+┌───────────────────────────────────┐ ┌───────────────────────────────────┐
+│  Dashboard: Transaction History   │ │  Dashboard: Gas Payment Analytics │
+│  /api/x402/transactions           │ │  /api/sponsor/analytics           │
+└───────────────────────────────────┘ └───────────────────────────────────┘
+```
+
+### Key Services
+
+| Service | File | Purpose |
+|---------|------|---------|
+| `ExactSchemeService` | `lib/services/ExactSchemeService.ts` | Processes EIP-3009 payments, logs transactions |
+| `ThirdwebTransactionService` | `lib/services/ThirdwebTransactionService.ts` | Executes transactions via Thirdweb, fetches gas info |
+| `TransactionLoggingService` | `lib/services/TransactionLoggingService.ts` | Logs to `perkos_x402_transactions` and `perkos_sponsor_spending` |
+
+### Database Tables
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `perkos_x402_transactions` | x402 payment records | `amount_wei` (USDC), `payer_address`, `recipient_address` |
+| `perkos_sponsor_spending` | Gas costs by sponsor | `amount_wei` (native token), `sponsor_wallet_id` |
+| `perkos_sponsor_wallets` | Sponsor wallet registry | `sponsor_address`, `user_wallet_address`, `balance` |
+| `perkos_sponsor_rules` | Agent whitelist rules | `agent_address`, `sponsor_wallet_id` |
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/x402/transactions` | x402 transaction history |
+| GET | `/api/sponsor/analytics` | Gas spending analytics |
+| GET | `/api/sponsor/wallets/[id]/balance` | Sponsor wallet balance |
+| GET | `/api/dashboard/stats` | Combined dashboard stats |
+
+### Gas Cost Calculation
+
+```typescript
+// In ThirdwebTransactionService.getTransactionReceipt()
+const receipt = await client.getTransactionReceipt({ hash: transactionHash });
+
+const gasUsed = receipt.gasUsed;                    // Gas units consumed
+const effectiveGasPrice = receipt.effectiveGasPrice; // Wei per gas unit
+const gasCostWei = gasUsed * effectiveGasPrice;     // Total gas cost in wei
+
+// Example on Avalanche:
+// gasUsed: 65000
+// effectiveGasPrice: 25000000000 (25 gwei)
+// gasCostWei: 1625000000000000 (0.001625 AVAX)
+```
+
 ## Resources
 
 - [x402 Protocol](https://x402.gitbook.io/x402)

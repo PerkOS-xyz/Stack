@@ -82,9 +82,9 @@ export interface VerifyResponse {
 
 export interface SettleResponse {
   success: boolean;
-  error: string | null;
-  payer: Address | null;
-  transaction: Hex | null;
+  errorReason?: string;  // x402 standard uses errorReason, not error
+  payer?: Address | null;
+  transaction?: Hex | null;
   network: string;
 }
 

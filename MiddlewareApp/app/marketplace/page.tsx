@@ -1,84 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+interface Vendor {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string;
+  wallet_address: string;
+  network: string;
+  category: string;
+  tags: string[];
+  status: string;
+  total_transactions: number;
+  total_volume: string;
+  average_rating: number;
+  icon_url: string | null;
+  website_url: string | null;
+  docs_url: string | null;
+  price_usd: string | null;
+}
+
+interface VendorsResponse {
+  success: boolean;
+  vendors: Vendor[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
 
 export default function MarketplacePage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "nft" | "defi" | "gaming" | "dao">("all");
-
-  // Mock data - replace with actual API calls
-  const overallStats = {
-    activeProviders: "156",
-    totalServices: "342",
-    totalVolume: "$2.8M",
-    communityMembers: "1.2K",
-  };
-
-  const serviceProviders = [
-    {
-      name: "Community DAO",
-      description: "Decentralized governance and treasury management",
-      address: "0x123a...45Bc",
-      transactions: 1234,
-      volume: "$234.5K",
-      network: "avalanche",
-      category: "dao",
-      rating: 4.8,
-      members: 450
-    },
-    {
-      name: "Local NFT Hub",
-      description: "Community-owned NFT marketplace and gallery",
-      address: "0x456d...78Ef",
-      transactions: 987,
-      volume: "$189.2K",
-      network: "base",
-      category: "nft",
-      rating: 4.9,
-      members: 320
-    },
-    {
-      name: "GameFi Guild",
-      description: "Play-to-earn gaming community and rewards",
-      address: "0xabc2...34Jk",
-      transactions: 743,
-      volume: "$142.3K",
-      network: "avalanche",
-      category: "gaming",
-      rating: 4.6,
-      members: 210
-    },
-    {
-      name: "Community Swap",
-      description: "Decentralized token exchange for local communities",
-      address: "0xdef5...67Lm",
-      transactions: 621,
-      volume: "$118.9K",
-      network: "base",
-      category: "defi",
-      rating: 4.5,
-      members: 180
-    },
-  ];
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    activeProviders: 0,
+    totalVolume: "$0",
+  });
 
   const networkIcons: Record<string, string> = {
     avalanche: "🔺",
+    "avalanche-fuji": "🔺",
     celo: "🌿",
+    "celo-sepolia": "🌿",
     base: "🔵",
+    "base-sepolia": "🔵",
   };
 
   const categoryIcons: Record<string, string> = {
     all: "🏪",
+    api: "🔌",
+    ai: "🤖",
+    data: "📊",
     nft: "🎨",
     defi: "💰",
     gaming: "🎮",
     dao: "🏛️",
+    other: "📦",
   };
 
-  const filteredProviders = categoryFilter === "all"
-    ? serviceProviders
-    : serviceProviders.filter(p => p.category === categoryFilter);
+  const fetchVendors = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (categoryFilter !== "all") {
+        params.append("category", categoryFilter);
+      }
+      params.append("limit", "50");
+
+      const response = await fetch(`/api/vendors?${params.toString()}`);
+      const data: VendorsResponse = await response.json();
+
+      if (data.success) {
+        setVendors(data.vendors);
+
+        // Calculate stats
+        const totalVolume = data.vendors.reduce((sum, v) => sum + parseFloat(v.total_volume || "0"), 0);
+        setStats({
+          activeProviders: data.pagination.total,
+          totalVolume: `$${(totalVolume / 1000000).toFixed(2)}M`,
+        });
+      } else {
+        setError("Failed to load vendors");
+      }
+    } catch {
+      setError("Failed to connect to server");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVendors();
+  }, [categoryFilter]);
+
+  const formatVolume = (volume: string) => {
+    const num = parseFloat(volume || "0");
+    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+    return `$${num.toFixed(2)}`;
+  };
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
@@ -135,24 +167,26 @@ export default function MarketplacePage() {
                 <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
                   Marketplace
                 </h2>
-                <p className="text-gray-400">Discover and connect with community service providers</p>
+                <p className="text-gray-400">Discover and connect with X402 service providers</p>
               </div>
 
-              {/* Time Range Filter */}
-              <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
-                {(["24h", "7d", "30d"] as const).map((range) => (
-                  <button
-                    key={range}
-                    onClick={() => setTimeRange(range)}
-                    className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                      timeRange === range
-                        ? "bg-slate-700 text-cyan-400"
-                        : "text-gray-400 hover:text-gray-200"
-                    }`}
-                  >
-                    {range.toUpperCase()}
-                  </button>
-                ))}
+              <div className="flex items-center space-x-4">
+                {/* Time Range Filter */}
+                <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+                  {(["24h", "7d", "30d"] as const).map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setTimeRange(range)}
+                      className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                        timeRange === range
+                          ? "bg-slate-700 text-cyan-400"
+                          : "text-gray-400 hover:text-gray-200"
+                      }`}
+                    >
+                      {range.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -160,26 +194,28 @@ export default function MarketplacePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Active Providers</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.activeProviders}</div>
+                <div className="text-2xl font-bold text-gray-100">{stats.activeProviders}</div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Services</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.totalServices}</div>
+                <div className="text-2xl font-bold text-gray-100">{vendors.length}</div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Volume</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.totalVolume}</div>
+                <div className="text-2xl font-bold text-gray-100">{stats.totalVolume}</div>
               </div>
               <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
-                <div className="text-sm text-gray-400 mb-1">Community Members</div>
-                <div className="text-2xl font-bold text-gray-100">{overallStats.communityMembers}</div>
+                <div className="text-sm text-gray-400 mb-1">Networks</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {new Set(vendors.map((v) => v.network)).size}
+                </div>
               </div>
             </div>
 
             {/* Category Filter */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-2">
-                {(["all", "nft", "defi", "gaming", "dao"] as const).map((category) => (
+                {Object.entries(categoryIcons).map(([category, icon]) => (
                   <button
                     key={category}
                     onClick={() => setCategoryFilter(category)}
@@ -189,74 +225,156 @@ export default function MarketplacePage() {
                         : "bg-slate-800/50 border border-blue-500/30 text-gray-400 hover:text-gray-200 hover:border-blue-400/50"
                     }`}
                   >
-                    <span>{categoryIcons[category]}</span>
-                    <span>{category === "all" ? "All Categories" : category.toUpperCase()}</span>
+                    <span>{icon}</span>
+                    <span>{category === "all" ? "All" : category.toUpperCase()}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Service Provider Cards */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {filteredProviders.map((provider) => (
-                <div
-                  key={provider.address}
-                  className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/50 transition-all duration-300 overflow-hidden"
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+                <p className="text-red-400">{error}</p>
+                <button
+                  onClick={fetchVendors}
+                  className="mt-4 px-4 py-2 bg-slate-800 text-gray-300 rounded-lg hover:bg-slate-700"
                 >
-                  <div className="p-6">
-                    {/* Provider Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-xl font-bold text-gray-100">{provider.name}</h3>
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md text-xs font-medium capitalize">
-                            {categoryIcons[provider.category]} {provider.category}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-400 mb-2">{provider.description}</p>
-                        <code className="text-xs text-gray-500 font-mono">{provider.address}</code>
-                      </div>
-                    </div>
+                  Try Again
+                </button>
+              </div>
+            )}
 
-                    {/* Provider Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Transactions</div>
-                        <div className="text-lg font-semibold text-gray-200">
-                          {provider.transactions.toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Volume</div>
-                        <div className="text-lg font-semibold text-green-400">{provider.volume}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Members</div>
-                        <div className="text-lg font-semibold text-gray-200">{provider.members}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Rating</div>
-                        <div className="flex items-center space-x-1">
-                          <span className="text-lg font-semibold text-yellow-400">⭐</span>
-                          <span className="text-lg font-semibold text-gray-200">{provider.rating}</span>
-                        </div>
-                      </div>
-                    </div>
+            {/* Empty State */}
+            {!isLoading && !error && vendors.length === 0 && (
+              <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-12 text-center">
+                <div className="text-6xl mb-4">🔌</div>
+                <h3 className="text-xl font-bold text-gray-200 mb-2">No Services Found</h3>
+                <p className="text-gray-400">
+                  Services register automatically via POST /api/register from their vendor API.
+                </p>
+              </div>
+            )}
 
-                    {/* Network Badge */}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{networkIcons[provider.network]}</span>
-                        <span className="text-xs text-gray-400 capitalize">{provider.network}</span>
+            {/* Service Provider Cards */}
+            {!isLoading && !error && vendors.length > 0 && (
+              <div className="grid md:grid-cols-2 gap-6">
+                {vendors.map((vendor) => (
+                  <div
+                    key={vendor.id}
+                    className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/50 transition-all duration-300 overflow-hidden"
+                  >
+                    <div className="p-6">
+                      {/* Provider Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            {vendor.icon_url && (
+                              <img
+                                src={vendor.icon_url}
+                                alt=""
+                                className="w-8 h-8 rounded-lg"
+                              />
+                            )}
+                            <h3 className="text-xl font-bold text-gray-100">{vendor.name}</h3>
+                            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md text-xs font-medium capitalize">
+                              {categoryIcons[vendor.category] || "📦"} {vendor.category}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400 mb-2">
+                            {vendor.description || "No description provided"}
+                          </p>
+                          <div className="flex items-center space-x-4">
+                            <code className="text-xs text-gray-500 font-mono">
+                              {truncateAddress(vendor.wallet_address)}
+                            </code>
+                            {vendor.price_usd && (
+                              <span className="text-xs text-cyan-400">
+                                ${vendor.price_usd}/call
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200">
-                        Connect
-                      </button>
+
+                      {/* Provider Stats */}
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <div className="text-xs text-gray-400 mb-1">Transactions</div>
+                          <div className="text-lg font-semibold text-gray-200">
+                            {vendor.total_transactions.toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-1">Volume</div>
+                          <div className="text-lg font-semibold text-green-400">
+                            {formatVolume(vendor.total_volume)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-400 mb-1">Rating</div>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-lg font-semibold text-yellow-400">⭐</span>
+                            <span className="text-lg font-semibold text-gray-200">
+                              {vendor.average_rating.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tags */}
+                      {vendor.tags && vendor.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {vendor.tags.slice(0, 4).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-1 bg-slate-700/50 text-gray-400 rounded text-xs"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Network Badge & Actions */}
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{networkIcons[vendor.network] || "🌐"}</span>
+                          <span className="text-xs text-gray-400 capitalize">{vendor.network}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {vendor.docs_url && (
+                            <a
+                              href={vendor.docs_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-2 bg-slate-700 text-gray-300 rounded-lg text-sm hover:bg-slate-600 transition-colors"
+                            >
+                              Docs
+                            </a>
+                          )}
+                          <a
+                            href={vendor.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all"
+                          >
+                            Connect
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -295,6 +413,7 @@ export default function MarketplacePage() {
           </div>
         </footer>
       </div>
+
     </div>
   );
 }
