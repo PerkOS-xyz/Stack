@@ -15,6 +15,7 @@ import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { getThirdwebTransactionService } from "./ThirdwebTransactionService";
+import { getTransactionLoggingService } from "./TransactionLoggingService";
 
 export class ExactSchemeService {
   private network: SupportedNetwork;
@@ -223,6 +224,53 @@ export class ExactSchemeService {
           to: authorization.to,
           value: authorization.value,
           sponsorWallet: sponsorWallet.sponsor_address,
+          gasUsed: result.gasUsed,
+          gasCostWei: result.gasCostWei,
+        });
+
+        // Log transaction to database for analytics
+        const loggingService = getTransactionLoggingService();
+        const chainId = this.getChainIdForNetwork(this.network);
+
+        // Extract vendor domain and endpoint from resource URL
+        let vendorDomain: string | undefined;
+        let vendorEndpoint: string | undefined;
+        try {
+          const resourceUrl = new URL(requirements.resource);
+          vendorDomain = resourceUrl.hostname;
+          vendorEndpoint = resourceUrl.pathname;
+        } catch {
+          // Invalid URL, leave vendor info undefined
+        }
+
+        // Log the x402 transaction (USDC payment)
+        await loggingService.logTransaction({
+          transactionHash: result.transactionHash,
+          payerAddress: authorization.from,
+          recipientAddress: authorization.to,
+          sponsorAddress: sponsorWallet.sponsor_address,
+          amountWei: authorization.value,
+          assetAddress: requirements.asset,
+          assetSymbol: "USDC",
+          network: this.network,
+          scheme: "exact",
+          status: "success",
+          vendorDomain,
+          vendorEndpoint,
+        });
+
+        // Log sponsor spending for gas analytics (actual gas cost paid by sponsor)
+        // Only log if we have gas cost info, use "0" as fallback if receipt failed
+        const gasCost = result.gasCostWei || "0";
+        await loggingService.logSponsorSpending({
+          sponsorWalletId: sponsorWallet.id,
+          amountWei: gasCost, // Actual gas cost in native token wei (AVAX/ETH/CELO)
+          agentAddress: authorization.from,
+          transactionHash: result.transactionHash,
+          chainId: chainId,
+          networkName: this.network,
+          serverDomain: vendorDomain,
+          serverEndpoint: vendorEndpoint,
         });
 
         return {

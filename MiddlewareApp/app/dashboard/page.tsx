@@ -1335,7 +1335,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-gray-400 mb-1">Total Gas Paid</p>
                     {summary && (
                       <p className="text-lg font-bold text-cyan-400">
-                        {(Number(summary.totalGasPaidWei) / 1e18).toFixed(6)} ETH
+                        {(Number(summary.totalGasPaidWei) / 1e18).toFixed(8)} {selectedWallet?.network === 'avalanche' ? 'AVAX' : selectedWallet?.network === 'base' ? 'ETH' : selectedWallet?.network === 'celo' ? 'CELO' : 'ETH'}
                       </p>
                     )}
                     <p className="text-xs text-gray-500 mt-1">
@@ -1382,16 +1382,25 @@ export default function DashboardPage() {
                           <div>
                             <p className="text-xs text-gray-400 mb-1">Gas Fee Paid</p>
                             <p className="text-cyan-400 font-mono text-sm">
-                              {(BigInt(tx.amount_wei) / BigInt(10 ** 18)).toString()} ETH
+                              {(Number(tx.amount_wei) / 1e18).toFixed(8)} {tx.network_name === 'avalanche' || tx.chain_id === '43114' ? 'AVAX' : tx.network_name === 'base' || tx.chain_id === '8453' ? 'ETH' : tx.network_name === 'celo' || tx.chain_id === '42220' ? 'CELO' : selectedWallet?.network === 'avalanche' ? 'AVAX' : 'ETH'}
                             </p>
                           </div>
 
-                          {/* Server & Endpoint */}
+                          {/* Vendor URL */}
                           <div>
-                            <p className="text-xs text-gray-400 mb-1">Server</p>
-                            <p className="text-gray-200 text-sm font-mono truncate">
-                              {tx.server_domain || 'N/A'}
-                            </p>
+                            <p className="text-xs text-gray-400 mb-1">Vendor</p>
+                            {tx.server_domain ? (
+                              <a
+                                href={`https://${tx.server_domain}${tx.server_endpoint || ''}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-cyan-400 hover:text-cyan-300 text-sm font-mono truncate block transition-colors"
+                              >
+                                {tx.server_domain}
+                              </a>
+                            ) : (
+                              <p className="text-gray-500 text-sm">N/A</p>
+                            )}
                             {tx.server_endpoint && (
                               <p className="text-gray-500 text-xs mt-1 truncate">{tx.server_endpoint}</p>
                             )}

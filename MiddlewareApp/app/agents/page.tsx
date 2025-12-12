@@ -1,56 +1,92 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
+interface Agent {
+  address: string;
+  fullAddress: string;
+  name: string | null;
+  transactions: number;
+  volume: string;
+  network: string;
+}
+
+interface Stats {
+  total: number;
+  active: number;
+  newToday: number;
+  totalVolume: string;
+}
+
+interface ApiResponse {
+  agents: Agent[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+  stats: Stats;
+}
+
 export default function AgentsPage() {
-  const [activeTab, setActiveTab] = useState<"members" | "providers">("members");
+  const [activeTab, setActiveTab] = useState<"member" | "provider">("member");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d" | "all">("7d");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    active: 0,
+    newToday: 0,
+    totalVolume: "$0",
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - replace with actual API calls
-  const memberStats = {
-    total: 1247,
-    active: 892,
-    newToday: 34,
-    totalVolume: "$1.2M",
-  };
+  const fetchAgents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        period: timeRange,
+        type: activeTab,
+        limit: "50",
+        offset: "0",
+      });
 
-  const providerStats = {
-    total: 156,
-    active: 124,
-    newToday: 3,
-    totalVolume: "$1.2M",
-  };
+      const response = await fetch(`/api/x402/agents?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch agents");
+      }
 
-  type Member = {
-    address: string;
-    transactions: number;
-    volume: string;
-    network: string;
-  };
+      const data: ApiResponse = await response.json();
+      setAgents(data.agents);
+      setStats(data.stats);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load agents");
+    } finally {
+      setLoading(false);
+    }
+  }, [timeRange, activeTab]);
 
-  type Provider = Member & {
-    name: string;
-  };
-
-  const topMembers: Member[] = [
-    { address: "0x742d...35Ab", transactions: 234, volume: "$45.2K", network: "avalanche" },
-    { address: "0x8f3c...92Cd", transactions: 189, volume: "$38.7K", network: "base" },
-    { address: "0x1a2b...47Ef", transactions: 167, volume: "$32.1K", network: "base" },
-    { address: "0x5d6e...83Gh", transactions: 143, volume: "$28.5K", network: "avalanche" },
-    { address: "0x9f0a...21Ij", transactions: 128, volume: "$24.3K", network: "avalanche" },
-  ];
-
-  const topProviders: Provider[] = [
-    { name: "Community DAO", address: "0x123a...45Bc", transactions: 1234, volume: "$234.5K", network: "avalanche" },
-    { name: "Local NFT Hub", address: "0x456d...78Ef", transactions: 987, volume: "$189.2K", network: "base" },
-    { name: "Community Swap", address: "0xdef5...67Lm", transactions: 621, volume: "$118.9K", network: "base" },
-  ];
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
 
   const networkIcons: Record<string, string> = {
     avalanche: "🔺",
+    "avalanche-fuji": "🔺",
     celo: "🌿",
+    "celo-sepolia": "🌿",
     base: "🔵",
+    "base-sepolia": "🔵",
+  };
+
+  const statsDisplay = {
+    total: stats.total,
+    active: stats.active,
+    newToday: stats.newToday,
+    totalVolume: stats.totalVolume,
   };
 
   return (
@@ -115,9 +151,9 @@ export default function AgentsPage() {
               {/* Agent Type Tabs */}
               <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
                 <button
-                  onClick={() => setActiveTab("members")}
+                  onClick={() => setActiveTab("member")}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    activeTab === "members"
+                    activeTab === "member"
                       ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
@@ -125,9 +161,9 @@ export default function AgentsPage() {
                   Community Members
                 </button>
                 <button
-                  onClick={() => setActiveTab("providers")}
+                  onClick={() => setActiveTab("provider")}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    activeTab === "providers"
+                    activeTab === "provider"
                       ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
@@ -154,29 +190,49 @@ export default function AgentsPage() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
+                {error}
+              </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {Object.entries(activeTab === "members" ? memberStats : providerStats).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm"
-                >
-                  <div className="text-sm text-gray-400 capitalize mb-1">
-                    {key.replace(/([A-Z])/g, " $1").trim()}
-                  </div>
-                  <div className="text-2xl font-bold text-gray-100">{value}</div>
+              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-gray-400 capitalize mb-1">Total</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : statsDisplay.total.toLocaleString()}
                 </div>
-              ))}
+              </div>
+              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-gray-400 capitalize mb-1">Active (24h)</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : statsDisplay.active.toLocaleString()}
+                </div>
+              </div>
+              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-gray-400 capitalize mb-1">New Today</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : statsDisplay.newToday.toLocaleString()}
+                </div>
+              </div>
+              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-gray-400 capitalize mb-1">Total Volume</div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {loading ? "..." : statsDisplay.totalVolume}
+                </div>
+              </div>
             </div>
 
             {/* Top Agents Table */}
             <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm overflow-hidden">
               <div className="p-6 border-b border-blue-500/20">
                 <h3 className="text-xl font-semibold text-gray-100">
-                  Top {activeTab === "members" ? "Community Members" : "Service Providers"}
+                  Top {activeTab === "member" ? "Community Members" : "Service Providers"}
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">
-                  Ranked by transaction volume in the last {timeRange}
+                  Ranked by transaction volume {timeRange !== "all" ? `in the last ${timeRange}` : "(all time)"}
                 </p>
               </div>
 
@@ -187,7 +243,7 @@ export default function AgentsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Rank
                       </th>
-                      {activeTab === "providers" && (
+                      {activeTab === "provider" && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                           Name
                         </th>
@@ -207,36 +263,52 @@ export default function AgentsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
-                    {(activeTab === "members" ? topMembers : topProviders).map((agent, index) => (
-                      <tr
-                        key={agent.address}
-                        className="hover:bg-slate-800/30 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-300">#{index + 1}</div>
-                        </td>
-                        {activeTab === "providers" && "name" in agent && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-200">{(agent as Provider).name}</div>
-                          </td>
-                        )}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-sm text-cyan-400 font-mono">{agent.address}</code>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-300">{agent.transactions.toLocaleString()}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-green-400">{agent.volume}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{networkIcons[agent.network]}</span>
-                            <span className="text-xs text-gray-400 capitalize">{agent.network}</span>
-                          </div>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={activeTab === "provider" ? 6 : 5} className="px-6 py-8 text-center text-gray-400">
+                          Loading agents...
                         </td>
                       </tr>
-                    ))}
+                    ) : agents.length === 0 ? (
+                      <tr>
+                        <td colSpan={activeTab === "provider" ? 6 : 5} className="px-6 py-8 text-center text-gray-400">
+                          No {activeTab === "member" ? "members" : "providers"} found for this period
+                        </td>
+                      </tr>
+                    ) : (
+                      agents.map((agent, index) => (
+                        <tr
+                          key={agent.fullAddress}
+                          className="hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-300">#{index + 1}</div>
+                          </td>
+                          {activeTab === "provider" && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-200">
+                                {agent.name || "Unknown"}
+                              </div>
+                            </td>
+                          )}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-sm text-cyan-400 font-mono">{agent.address}</code>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-300">{agent.transactions.toLocaleString()}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-green-400">{agent.volume}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{networkIcons[agent.network] || "🌐"}</span>
+                              <span className="text-xs text-gray-400 capitalize">{agent.network}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
