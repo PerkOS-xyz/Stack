@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 500);
     const offset = parseInt(searchParams.get('offset') || '0');
 
+    console.log('[Analytics API] Query params:', { walletId, period, chainId, limit, offset });
+
     // Calculate time filter based on period
     let timeFilter: Date | null = null;
     const now = new Date();
@@ -74,13 +76,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (chainId) {
-      query = query.eq('chain_id', chainId);
+      // chain_id column is TEXT type, compare as string
+      query = query.eq('chain_id', String(chainId));
     }
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
     const { data: transactions, error, count } = await query;
+
+    console.log('[Analytics API] Results:', {
+      count,
+      error: error?.message,
+      sampleChainIds: transactions?.slice(0, 3).map(t => ({ chain_id: t.chain_id, type: typeof t.chain_id }))
+    });
 
     if (error) {
       console.error('Error fetching analytics:', error);
@@ -104,7 +113,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (chainId) {
-      summaryQuery = summaryQuery.eq('chain_id', chainId);
+      // chain_id column is TEXT type, compare as string
+      summaryQuery = summaryQuery.eq('chain_id', String(chainId));
     }
 
     const { data: allTransactions } = await summaryQuery;
