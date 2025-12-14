@@ -82,7 +82,7 @@ export default function ContributorsPage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [filteredTotal, setFilteredTotal] = useState(0);
   const [selectedContributor, setSelectedContributor] = useState<Contributor | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState('base');
   const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
@@ -115,7 +115,7 @@ export default function ContributorsPage() {
         setContributors(data.contributors);
         setStats(data.stats);
         setHasMore(data.pagination.hasMore);
-        setTotal(data.pagination.total);
+        setFilteredTotal(data.pagination.total);
       }
     } catch (error) {
       console.error('Failed to fetch contributors:', error);
@@ -252,7 +252,8 @@ export default function ContributorsPage() {
             <>
               {/* Results Count */}
               <div className="text-sm text-gray-500 mb-4">
-                Showing {contributors.length} of {total} contributors
+                Showing {contributors.length} of {filteredTotal} contributors
+                {filterType !== 'all' && stats && ` (${stats.total} total)`}
               </div>
 
               {/* Contributors Grid */}
@@ -374,7 +375,7 @@ export default function ContributorsPage() {
                   Previous
                 </button>
                 <span className="text-gray-500">
-                  Page {page + 1} of {Math.ceil(total / LIMIT) || 1}
+                  Page {page + 1} of {Math.ceil(filteredTotal / LIMIT) || 1}
                 </span>
                 <button
                   onClick={() => setPage(page + 1)}
