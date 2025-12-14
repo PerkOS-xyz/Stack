@@ -379,6 +379,80 @@ export interface Database {
           verified_at?: string
         }
       }
+      perkos_user_profiles: {
+        Row: {
+          id: string
+          wallet_address: string
+          account_type: 'personal' | 'community' | 'organization' | 'vendor'
+          display_name: string | null
+          description: string | null
+          website: string | null
+          avatar_url: string | null
+          twitter_handle: string | null
+          github_handle: string | null
+          discord_handle: string | null
+          farcaster_handle: string | null
+          telegram_handle: string | null
+          instagram_handle: string | null
+          tiktok_handle: string | null
+          twitch_handle: string | null
+          kick_handle: string | null
+          company_name: string | null
+          company_registration_number: string | null
+          is_verified: boolean
+          is_public: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          wallet_address: string
+          account_type?: 'personal' | 'community' | 'organization' | 'vendor'
+          display_name?: string | null
+          description?: string | null
+          website?: string | null
+          avatar_url?: string | null
+          twitter_handle?: string | null
+          github_handle?: string | null
+          discord_handle?: string | null
+          farcaster_handle?: string | null
+          telegram_handle?: string | null
+          instagram_handle?: string | null
+          tiktok_handle?: string | null
+          twitch_handle?: string | null
+          kick_handle?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          is_verified?: boolean
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          wallet_address?: string
+          account_type?: 'personal' | 'community' | 'organization' | 'vendor'
+          display_name?: string | null
+          description?: string | null
+          website?: string | null
+          avatar_url?: string | null
+          twitter_handle?: string | null
+          github_handle?: string | null
+          discord_handle?: string | null
+          farcaster_handle?: string | null
+          telegram_handle?: string | null
+          instagram_handle?: string | null
+          tiktok_handle?: string | null
+          twitch_handle?: string | null
+          kick_handle?: string | null
+          company_name?: string | null
+          company_registration_number?: string | null
+          is_verified?: boolean
+          is_public?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
