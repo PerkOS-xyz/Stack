@@ -5,7 +5,44 @@ import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
 import { ConnectButton, useActiveAccount, darkTheme } from "thirdweb/react";
 import { client, chains } from "@/lib/config/thirdweb";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+// Types for API response
+interface NetworkStats {
+  name: string;
+  network: string;
+  icon: string;
+  chainId: number;
+  txCount: number;
+  volume: string;
+}
+
+interface RecentTransaction {
+  hash: string;
+  network: string;
+  amount: string;
+  scheme: string;
+  time: string;
+  timestamp: number;
+}
+
+interface DashboardStats {
+  totalTransactions: number;
+  totalVolume: string;
+  activeAgents: number;
+  networks: number;
+  growth: {
+    transactions: string;
+    volume: string;
+    agents: string;
+  };
+  networkStats: {
+    mainnet: NetworkStats[];
+    testnet: NetworkStats[];
+  };
+  chartData: Array<{ day: number; value: number; date: string }>;
+  recentTransactions: RecentTransaction[];
+}
 
 // Define wallets outside component to avoid hoisting issues
 const supportedWallets = [
@@ -26,23 +63,55 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalTransactions: 0,
-    totalVolume: "0",
+    totalVolume: "$0",
     activeAgents: 0,
     networks: 8,
   });
+  const [growth, setGrowth] = useState({
+    transactions: "+0%",
+    volume: "+0%",
+    agents: "+0%",
+  });
+  const [networks, setNetworks] = useState<{ mainnet: NetworkStats[]; testnet: NetworkStats[] }>({
+    mainnet: [],
+    testnet: [],
+  });
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [apiChartData, setApiChartData] = useState<Array<{ day: number; value: number; date: string }>>([]);
 
-  // Mock data - replace with actual API calls
-  useEffect(() => {
-    // Simulate fetching real-time data
-    setStats({
-      totalTransactions: 22967,
-      totalVolume: "$4.9M",
-      activeAgents: 1247,
-      networks: 8,
-    });
+  // Fetch dashboard stats from API
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/dashboard/stats?timeRange=${timeRange}`);
+      if (!response.ok) throw new Error("Failed to fetch stats");
+
+      const data: DashboardStats = await response.json();
+
+      setStats({
+        totalTransactions: data.totalTransactions,
+        totalVolume: data.totalVolume,
+        activeAgents: data.activeAgents,
+        networks: data.networks,
+      });
+      setGrowth(data.growth);
+      setNetworks(data.networkStats);
+      setRecentTransactions(data.recentTransactions);
+      setApiChartData(data.chartData);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [timeRange]);
+
+  // Fetch data when timeRange changes
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
 
   const services = [
     {
@@ -68,30 +137,8 @@ export default function Home() {
     },
   ];
 
-  const networks = {
-    mainnet: [
-      { name: "Avalanche", icon: "🔺", network: "avalanche", txCount: 5234, volume: "$1.2M" },
-      { name: "Base", icon: "🔵", network: "base", txCount: 3490, volume: "$760K" },
-      { name: "Ethereum", icon: "⟠", network: "ethereum", txCount: 4521, volume: "$980K" },
-      { name: "Polygon", icon: "🟣", network: "polygon", txCount: 2876, volume: "$520K" },
-      { name: "Arbitrum", icon: "🔷", network: "arbitrum", txCount: 3156, volume: "$680K" },
-      { name: "Optimism", icon: "🔴", network: "optimism", txCount: 2234, volume: "$450K" },
-      { name: "Celo", icon: "🟡", network: "celo", txCount: 1456, volume: "$280K" },
-      { name: "Monad", icon: "🟢", network: "monad", txCount: 0, volume: "$0" },
-    ],
-    testnet: [
-      { name: "Avalanche Fuji", icon: "🔺", network: "avalanche-fuji", txCount: 892, volume: "$234K" },
-      { name: "Base Sepolia", icon: "🔵", network: "base-sepolia", txCount: 634, volume: "$145K" },
-      { name: "Sepolia", icon: "⟠", network: "sepolia", txCount: 756, volume: "$178K" },
-      { name: "Polygon Amoy", icon: "🟣", network: "polygon-amoy", txCount: 523, volume: "$98K" },
-      { name: "Arbitrum Sepolia", icon: "🔷", network: "arbitrum-sepolia", txCount: 445, volume: "$87K" },
-      { name: "OP Sepolia", icon: "🔴", network: "optimism-sepolia", txCount: 389, volume: "$72K" },
-      { name: "Celo Sepolia", icon: "🟡", network: "celo-sepolia", txCount: 234, volume: "$45K" },
-      { name: "Monad Testnet", icon: "🟢", network: "monad-testnet", txCount: 178, volume: "$32K" },
-    ],
-  };
-
-  const activeNetworks = networks[activeTab];
+  // Active networks based on tab selection (from API data)
+  const activeNetworks = networks[activeTab] || [];
 
   // Chart data - initialized in useEffect to avoid hydration mismatch
   const [chartData, setChartData] = useState<Array<{ day: number; height: number; value: number }>>([]);
@@ -100,7 +147,7 @@ export default function Home() {
   const [volumeTrendData, setVolumeTrendData] = useState<number[]>([]);
   const [networkCharts, setNetworkCharts] = useState<Record<string, number[]>>({});
 
-  // Generate chart data on client-side only
+  // Generate mini chart data on client-side only (for UI consistency before API loads)
   useEffect(() => {
     setChartData(
       Array.from({ length: 30 }, (_, i) => ({
@@ -112,28 +159,23 @@ export default function Home() {
     setNetworkActivityData(Array.from({ length: 12 }, () => Math.random() * 100));
     setAgentGrowthData(Array.from({ length: 12 }, () => Math.random() * 100));
     setVolumeTrendData(Array.from({ length: 12 }, () => Math.random() * 100));
-
-    // Pre-generate network charts for all networks
-    const charts: Record<string, number[]> = {};
-    [...networks.mainnet, ...networks.testnet].forEach((network) => {
-      charts[network.network] = Array.from({ length: 24 }, () => Math.random() * 100);
-    });
-    setNetworkCharts(charts);
   }, []);
+
+  // Generate network charts when API data loads
+  useEffect(() => {
+    if (networks.mainnet.length > 0 || networks.testnet.length > 0) {
+      const charts: Record<string, number[]> = {};
+      [...networks.mainnet, ...networks.testnet].forEach((network) => {
+        charts[network.network] = Array.from({ length: 24 }, () => Math.random() * 100);
+      });
+      setNetworkCharts(charts);
+    }
+  }, [networks]);
 
   // Small charts data
   const schemeDistributionData = [
     { name: "Exact", value: 65, color: "from-green-500/60 to-green-400/60" },
     { name: "Deferred", value: 35, color: "from-blue-500/60 to-blue-400/60" },
-  ];
-
-  // Recent transactions (mock)
-  const recentTransactions = [
-    { hash: "0xf3c4...a21b", network: "avalanche", amount: "$125.50", scheme: "exact", time: "2m ago" },
-    { hash: "0x3e7f...9a8c", network: "base", amount: "$234.75", scheme: "exact", time: "8m ago" },
-    { hash: "0xa1b2...4d5e", network: "avalanche", amount: "$56.30", scheme: "exact", time: "12m ago" },
-    { hash: "0x5d8e...7b3f", network: "base", amount: "$189.40", scheme: "deferred", time: "18m ago" },
-    { hash: "0x2c9a...1e6d", network: "avalanche", amount: "$98.75", scheme: "exact", time: "22m ago" },
   ];
 
   return (
@@ -320,7 +362,7 @@ export default function Home() {
                 <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
                   {stats.totalTransactions.toLocaleString()}
                 </div>
-                <div className="text-xs text-green-400 mb-3">+12.5% vs last {timeRange}</div>
+                <div className="text-xs text-green-400 mb-3">{growth.transactions} vs last {timeRange}</div>
                 {/* Mini line chart */}
                 <div className="h-8 flex items-end space-x-0.5">
                   {networkActivityData.map((value, i) => (
@@ -338,7 +380,7 @@ export default function Home() {
                 <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                   {stats.totalVolume}
                 </div>
-                <div className="text-xs text-green-400 mb-3">+8.3% vs last {timeRange}</div>
+                <div className="text-xs text-green-400 mb-3">{growth.volume} vs last {timeRange}</div>
                 {/* Mini area chart */}
                 <div className="h-8 flex items-end space-x-0.5">
                   {volumeTrendData.map((value, i) => (
@@ -356,7 +398,7 @@ export default function Home() {
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
                   {stats.activeAgents.toLocaleString()}
                 </div>
-                <div className="text-xs text-green-400 mb-3">+15.7% vs last {timeRange}</div>
+                <div className="text-xs text-green-400 mb-3">{growth.agents} vs last {timeRange}</div>
                 {/* Mini growth chart */}
                 <div className="h-8 flex items-end space-x-0.5">
                   {agentGrowthData.map((value, i) => (
@@ -468,30 +510,63 @@ export default function Home() {
 
             {/* Network Cards with Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {activeNetworks.map((network) => (
-                <div
-                  key={network.network}
-                  className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/70 transition-all duration-300"
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className="text-3xl">{network.icon}</span>
-                    <div>
-                      <div className="text-base font-semibold text-gray-200">{network.name}</div>
-                      <div className="text-xs text-gray-400 font-mono">{network.network}</div>
+              {loading && activeNetworks.length === 0 ? (
+                // Loading skeleton
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm animate-pulse"
+                  >
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-8 h-8 bg-slate-700 rounded-full" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-slate-700 rounded w-24 mb-2" />
+                        <div className="h-3 bg-slate-700 rounded w-16" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="h-3 bg-slate-700 rounded w-16 mb-1" />
+                        <div className="h-5 bg-slate-700 rounded w-12" />
+                      </div>
+                      <div>
+                        <div className="h-3 bg-slate-700 rounded w-12 mb-1" />
+                        <div className="h-5 bg-slate-700 rounded w-14" />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <div className="text-xs text-gray-400">Transactions</div>
-                      <div className="text-base font-bold text-cyan-400">{network.txCount.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400">Volume</div>
-                      <div className="text-base font-bold text-blue-400">{network.volume}</div>
-                    </div>
-                  </div>
+                ))
+              ) : activeNetworks.length === 0 ? (
+                // No data state
+                <div className="col-span-full text-center py-8 text-gray-400">
+                  No network data available
                 </div>
-              ))}
+              ) : (
+                activeNetworks.map((network) => (
+                  <div
+                    key={network.network}
+                    className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/70 transition-all duration-300"
+                  >
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-3xl">{network.icon}</span>
+                      <div>
+                        <div className="text-base font-semibold text-gray-200">{network.name}</div>
+                        <div className="text-xs text-gray-400 font-mono">{network.network}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <div className="text-xs text-gray-400">Transactions</div>
+                        <div className="text-base font-bold text-cyan-400">{network.txCount.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-400">Volume</div>
+                        <div className="text-base font-bold text-blue-400">{network.volume}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -555,7 +630,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="text-gray-400 text-xs">Growth</div>
-                    <div className="text-lg font-bold text-green-400">+12.5%</div>
+                    <div className="text-lg font-bold text-green-400">{growth.transactions}</div>
                   </div>
                 </div>
               </div>

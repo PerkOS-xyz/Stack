@@ -73,13 +73,26 @@ export default function AgentsPage() {
     fetchAgents();
   }, [fetchAgents]);
 
+  // Network icons for all 16 supported networks (8 mainnet + 8 testnet)
   const networkIcons: Record<string, string> = {
+    // Mainnet
     avalanche: "🔺",
-    "avalanche-fuji": "🔺",
-    celo: "🌿",
-    "celo-sepolia": "🌿",
     base: "🔵",
+    ethereum: "⟠",
+    polygon: "🟣",
+    arbitrum: "🔷",
+    optimism: "🔴",
+    celo: "🟡",
+    monad: "🟢",
+    // Testnet
+    "avalanche-fuji": "🔺",
     "base-sepolia": "🔵",
+    sepolia: "⟠",
+    "polygon-amoy": "🟣",
+    "arbitrum-sepolia": "🔷",
+    "optimism-sepolia": "🔴",
+    "celo-sepolia": "🟡",
+    "monad-testnet": "🟢",
   };
 
   const statsDisplay = {

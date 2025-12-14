@@ -4,47 +4,135 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/db/supabase";
+import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
 
-// Network metadata
+// Network metadata for all 16 supported networks (8 mainnet + 8 testnet)
 const NETWORK_METADATA: Record<
   string,
-  { name: string; chainId: number; symbol: string; color: string }
+  { name: string; chainId: number; symbol: string; color: string; icon: string }
 > = {
+  // Mainnet networks
   avalanche: {
     name: "Avalanche",
-    chainId: 43114,
+    chainId: CHAIN_IDS.AVALANCHE,
     symbol: "AVAX",
     color: "#E84142",
+    icon: "🔺",
   },
-  "avalanche-fuji": {
-    name: "Avalanche Fuji",
-    chainId: 43113,
-    symbol: "AVAX",
-    color: "#E84142",
-  },
-  base: { name: "Base", chainId: 8453, symbol: "ETH", color: "#0052FF" },
-  "base-sepolia": {
-    name: "Base Sepolia",
-    chainId: 84532,
+  base: {
+    name: "Base",
+    chainId: CHAIN_IDS.BASE,
     symbol: "ETH",
     color: "#0052FF",
+    icon: "🔵",
   },
-  celo: { name: "Celo", chainId: 42220, symbol: "CELO", color: "#35D07F" },
-  "celo-sepolia": {
-    name: "Celo Sepolia",
-    chainId: 11142220,
+  ethereum: {
+    name: "Ethereum",
+    chainId: CHAIN_IDS.ETHEREUM,
+    symbol: "ETH",
+    color: "#627EEA",
+    icon: "⟠",
+  },
+  polygon: {
+    name: "Polygon",
+    chainId: CHAIN_IDS.POLYGON,
+    symbol: "MATIC",
+    color: "#8247E5",
+    icon: "🟣",
+  },
+  arbitrum: {
+    name: "Arbitrum",
+    chainId: CHAIN_IDS.ARBITRUM,
+    symbol: "ETH",
+    color: "#28A0F0",
+    icon: "🔷",
+  },
+  optimism: {
+    name: "Optimism",
+    chainId: CHAIN_IDS.OPTIMISM,
+    symbol: "ETH",
+    color: "#FF0420",
+    icon: "🔴",
+  },
+  celo: {
+    name: "Celo",
+    chainId: CHAIN_IDS.CELO,
     symbol: "CELO",
     color: "#35D07F",
+    icon: "🟡",
+  },
+  monad: {
+    name: "Monad",
+    chainId: CHAIN_IDS.MONAD,
+    symbol: "MON",
+    color: "#00FF00",
+    icon: "🟢",
+  },
+  // Testnet networks
+  "avalanche-fuji": {
+    name: "Avalanche Fuji",
+    chainId: CHAIN_IDS.AVALANCHE_FUJI,
+    symbol: "AVAX",
+    color: "#E84142",
+    icon: "🔺",
+  },
+  "base-sepolia": {
+    name: "Base Sepolia",
+    chainId: CHAIN_IDS.BASE_SEPOLIA,
+    symbol: "ETH",
+    color: "#0052FF",
+    icon: "🔵",
+  },
+  sepolia: {
+    name: "Sepolia",
+    chainId: CHAIN_IDS.SEPOLIA,
+    symbol: "ETH",
+    color: "#627EEA",
+    icon: "⟠",
+  },
+  "polygon-amoy": {
+    name: "Polygon Amoy",
+    chainId: CHAIN_IDS.POLYGON_AMOY,
+    symbol: "MATIC",
+    color: "#8247E5",
+    icon: "🟣",
+  },
+  "arbitrum-sepolia": {
+    name: "Arbitrum Sepolia",
+    chainId: CHAIN_IDS.ARBITRUM_SEPOLIA,
+    symbol: "ETH",
+    color: "#28A0F0",
+    icon: "🔷",
+  },
+  "optimism-sepolia": {
+    name: "OP Sepolia",
+    chainId: CHAIN_IDS.OPTIMISM_SEPOLIA,
+    symbol: "ETH",
+    color: "#FF0420",
+    icon: "🔴",
+  },
+  "celo-sepolia": {
+    name: "Celo Sepolia",
+    chainId: CHAIN_IDS.CELO_SEPOLIA,
+    symbol: "CELO",
+    color: "#35D07F",
+    icon: "🟡",
+  },
+  "monad-testnet": {
+    name: "Monad Testnet",
+    chainId: CHAIN_IDS.MONAD_TESTNET,
+    symbol: "MON",
+    color: "#00FF00",
+    icon: "🟢",
   },
 };
+
+// Lists of network keys for filtering
+const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad"];
+const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "celo-sepolia", "monad-testnet"];
 
 interface NetworkAggregation {
   network: string;
@@ -80,35 +168,31 @@ export async function GET(request: NextRequest) {
         timeFilter = null;
     }
 
-    // Aggregate network stats directly from transactions table
-    // This is more accurate than using the daily stats table
+    // Determine which networks to show
+    const networksToShow = includeTestnets
+      ? [...MAINNET_NETWORKS, ...TESTNET_NETWORKS]
+      : MAINNET_NETWORKS;
+
+    // Fetch transactions from perkos_transactions table
     const { data: transactions, error } = await supabase
-      .from("perkos_x402_transactions")
-      .select("network, chain_id, payer_address, recipient_address, amount_usd, created_at");
+      .from("perkos_transactions")
+      .select("network, chain_id, payer, payee, amount, created_at, status")
+      .eq("status", "settled");
 
     if (error) {
       console.error("Error fetching transactions:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch network stats", details: error.message },
-        { status: 500 }
-      );
+      // Return all networks with zero stats on error
+      return returnEmptyNetworks(networksToShow, period);
     }
 
-    // Aggregate stats per network
+    // Initialize stats for all networks (even those with no transactions)
     const networkStatsMap = new Map<string, NetworkAggregation>();
-
-    for (const tx of transactions || []) {
-      const networkKey = tx.network;
-
-      // Skip testnets if not requested
-      if (!includeTestnets && (networkKey?.includes("fuji") || networkKey?.includes("sepolia"))) {
-        continue;
-      }
-
-      if (!networkStatsMap.has(networkKey)) {
+    for (const networkKey of networksToShow) {
+      const metadata = NETWORK_METADATA[networkKey];
+      if (metadata) {
         networkStatsMap.set(networkKey, {
           network: networkKey,
-          chain_id: tx.chain_id,
+          chain_id: metadata.chainId,
           total_transactions: 0,
           total_volume_usd: 0,
           unique_payers: 0,
@@ -116,10 +200,22 @@ export async function GET(request: NextRequest) {
           last_transaction_at: null,
         });
       }
+    }
+
+    // Aggregate transaction data into network stats
+    for (const tx of transactions || []) {
+      const networkKey = tx.network;
+
+      // Skip if not in our networks list
+      if (!networkStatsMap.has(networkKey)) {
+        continue;
+      }
 
       const stats = networkStatsMap.get(networkKey)!;
       stats.total_transactions += 1;
-      stats.total_volume_usd += tx.amount_usd || 0;
+      // Convert amount from string (6 decimals for USDC) to USD
+      const amountUsd = Number(tx.amount || "0") / 1e6;
+      stats.total_volume_usd += amountUsd;
 
       // Track last transaction
       if (!stats.last_transaction_at || new Date(tx.created_at) > new Date(stats.last_transaction_at)) {
@@ -130,8 +226,8 @@ export async function GET(request: NextRequest) {
     // Calculate unique payers and recipients per network
     for (const [networkKey, stats] of networkStatsMap) {
       const networkTxs = (transactions || []).filter(tx => tx.network === networkKey);
-      const uniquePayers = new Set(networkTxs.map(tx => tx.payer_address));
-      const uniqueRecipients = new Set(networkTxs.map(tx => tx.recipient_address));
+      const uniquePayers = new Set(networkTxs.map(tx => tx.payer));
+      const uniqueRecipients = new Set(networkTxs.map(tx => tx.payee));
       stats.unique_payers = uniquePayers.size;
       stats.unique_recipients = uniqueRecipients.size;
     }
@@ -152,7 +248,8 @@ export async function GET(request: NextRequest) {
             acc[tx.network] = { transactions: 0, volume: 0 };
           }
           acc[tx.network].transactions += 1;
-          acc[tx.network].volume += tx.amount_usd || 0;
+          const amountUsd = Number(tx.amount || "0") / 1e6;
+          acc[tx.network].volume += amountUsd;
           return acc;
         },
         {} as Record<string, { transactions: number; volume: number }>
@@ -170,12 +267,11 @@ export async function GET(request: NextRequest) {
         chainId: network.chain_id,
         symbol: "ETH",
         color: "#627EEA",
+        icon: "🌐",
       };
 
       const periodData = periodStats[network.network];
-      const isTestnet =
-        network.network?.includes("fuji") ||
-        network.network?.includes("sepolia");
+      const isTestnet = TESTNET_NETWORKS.includes(network.network);
 
       return {
         id: network.network,
@@ -183,6 +279,7 @@ export async function GET(request: NextRequest) {
         chainId: network.chain_id,
         symbol: metadata.symbol,
         color: metadata.color,
+        icon: metadata.icon,
         isTestnet,
         stats: {
           totalTransactions: network.total_transactions || 0,
@@ -251,4 +348,44 @@ function formatCurrency(amount: number): string {
   if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
   if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
   return `$${amount.toFixed(2)}`;
+}
+
+// Helper function to return empty networks on error
+function returnEmptyNetworks(networksToShow: string[], period: string) {
+  const emptyNetworks = networksToShow.map((networkKey) => {
+    const metadata = NETWORK_METADATA[networkKey];
+    const isTestnet = TESTNET_NETWORKS.includes(networkKey);
+    return {
+      id: networkKey,
+      name: metadata?.name || networkKey,
+      chainId: metadata?.chainId || 0,
+      symbol: metadata?.symbol || "ETH",
+      color: metadata?.color || "#627EEA",
+      icon: metadata?.icon || "🌐",
+      isTestnet,
+      stats: {
+        totalTransactions: 0,
+        totalVolume: "$0.00",
+        totalVolumeRaw: 0,
+        uniquePayers: 0,
+        uniqueRecipients: 0,
+        lastActivity: null,
+      },
+      periodStats: null,
+      volumeShare: 0,
+      transactionShare: 0,
+    };
+  });
+
+  return NextResponse.json({
+    networks: emptyNetworks,
+    summary: {
+      totalNetworks: networksToShow.length,
+      activeNetworks: 0,
+      totalTransactions: 0,
+      totalVolume: "$0.00",
+      totalVolumeRaw: 0,
+    },
+    period,
+  });
 }

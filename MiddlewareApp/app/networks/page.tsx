@@ -18,6 +18,7 @@ interface Network {
   chainId: number;
   symbol: string;
   color: string;
+  icon: string;
   isTestnet: boolean;
   stats: NetworkStats;
   periodStats: {
@@ -45,6 +46,7 @@ interface ApiResponse {
 
 export default function NetworksPage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
+  const [showTestnets, setShowTestnets] = useState(false);
   const [chartData, setChartData] = useState<Record<string, Array<{ height: number; value: number }>>>({});
   const [networks, setNetworks] = useState<Network[]>([]);
   const [summary, setSummary] = useState<Summary>({
@@ -63,7 +65,7 @@ export default function NetworksPage() {
     try {
       const params = new URLSearchParams({
         period: timeRange,
-        includeTestnets: "false",
+        includeTestnets: showTestnets ? "true" : "false",
       });
 
       const response = await fetch(`/api/x402/networks?${params}`);
@@ -90,20 +92,11 @@ export default function NetworksPage() {
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, showTestnets]);
 
   useEffect(() => {
     fetchNetworks();
   }, [fetchNetworks]);
-
-  const networkIcons: Record<string, string> = {
-    avalanche: "🔺",
-    "avalanche-fuji": "🔺",
-    celo: "🌿",
-    "celo-sepolia": "🌿",
-    base: "🔵",
-    "base-sepolia": "🔵",
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
@@ -163,21 +156,36 @@ export default function NetworksPage() {
                 <p className="text-gray-400">Multi-chain x402 payment processing statistics</p>
               </div>
 
-              {/* Time Range Filter */}
-              <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
-                {(["24h", "7d", "30d"] as const).map((range) => (
-                  <button
-                    key={range}
-                    onClick={() => setTimeRange(range)}
-                    className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                      timeRange === range
-                        ? "bg-slate-700 text-cyan-400"
-                        : "text-gray-400 hover:text-gray-200"
-                    }`}
-                  >
-                    {range.toUpperCase()}
-                  </button>
-                ))}
+              {/* Filters */}
+              <div className="flex items-center space-x-4">
+                {/* Testnet Toggle */}
+                <button
+                  onClick={() => setShowTestnets(!showTestnets)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${
+                    showTestnets
+                      ? "bg-purple-500/20 border-purple-500/50 text-purple-400"
+                      : "bg-slate-800/50 border-blue-500/30 text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  {showTestnets ? "Hide Testnets" : "Show Testnets"}
+                </button>
+
+                {/* Time Range Filter */}
+                <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+                  {(["24h", "7d", "30d"] as const).map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setTimeRange(range)}
+                      className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                        timeRange === range
+                          ? "bg-slate-700 text-cyan-400"
+                          : "text-gray-400 hover:text-gray-200"
+                      }`}
+                    >
+                      {range.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -229,21 +237,32 @@ export default function NetworksPage() {
               ) : (
                 networks.map((network) => {
                   const networkChartData = chartData[network.id] || [];
-                  const change = network.periodStats
-                    ? `+${network.volumeShare.toFixed(1)}%`
-                    : "N/A";
+                  const change = network.volumeShare > 0
+                    ? `${network.volumeShare.toFixed(1)}%`
+                    : "0%";
 
                   return (
                     <div
                       key={network.id}
-                      className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm overflow-hidden"
+                      className={`bg-slate-800/30 border rounded-xl backdrop-blur-sm overflow-hidden ${
+                        network.isTestnet
+                          ? "border-purple-500/30"
+                          : "border-blue-500/20"
+                      }`}
                     >
                       <div className="p-6">
                         <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center space-x-3">
-                            <span className="text-4xl">{networkIcons[network.id] || "🌐"}</span>
+                            <span className="text-4xl">{network.icon || "🌐"}</span>
                             <div>
-                              <h3 className="text-2xl font-bold text-gray-100">{network.name}</h3>
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-2xl font-bold text-gray-100">{network.name}</h3>
+                                {network.isTestnet && (
+                                  <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-purple-400 text-xs">
+                                    Testnet
+                                  </span>
+                                )}
+                              </div>
                               <code className="text-xs text-gray-400 font-mono">
                                 {network.id} (Chain ID: {network.chainId})
                               </code>
