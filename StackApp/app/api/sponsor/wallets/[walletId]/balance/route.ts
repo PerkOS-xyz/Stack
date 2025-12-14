@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/db/supabase";
 import { createPublicClient, http, type Address } from "viem";
-import { avalanche, avalancheFuji, base, baseSepolia, celo } from "viem/chains";
+import { chains, getRpcUrl, getNativeTokenSymbol } from "@/lib/utils/chains";
 
 export const runtime = 'nodejs';
 export const dynamic = "force-dynamic";
-
-// Chain configurations
-const chains: Record<string, any> = {
-  avalanche,
-  "avalanche-fuji": avalancheFuji,
-  base,
-  "base-sepolia": baseSepolia,
-  celo,
-};
-
-// RPC URLs from environment
-const rpcUrls: Record<string, string> = {
-  avalanche: process.env.NEXT_PUBLIC_AVALANCHE_RPC || "https://api.avax.network/ext/bc/C/rpc",
-  "avalanche-fuji": process.env.NEXT_PUBLIC_AVALANCHE_FUJI_RPC || "https://api.avax-test.network/ext/bc/C/rpc",
-  base: process.env.NEXT_PUBLIC_BASE_RPC || "https://mainnet.base.org",
-  "base-sepolia": process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org",
-  celo: process.env.NEXT_PUBLIC_CELO_RPC || "https://forno.celo.org",
-};
 
 /**
  * GET /api/sponsor/wallets/[walletId]/balance
@@ -30,10 +12,10 @@ const rpcUrls: Record<string, string> = {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { walletId: string } }
+  { params }: { params: Promise<{ walletId: string }> }
 ) {
   try {
-    const { walletId } = params;
+    const { walletId } = await params;
 
     // Get wallet from database
     const { data: wallet, error: fetchError } = await supabase
@@ -51,13 +33,19 @@ export async function GET(
 
     const { network, sponsor_address } = wallet;
 
-    // Get chain configuration
+    // Get chain configuration from centralized chains.ts
     const chain = chains[network];
-    const rpcUrl = rpcUrls[network];
-
-    if (!chain || !rpcUrl) {
+    if (!chain) {
       return NextResponse.json(
         { error: `Unsupported network: ${network}` },
+        { status: 400 }
+      );
+    }
+
+    const rpcUrl = getRpcUrl(chain.id);
+    if (!rpcUrl) {
+      return NextResponse.json(
+        { error: `No RPC URL configured for network: ${network}` },
         { status: 400 }
       );
     }
@@ -90,16 +78,15 @@ export async function GET(
       );
     }
 
+    // Get native token symbol
+    const symbol = getNativeTokenSymbol(network);
+
     return NextResponse.json({
       success: true,
       balance: balance.toString(),
-      balanceFormatted: `${(Number(balance) / 1e18).toFixed(4)} ${
-        network === "avalanche" || network === "avalanche-fuji"
-          ? "AVAX"
-          : network === "base" || network === "base-sepolia"
-          ? "ETH"
-          : "CELO"
-      }`,
+      balanceFormatted: `${(Number(balance) / 1e18).toFixed(4)} ${symbol}`,
+      symbol,
+      network,
     });
   } catch (error) {
     console.error("Error in GET /api/sponsor/wallets/[walletId]/balance:", error);

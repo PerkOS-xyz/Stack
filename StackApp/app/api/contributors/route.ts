@@ -1,6 +1,6 @@
 /**
- * API Route: /api/participants
- * Fetch public user profiles for the Participants directory
+ * API Route: /api/contributors
+ * Fetch public user profiles for the Contributors directory
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -39,9 +39,9 @@ export async function GET(req: NextRequest) {
     const { data: profiles, error, count } = await query;
 
     if (error) {
-      console.error("Error fetching participants:", error);
+      console.error("Error fetching contributors:", error);
       return NextResponse.json(
-        { error: "Failed to fetch participants" },
+        { error: "Failed to fetch contributors" },
         { status: 500 }
       );
     }
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      participants: formattedProfiles,
+      contributors: formattedProfiles,
       pagination: {
         limit,
         offset,
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       stats,
     });
   } catch (error) {
-    console.error("Error in GET /api/participants:", error);
+    console.error("Error in GET /api/contributors:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

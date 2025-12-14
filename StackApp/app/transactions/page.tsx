@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -204,6 +205,15 @@ export default function TransactionsPage() {
             {/* Page Header */}
             <div className="flex justify-between items-start mb-8">
               <div>
+                <Link
+                  href="/"
+                  className="inline-flex items-center space-x-2 text-gray-400 hover:text-cyan-400 transition-colors mb-4 group"
+                >
+                  <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                  </svg>
+                  <span className="text-sm font-medium">Back to Home</span>
+                </Link>
                 <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
                   Transactions
                 </h2>

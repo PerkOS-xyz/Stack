@@ -741,8 +741,8 @@ export default function ProfilePage() {
                       </div>
                       <p className="text-sm text-gray-400">
                         {isPublic
-                          ? 'Your profile will appear on the Participants page and be visible to other users'
-                          : 'Your profile is hidden from the Participants page and other users'}
+                          ? 'Your profile will appear on the Contributors page and be visible to other users'
+                          : 'Your profile is hidden from the Contributors page and other users'}
                       </p>
                     </div>
 
@@ -774,7 +774,7 @@ export default function ProfilePage() {
                       {isPublic ? (
                         <>
                           <span className="text-green-400 font-medium">Public profiles</span> are displayed on the{' '}
-                          <a href="/participants" className="text-cyan-400 hover:underline">Participants</a> page,
+                          <a href="/contributors" className="text-cyan-400 hover:underline">Contributors</a> page,
                           allowing other community members to discover and connect with you.
                         </>
                       ) : (

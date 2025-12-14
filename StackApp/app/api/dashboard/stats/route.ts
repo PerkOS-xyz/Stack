@@ -42,21 +42,22 @@ export async function GET(req: NextRequest) {
     const daysAgo = timeRange === "24h" ? 1 : timeRange === "7d" ? 7 : 30;
     const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
 
-    // Fetch total transactions count
+    // Fetch total transactions count from x402 transactions table
     const { count: totalTransactions } = await supabase
-      .from("perkos_transactions")
+      .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
-      .eq("status", "settled");
+      .eq("status", "success");
 
-    // Fetch total volume (sum of all settled transactions)
+    // Fetch total volume (sum of all successful transactions)
     const { data: volumeData } = await supabase
-      .from("perkos_transactions")
-      .select("amount")
-      .eq("status", "settled");
+      .from("perkos_x402_transactions")
+      .select("amount_usd")
+      .eq("status", "success");
 
-    const totalVolume = volumeData?.reduce((sum, tx) => {
-      return sum + BigInt(tx.amount || "0");
-    }, 0n) || 0n;
+    // Calculate total volume from USD amounts (already in decimal form)
+    const totalVolumeUsd = volumeData?.reduce((sum, tx) => {
+      return sum + (tx.amount_usd || 0);
+    }, 0) || 0;
 
     // Fetch active agents count
     const { count: activeAgents } = await supabase
@@ -138,13 +139,13 @@ export async function GET(req: NextRequest) {
       date,
     }));
 
-    // Fetch recent transactions
+    // Fetch recent transactions (last 15 for landing page display)
     const { data: recentTxs } = await supabase
-      .from("perkos_transactions")
-      .select("hash, network, amount, scheme, created_at")
-      .eq("status", "settled")
+      .from("perkos_x402_transactions")
+      .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at")
+      .eq("status", "success")
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(15);
 
     const recentTransactions = recentTxs?.map((tx) => {
       const timeDiff = Date.now() - new Date(tx.created_at).getTime();
@@ -154,10 +155,16 @@ export async function GET(req: NextRequest) {
           ? `${minutesAgo}m ago`
           : `${Math.floor(minutesAgo / 60)}h ago`;
 
+      // Format amount from USD value
+      const amountUsd = tx.amount_usd || 0;
+      const formattedAmount = amountUsd >= 1000
+        ? `$${(amountUsd / 1000).toFixed(1)}K`
+        : `$${amountUsd.toFixed(2)}`;
+
       return {
-        hash: `${tx.hash.slice(0, 6)}...${tx.hash.slice(-4)}`,
+        hash: `${tx.transaction_hash.slice(0, 6)}...${tx.transaction_hash.slice(-4)}`,
         network: tx.network,
-        amount: formatVolume(BigInt(tx.amount || "0")),
+        amount: formattedAmount,
         scheme: tx.scheme,
         time: timeStr,
         timestamp: new Date(tx.created_at).getTime(),
@@ -167,9 +174,9 @@ export async function GET(req: NextRequest) {
     // Calculate growth (compare with previous period)
     const prevStartDate = new Date(startDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
     const { count: prevTransactions } = await supabase
-      .from("perkos_transactions")
+      .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
-      .eq("status", "settled")
+      .eq("status", "success")
       .gte("created_at", prevStartDate.toISOString())
       .lt("created_at", startDate.toISOString());
 
@@ -177,9 +184,16 @@ export async function GET(req: NextRequest) {
       ? ((((totalTransactions || 0) - prevTransactions) / prevTransactions) * 100).toFixed(1)
       : "0";
 
+    // Format total volume from USD
+    const formattedTotalVolume = totalVolumeUsd >= 1000000
+      ? `$${(totalVolumeUsd / 1000000).toFixed(1)}M`
+      : totalVolumeUsd >= 1000
+      ? `$${(totalVolumeUsd / 1000).toFixed(1)}K`
+      : `$${totalVolumeUsd.toFixed(2)}`;
+
     const stats = {
       totalTransactions: totalTransactions || 0,
-      totalVolume: formatVolume(totalVolume),
+      totalVolume: formattedTotalVolume,
       activeAgents: activeAgents || 0,
       networks: NETWORK_CONFIG.mainnet.length, // Count of mainnet networks
       growth: {

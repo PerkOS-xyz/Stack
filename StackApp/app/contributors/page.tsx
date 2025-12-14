@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { QRCodeSVG } from 'qrcode.react';
 
-interface Participant {
+interface Contributor {
   id: string;
   walletAddress: string;
   displayAddress: string;
@@ -37,6 +38,35 @@ interface Stats {
   vendor: number;
 }
 
+interface NetworkConfig {
+  name: string;
+  symbol: string;
+  icon: string;
+  chainId: number;
+  isTestnet?: boolean;
+}
+
+const networks: Record<string, NetworkConfig> = {
+  // Mainnets
+  'avalanche': { name: 'Avalanche', symbol: 'AVAX', icon: '🔺', chainId: 43114 },
+  'base': { name: 'Base', symbol: 'ETH', icon: '🔵', chainId: 8453 },
+  'celo': { name: 'Celo', symbol: 'CELO', icon: '🟢', chainId: 42220 },
+  'ethereum': { name: 'Ethereum', symbol: 'ETH', icon: '💎', chainId: 1 },
+  'polygon': { name: 'Polygon', symbol: 'POL', icon: '🟣', chainId: 137 },
+  'arbitrum': { name: 'Arbitrum', symbol: 'ETH', icon: '🔷', chainId: 42161 },
+  'optimism': { name: 'Optimism', symbol: 'ETH', icon: '🔴', chainId: 10 },
+  'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 10142 },
+  // Testnets
+  'avalanche-fuji': { name: 'Avalanche Fuji', symbol: 'AVAX', icon: '🔺', chainId: 43113, isTestnet: true },
+  'base-sepolia': { name: 'Base Sepolia', symbol: 'ETH', icon: '🔵', chainId: 84532, isTestnet: true },
+  'celo-sepolia': { name: 'Celo Alfajores', symbol: 'CELO', icon: '🟢', chainId: 11142220, isTestnet: true },
+  'sepolia': { name: 'Sepolia', symbol: 'ETH', icon: '💎', chainId: 11155111, isTestnet: true },
+  'polygon-amoy': { name: 'Polygon Amoy', symbol: 'POL', icon: '🟣', chainId: 80002, isTestnet: true },
+  'arbitrum-sepolia': { name: 'Arbitrum Sepolia', symbol: 'ETH', icon: '🔷', chainId: 421614, isTestnet: true },
+  'optimism-sepolia': { name: 'OP Sepolia', symbol: 'ETH', icon: '🔴', chainId: 11155420, isTestnet: true },
+  'monad-testnet': { name: 'Monad Testnet', symbol: 'MON', icon: '🟡', chainId: 10143, isTestnet: true },
+};
+
 const ACCOUNT_TYPE_CONFIG = {
   personal: { label: 'Personal', icon: '👤', color: 'blue' },
   community: { label: 'Community', icon: '🌐', color: 'green' },
@@ -44,8 +74,8 @@ const ACCOUNT_TYPE_CONFIG = {
   vendor: { label: 'Vendor', icon: '🏪', color: 'orange' },
 } as const;
 
-export default function ParticipantsPage() {
-  const [participants, setParticipants] = useState<Participant[]>([]);
+export default function ContributorsPage() {
+  const [contributors, setContributors] = useState<Contributor[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -53,14 +83,17 @@ export default function ParticipantsPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
+  const [selectedContributor, setSelectedContributor] = useState<Contributor | null>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState('base');
+  const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
 
   const LIMIT = 12;
 
   useEffect(() => {
-    fetchParticipants();
+    fetchContributors();
   }, [filterType, page]);
 
-  const fetchParticipants = async () => {
+  const fetchContributors = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -76,16 +109,16 @@ export default function ParticipantsPage() {
         params.set('search', search);
       }
 
-      const response = await fetch(`/api/participants?${params}`);
+      const response = await fetch(`/api/contributors?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setParticipants(data.participants);
+        setContributors(data.contributors);
         setStats(data.stats);
         setHasMore(data.pagination.hasMore);
         setTotal(data.pagination.total);
       }
     } catch (error) {
-      console.error('Failed to fetch participants:', error);
+      console.error('Failed to fetch contributors:', error);
     } finally {
       setLoading(false);
     }
@@ -94,14 +127,14 @@ export default function ParticipantsPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(0);
-    fetchParticipants();
+    fetchContributors();
   };
 
-  const getSocialLinks = (socials: Participant['socials']) => {
+  const getSocialLinks = (socials: Contributor['socials']) => {
     const links = [];
     if (socials.twitter) links.push({ platform: 'twitter', handle: socials.twitter, url: `https://twitter.com/${socials.twitter}` });
     if (socials.github) links.push({ platform: 'github', handle: socials.github, url: `https://github.com/${socials.github}` });
-    if (socials.farcaster) links.push({ platform: 'farcaster', handle: socials.farcaster, url: `https://warpcast.com/${socials.farcaster}` });
+    if (socials.farcaster) links.push({ platform: 'farcaster', handle: socials.farcaster, url: `https://farcaster.xyz/${socials.farcaster}` });
     if (socials.telegram) links.push({ platform: 'telegram', handle: socials.telegram, url: `https://t.me/${socials.telegram}` });
     if (socials.instagram) links.push({ platform: 'instagram', handle: socials.instagram, url: `https://instagram.com/${socials.instagram}` });
     if (socials.tiktok) links.push({ platform: 'tiktok', handle: socials.tiktok, url: `https://tiktok.com/@${socials.tiktok}` });
@@ -121,18 +154,24 @@ export default function ParticipantsPage() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const currentNetwork = networks[selectedNetwork];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex flex-col">
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
-      <div className="relative">
+      <div className="relative flex-1 flex flex-col">
         <Header />
 
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              Participants
+              Contributors
             </h1>
             <p className="text-gray-400 mt-2">
               Discover community members, organizations, and service providers
@@ -199,12 +238,12 @@ export default function ParticipantsPage() {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-cyan-400 border-r-transparent"></div>
-              <span className="ml-3 text-gray-400">Loading participants...</span>
+              <span className="ml-3 text-gray-400">Loading contributors...</span>
             </div>
-          ) : participants.length === 0 ? (
+          ) : contributors.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">👥</div>
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">No participants found</h3>
+              <h3 className="text-xl font-semibold text-gray-300 mb-2">No contributors found</h3>
               <p className="text-gray-500">
                 {search ? 'Try a different search term' : 'Be the first to create a public profile!'}
               </p>
@@ -213,27 +252,28 @@ export default function ParticipantsPage() {
             <>
               {/* Results Count */}
               <div className="text-sm text-gray-500 mb-4">
-                Showing {participants.length} of {total} participants
+                Showing {contributors.length} of {total} contributors
               </div>
 
-              {/* Participants Grid */}
+              {/* Contributors Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {participants.map((participant) => {
-                  const typeConfig = ACCOUNT_TYPE_CONFIG[participant.accountType];
-                  const socialLinks = getSocialLinks(participant.socials);
+                {contributors.map((contributor) => {
+                  const typeConfig = ACCOUNT_TYPE_CONFIG[contributor.accountType];
+                  const socialLinks = getSocialLinks(contributor.socials);
 
                   return (
                     <div
-                      key={participant.id}
-                      className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-cyan-500/50 transition-all"
+                      key={contributor.id}
+                      onClick={() => setSelectedContributor(contributor)}
+                      className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-cyan-500/50 transition-all cursor-pointer"
                     >
                       {/* Header */}
                       <div className="flex items-start gap-4 mb-4">
                         {/* Avatar */}
-                        {participant.avatarUrl ? (
+                        {contributor.avatarUrl ? (
                           <img
-                            src={participant.avatarUrl}
-                            alt={participant.displayName || 'Avatar'}
+                            src={contributor.avatarUrl}
+                            alt={contributor.displayName || 'Avatar'}
                             className="w-16 h-16 rounded-full object-cover border-2 border-blue-500/30"
                           />
                         ) : (
@@ -246,13 +286,13 @@ export default function ParticipantsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="text-lg font-semibold text-gray-200 truncate">
-                              {participant.displayName || participant.displayAddress}
+                              {contributor.displayName || contributor.displayAddress}
                             </h3>
-                            {participant.isVerified && (
+                            {contributor.isVerified && (
                               <span className="text-cyan-400" title="Verified">✓</span>
                             )}
                           </div>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(participant.accountType)}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(contributor.accountType)}`}>
                             <span>{typeConfig.icon}</span>
                             <span>{typeConfig.label}</span>
                           </span>
@@ -260,31 +300,32 @@ export default function ParticipantsPage() {
                       </div>
 
                       {/* Description */}
-                      {participant.description && (
+                      {contributor.description && (
                         <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-                          {participant.description}
+                          {contributor.description}
                         </p>
                       )}
 
                       {/* Company Name (for vendors) */}
-                      {participant.companyName && (
+                      {contributor.companyName && (
                         <div className="text-sm text-gray-500 mb-3">
-                          <span className="text-gray-400">Company:</span> {participant.companyName}
+                          <span className="text-gray-400">Company:</span> {contributor.companyName}
                         </div>
                       )}
 
                       {/* Website */}
-                      {participant.website && (
+                      {contributor.website && (
                         <a
-                          href={participant.website}
+                          href={contributor.website}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 mb-3"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
-                          <span className="truncate">{new URL(participant.website).hostname}</span>
+                          <span className="truncate">{new URL(contributor.website).hostname}</span>
                         </a>
                       )}
 
@@ -297,6 +338,7 @@ export default function ParticipantsPage() {
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="p-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-colors"
                               title={`@${link.handle}`}
                             >
@@ -314,7 +356,7 @@ export default function ParticipantsPage() {
                       {/* Wallet Address */}
                       <div className="mt-4 pt-3 border-t border-slate-700/50">
                         <code className="text-xs text-gray-500 font-mono">
-                          {participant.displayAddress}
+                          {contributor.displayAddress}
                         </code>
                       </div>
                     </div>
@@ -348,6 +390,236 @@ export default function ParticipantsPage() {
 
         <Footer />
       </div>
+
+      {/* Contributor Detail Modal */}
+      {selectedContributor && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setSelectedContributor(null);
+            setShowNetworkDropdown(false);
+          }}
+        >
+          <div
+            className="bg-slate-800/95 border border-blue-500/30 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative p-6 pb-0">
+              <button
+                onClick={() => {
+                  setSelectedContributor(null);
+                  setShowNetworkDropdown(false);
+                }}
+                className="absolute top-4 right-4 p-2 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Avatar and Name */}
+              <div className="flex flex-col items-center text-center mb-6">
+                {selectedContributor.avatarUrl ? (
+                  <img
+                    src={selectedContributor.avatarUrl}
+                    alt={selectedContributor.displayName || 'Avatar'}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-cyan-500/30 mb-4"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-slate-700 border-4 border-cyan-500/30 flex items-center justify-center mb-4">
+                    <span className="text-4xl">{ACCOUNT_TYPE_CONFIG[selectedContributor.accountType].icon}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-2xl font-bold text-white">
+                    {selectedContributor.displayName || selectedContributor.displayAddress}
+                  </h2>
+                  {selectedContributor.isVerified && (
+                    <span className="text-cyan-400 text-xl" title="Verified">✓</span>
+                  )}
+                </div>
+
+                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(selectedContributor.accountType)}`}>
+                  <span>{ACCOUNT_TYPE_CONFIG[selectedContributor.accountType].icon}</span>
+                  <span>{ACCOUNT_TYPE_CONFIG[selectedContributor.accountType].label}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 pt-0 space-y-6">
+              {/* Description */}
+              {selectedContributor.description && (
+                <p className="text-gray-300 text-center">
+                  {selectedContributor.description}
+                </p>
+              )}
+
+              {/* Company Name */}
+              {selectedContributor.companyName && (
+                <div className="text-center">
+                  <span className="text-gray-500">Company: </span>
+                  <span className="text-gray-300">{selectedContributor.companyName}</span>
+                </div>
+              )}
+
+              {/* Website */}
+              {selectedContributor.website && (
+                <a
+                  href={selectedContributor.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 text-cyan-400 hover:text-cyan-300"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>{selectedContributor.website}</span>
+                </a>
+              )}
+
+              {/* Social Links */}
+              {getSocialLinks(selectedContributor.socials).length > 0 && (
+                <div className="flex flex-wrap justify-center gap-3 pt-4 border-t border-slate-700/50">
+                  {getSocialLinks(selectedContributor.socials).map((link) => (
+                    <a
+                      key={link.platform}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-xl transition-colors"
+                      title={`@${link.handle}`}
+                    >
+                      <SocialIcon platform={link.platform} />
+                      <span className="text-sm text-gray-300">@{link.handle}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* Donation Section */}
+              <div className="pt-6 border-t border-slate-700/50">
+                <h3 className="text-lg font-semibold text-white text-center mb-4">
+                  💝 Support This Contributor
+                </h3>
+
+                {/* Network Selector */}
+                <div className="relative mb-4">
+                  <button
+                    onClick={() => setShowNetworkDropdown(!showNetworkDropdown)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-700/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{currentNetwork?.icon}</span>
+                      <span className="text-white font-medium">{currentNetwork?.name}</span>
+                      {currentNetwork?.isTestnet && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">TESTNET</span>
+                      )}
+                    </div>
+                    <svg className={`w-5 h-5 text-gray-400 transition-transform ${showNetworkDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {showNetworkDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-2 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 z-10 max-h-60 overflow-y-auto backdrop-blur-xl">
+                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">Mainnets</div>
+                      {Object.entries(networks).filter(([, n]) => !n.isTestnet).map(([key, net]) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            setSelectedNetwork(key);
+                            setShowNetworkDropdown(false);
+                          }}
+                          className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-500/10 transition-colors ${selectedNetwork === key ? 'bg-blue-500/10' : ''}`}
+                        >
+                          <span className="text-lg">{net.icon}</span>
+                          <span className="text-sm text-white flex-1 text-left">{net.name}</span>
+                          {selectedNetwork === key && (
+                            <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                      {Object.entries(networks).filter(([, n]) => n.isTestnet).map(([key, net]) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            setSelectedNetwork(key);
+                            setShowNetworkDropdown(false);
+                          }}
+                          className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-500/10 transition-colors ${selectedNetwork === key ? 'bg-blue-500/10' : ''}`}
+                        >
+                          <span className="text-lg">{net.icon}</span>
+                          <span className="text-sm text-white flex-1 text-left">{net.name}</span>
+                          {selectedNetwork === key && (
+                            <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* QR Code */}
+                <div className="flex justify-center mb-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/50 to-blue-500/50 rounded-2xl blur-sm" />
+                    <div className="relative p-1 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-cyan-500/30 rounded-2xl">
+                      <div className="p-4 bg-white rounded-xl">
+                        <QRCodeSVG
+                          value={`ethereum:${selectedContributor.walletAddress}@${currentNetwork?.chainId || 1}`}
+                          size={180}
+                          level="H"
+                          includeMargin={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wallet Address */}
+                <div className="text-center mb-4">
+                  <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Wallet Address</p>
+                  <code className="text-sm font-mono text-cyan-400 break-all px-2">
+                    {selectedContributor.walletAddress}
+                  </code>
+                </div>
+
+                {/* Copy Button */}
+                <button
+                  onClick={() => copyToClipboard(selectedContributor.walletAddress)}
+                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Copy Address</span>
+                </button>
+
+                {/* Info Notice */}
+                <div className="mt-4 p-3 bg-slate-700/30 border border-amber-500/20 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs text-gray-400">
+                      Only send <span className="text-cyan-400 font-medium">{currentNetwork?.symbol}</span> on <span className="text-cyan-400 font-medium">{currentNetwork?.name}</span>.
+                      Sending other assets may result in permanent loss.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

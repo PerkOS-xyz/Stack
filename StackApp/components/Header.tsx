@@ -32,12 +32,11 @@ interface NavItem {
 }
 
 // Navigation items (excluding Dashboard and Profile which go in user dropdown)
+// Networks and Transactions are accessible from landing page "View All" links
 const navItems: NavItem[] = [
-  { href: "/networks", label: "Networks", icon: "🌐" },
-  { href: "/transactions", label: "Transactions", icon: "💸" },
   { href: "/marketplace", label: "Marketplace", icon: "🏪" },
   { href: "/agents", label: "Agents", icon: "👥" },
-  { href: "/participants", label: "Participants", icon: "🤝" },
+  { href: "/contributors", label: "Contributors", icon: "🤝" },
 ];
 
 // User dropdown menu items (only shown when logged in)
@@ -58,6 +57,7 @@ export function Header() {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensAvatar, setEnsAvatar] = useState<string | null>(null);
+  const [hasSponsorWallet, setHasSponsorWallet] = useState(false);
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const { disconnect } = useDisconnect();
@@ -119,6 +119,27 @@ export function Header() {
       }
     }
     fetchUserAvatar();
+  }, [account?.address]);
+
+  // Check if user has a sponsor wallet
+  useEffect(() => {
+    async function checkSponsorWallet() {
+      if (!account?.address) {
+        setHasSponsorWallet(false);
+        return;
+      }
+      try {
+        const response = await fetch(`/api/sponsor/wallets?address=${account.address}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHasSponsorWallet(data.wallets && data.wallets.length > 0);
+        }
+      } catch (error) {
+        console.error("Failed to check sponsor wallet:", error);
+        setHasSponsorWallet(false);
+      }
+    }
+    checkSponsorWallet();
   }, [account?.address]);
 
   // Close user menu when clicking outside
@@ -286,6 +307,21 @@ export function Header() {
                         </Link>
                       );
                     })}
+                    {/* Wallet link - only shown when sponsor wallet exists */}
+                    {hasSponsorWallet && (
+                      <Link
+                        href="/wallet"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2.5 text-sm transition-all ${
+                          isActive("/wallet")
+                            ? "text-cyan-400 bg-cyan-500/10"
+                            : "text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10"
+                        }`}
+                      >
+                        <span>💰</span>
+                        <span>Wallet</span>
+                      </Link>
+                    )}
                   </div>
 
                   {/* Logout */}
@@ -377,6 +413,21 @@ export function Header() {
                       </Link>
                     );
                   })}
+                  {/* Wallet link - only shown when sponsor wallet exists */}
+                  {hasSponsorWallet && (
+                    <Link
+                      href="/wallet"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 ${
+                        isActive("/wallet")
+                          ? "text-cyan-400 font-medium"
+                          : "text-gray-300 hover:text-cyan-400"
+                      }`}
+                    >
+                      <span>💰</span>
+                      <span>Wallet</span>
+                    </Link>
+                  )}
                   <div className="border-t border-blue-500/20 my-2"></div>
                 </>
               )}
