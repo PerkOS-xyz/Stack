@@ -5,6 +5,8 @@ import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { useActiveAccount } from "thirdweb/react";
+import Link from "next/link";
 
 // Types for API response
 interface NetworkStats {
@@ -44,6 +46,7 @@ interface DashboardStats {
 }
 
 export default function Home() {
+  const account = useActiveAccount();
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [loading, setLoading] = useState(true);
@@ -181,6 +184,21 @@ export default function Home() {
               <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
                 Multi-chain payment infrastructure built for communities. Supporting x402, service discovery, and gasless transactions across 8 networks including Ethereum, Avalanche, Base, Polygon, Arbitrum, and Optimism.
               </p>
+
+              {/* Go to Dashboard button - shown when authenticated */}
+              {account && (
+                <div className="mb-8">
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300"
+                  >
+                    <span>Go to Dashboard</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Main Stats Dashboard with Mini Charts */}

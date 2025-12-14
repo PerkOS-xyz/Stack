@@ -329,12 +329,22 @@ export function Header() {
                   padding: "8px 24px",
                 },
               }}
+              appMetadata={{
+                name: "PerkOS Stack",
+                logoUrl: "https://stack.perkos.xyz/logo.png",
+                url: typeof window !== "undefined" ? window.location.origin : "",
+              }}
               connectModal={{
                 size: "wide",
-                title: "Sign In to Stack",
+                title: "Sign In to PerkOS Stack",
                 welcomeScreen: {
-                  title: "Stack Middleware",
+                  title: "PerkOS Stack",
                   subtitle: "Multi-chain x402 payment infrastructure",
+                  img: {
+                    src: "https://stack.perkos.xyz/logo.png",
+                    width: 150,
+                    height: 150,
+                  },
                 },
                 showThirdwebBranding: false,
               }}
