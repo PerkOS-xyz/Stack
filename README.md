@@ -839,10 +839,10 @@ PROXY_ADDRESS=0x... npm run upgrade:base
 | Document | Description |
 |----------|-------------|
 | [StackApp/README.md](StackApp/README.md) | Detailed API documentation |
-| [Documents/SUPABASE_SETUP.md](Documents/SUPABASE_SETUP.md) | Database setup guide |
-| [Documents/DEPLOYMENT_CHECKLIST.md](Documents/DEPLOYMENT_CHECKLIST.md) | Production checklist |
-| [Documents/X402_DEFERRED_SCHEME.md](Documents/X402_DEFERRED_SCHEME.md) | Deferred payments guide |
-| [Documents/MULTI_CHAIN_GUIDE.md](Documents/MULTI_CHAIN_GUIDE.md) | Network configuration |
+| [Docs/SUPABASE_SETUP.md](Docs/SUPABASE_SETUP.md) | Database setup guide |
+| [Docs/DEPLOYMENT_CHECKLIST.md](Docs/DEPLOYMENT_CHECKLIST.md) | Production checklist |
+| [Docs/X402_DEFERRED_SCHEME.md](Docs/X402_DEFERRED_SCHEME.md) | Deferred payments guide |
+| [Docs/MULTI_CHAIN_GUIDE.md](Docs/MULTI_CHAIN_GUIDE.md) | Network configuration |
 
 ---
 
