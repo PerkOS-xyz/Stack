@@ -6,6 +6,8 @@ import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect } from 'react';
 import { toast, Toaster } from 'sonner';
 import { AddressDisplay } from '@/components/AddressDisplay';
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import type { Address } from 'viem';
 
 interface SponsorWallet {
@@ -413,85 +415,7 @@ export default function DashboardPage() {
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
       <div className="relative">
-        {/* Header - Same as landing page */}
-        <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              {/* Logo */}
-              <div className="flex items-center space-x-3">
-                <img src="/logo.png" alt="Stack" className="w-10 h-10 rounded-lg" />
-                <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                    Stack
-                  </h1>
-                  <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
-                </div>
-              </div>
-
-              {/* Navigation Menu - Centered */}
-              <nav className="hidden lg:flex items-center space-x-1">
-                <a
-                  href="/dashboard"
-                  className="px-4 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2 font-medium"
-                >
-                  <span>📊</span>
-                  <span>Dashboard</span>
-                </a>
-                <a
-                  href="/networks"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>🌐</span>
-                  <span>Networks</span>
-                </a>
-                <a
-                  href="/transactions"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>💸</span>
-                  <span>Transactions</span>
-                </a>
-                <a
-                  href="/marketplace"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>🏪</span>
-                  <span>Marketplace</span>
-                </a>
-                <a
-                  href="/agents"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>👥</span>
-                  <span>Agents</span>
-                </a>
-              </nav>
-
-              {/* Right Side - Status & Connect */}
-              <div className="flex items-center space-x-3">
-                <span className="hidden sm:flex px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-xs font-medium items-center space-x-1.5">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                  <span>Operational</span>
-                </span>
-
-                <ConnectButton
-                  client={client}
-                  chains={chains}
-                  wallets={supportedWallets}
-                  detailsButton={{
-                    displayBalanceToken: {
-                      [chains[0]?.id]: "AVAX",
-                      [chains[1]?.id]: "AVAX",
-                      [chains[2]?.id]: "ETH",
-                      [chains[3]?.id]: "ETH",
-                      [chains[4]?.id]: "CELO",
-                    },
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header />
 
         {/* Main Content */}
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1504,6 +1428,8 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        <Footer />
       </div>
     </div>
   );

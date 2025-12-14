@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 interface Vendor {
   id: string;
@@ -118,45 +119,7 @@ export default function MarketplacePage() {
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
       <div className="relative">
-        {/* Header */}
-        <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-8">
-                <Link href="/" className="flex items-center space-x-3">
-                  <img src="/logo.png" alt="Stack" className="w-10 h-10 rounded-lg" />
-                  <div>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                      Stack
-                    </h1>
-                    <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
-                  </div>
-                </Link>
-
-                <nav className="hidden md:flex items-center space-x-6">
-                  <Link href="/networks" className="text-sm text-gray-300 hover:text-cyan-400 transition-colors">
-                    Networks
-                  </Link>
-                  <Link href="/transactions" className="text-sm text-gray-300 hover:text-cyan-400 transition-colors">
-                    Transactions
-                  </Link>
-                  <Link href="/marketplace" className="text-sm text-cyan-400 font-semibold">
-                    Marketplace
-                  </Link>
-                  <Link href="/agents" className="text-sm text-gray-300 hover:text-cyan-400 transition-colors">
-                    Agents
-                  </Link>
-                </nav>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-sm font-medium">
-                  ● Operational
-                </span>
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-12">
@@ -378,42 +341,8 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="border-t border-blue-500/20 backdrop-blur-sm bg-slate-950/50 mt-16">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="text-gray-400 text-sm">
-                © 2025 Stack. Open Source.
-              </div>
-              <div className="flex space-x-6">
-                <a
-                  href="https://x402.gitbook.io/x402"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  Documentation
-                </a>
-                <a
-                  href="https://github.com/coinbase/x402"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  GitHub
-                </a>
-                <a
-                  href="/api/v2/x402/health"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  Status
-                </a>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
-
     </div>
   );
 }

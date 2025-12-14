@@ -2,10 +2,9 @@
 
 import { config } from "@/lib/utils/config";
 import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
-import { ConnectButton, useActiveAccount, darkTheme } from "thirdweb/react";
-import { client, chains } from "@/lib/config/thirdweb";
-import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { useState, useEffect, useCallback } from "react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 // Types for API response
 interface NetworkStats {
@@ -44,25 +43,9 @@ interface DashboardStats {
   recentTransactions: RecentTransaction[];
 }
 
-// Define wallets outside component to avoid hoisting issues
-const supportedWallets = [
-  createWallet("io.metamask"),
-  createWallet("com.coinbase.wallet"),
-  createWallet("me.rainbow"),
-  createWallet("app.phantom"),
-  createWallet("walletConnect"),
-  inAppWallet({
-    auth: {
-      options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
-    },
-  }),
-].filter(wallet => wallet && typeof wallet === 'object');
-
 export default function Home() {
-  const account = useActiveAccount();
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalTransactions: 0,
@@ -184,162 +167,7 @@ export default function Home() {
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
       <div className="relative">
-        {/* Header */}
-        <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              {/* Left Side - Hamburger Menu (mobile only) + Logo */}
-              <div className="flex items-center space-x-3">
-                {/* Hamburger Menu Button - visible on small screens */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="lg:hidden p-2 text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Logo */}
-                <img src="/logo.png" alt="Stack" className="w-10 h-10 rounded-lg" />
-                <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                    Stack
-                  </h1>
-                  <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
-                </div>
-              </div>
-
-              {/* Navigation Menu - Desktop only */}
-              <nav className="hidden lg:flex items-center space-x-1">
-                {account && (
-                  <a
-                    href="/dashboard"
-                    className="px-4 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2 font-medium"
-                  >
-                    <span>📊</span>
-                    <span>Dashboard</span>
-                  </a>
-                )}
-                <a
-                  href="/networks"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>🌐</span>
-                  <span>Networks</span>
-                </a>
-                <a
-                  href="/transactions"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>💸</span>
-                  <span>Transactions</span>
-                </a>
-                <a
-                  href="/marketplace"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>🏪</span>
-                  <span>Marketplace</span>
-                </a>
-                <a
-                  href="/agents"
-                  className="px-4 py-2 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2"
-                >
-                  <span>👥</span>
-                  <span>Agents</span>
-                </a>
-              </nav>
-
-              {/* Right Side - Connect */}
-              <ConnectButton
-                client={client}
-                chains={chains}
-                wallets={supportedWallets}
-                theme={darkTheme({
-                  colors: {
-                    primaryButtonBg: "linear-gradient(to right, #3b82f6, #06b6d4)",
-                    primaryButtonText: "#ffffff",
-                  },
-                })}
-                connectButton={{
-                  label: "Sign In",
-                  style: {
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    padding: "8px 24px",
-                  },
-                }}
-                connectModal={{
-                  size: "wide",
-                  title: "Sign In to Stack",
-                  welcomeScreen: {
-                    title: "Stack Middleware",
-                    subtitle: "Multi-chain x402 payment infrastructure",
-                  },
-                  showThirdwebBranding: false,
-                }}
-              />
-            </div>
-
-            {/* Mobile Menu Dropdown */}
-            {mobileMenuOpen && (
-              <div className="lg:hidden mt-4 pt-4 border-t border-blue-500/20">
-                <nav className="flex flex-col space-y-2">
-                  {account && (
-                    <a
-                      href="/dashboard"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="px-4 py-3 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 font-medium"
-                    >
-                      <span>📊</span>
-                      <span>Dashboard</span>
-                    </a>
-                  )}
-                  <a
-                    href="/networks"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3"
-                  >
-                    <span>🌐</span>
-                    <span>Networks</span>
-                  </a>
-                  <a
-                    href="/transactions"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3"
-                  >
-                    <span>💸</span>
-                    <span>Transactions</span>
-                  </a>
-                  <a
-                    href="/marketplace"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3"
-                  >
-                    <span>🏪</span>
-                    <span>Marketplace</span>
-                  </a>
-                  <a
-                    href="/agents"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 text-sm text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3"
-                  >
-                    <span>👥</span>
-                    <span>Agents</span>
-                  </a>
-                </nav>
-              </div>
-            )}
-          </div>
-        </header>
+        <Header />
 
         {/* Hero Section with Stats */}
         <section className="container mx-auto px-4 py-12">
@@ -826,46 +654,7 @@ const { isValid, payer } = await response.json();`}
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="border-t border-blue-500/20 backdrop-blur-sm bg-slate-950/50 mt-16">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="flex items-center space-x-4">
-                <div className="text-gray-400 text-sm">
-                  © 2025 Stack. Open Source.
-                </div>
-                <span className="flex px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full text-green-400 text-xs font-medium items-center space-x-1.5">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                  <span>Operational</span>
-                </span>
-              </div>
-              <div className="flex space-x-6">
-                <a
-                  href="https://x402.gitbook.io/x402"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  Documentation
-                </a>
-                <a
-                  href="https://github.com/coinbase/x402"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  GitHub
-                </a>
-                <a
-                  href="/api/v2/x402/health"
-                  className="text-gray-400 hover:text-cyan-400 transition-colors text-sm"
-                >
-                  Status
-                </a>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </div>
   );
