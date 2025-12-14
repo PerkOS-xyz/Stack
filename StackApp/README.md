@@ -76,16 +76,35 @@
 
 ### Supported Networks (16)
 
-| Mainnet | Chain ID | Testnet | Chain ID |
-|---------|----------|---------|----------|
-| Avalanche | 43114 | Avalanche Fuji | 43113 |
-| Base | 8453 | Base Sepolia | 84532 |
-| Ethereum | 1 | Sepolia | 11155111 |
-| Polygon | 137 | Polygon Amoy | 80002 |
-| Arbitrum | 42161 | Arbitrum Sepolia | 421614 |
-| Optimism | 10 | OP Sepolia | 11155420 |
-| Celo | 42220 | Celo Sepolia | 11142220 |
-| Monad | 10142 | Monad Testnet | 10143 |
+PerkOS Stack supports 16 EVM networks with native Circle USDC integration:
+
+#### Mainnet Networks
+
+| Network | Chain ID | Native | USDC Address (Circle) |
+|---------|----------|--------|----------------------|
+| Ethereum | 1 | ETH | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| Avalanche | 43114 | AVAX | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
+| Base | 8453 | ETH | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Polygon | 137 | POL | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
+| Arbitrum | 42161 | ETH | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
+| Optimism | 10 | ETH | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` |
+| Celo | 42220 | CELO | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
+| Monad | 10142 | MON | *Coming soon* |
+
+#### Testnet Networks
+
+| Network | Chain ID | Native | USDC Address (Circle) |
+|---------|----------|--------|----------------------|
+| Sepolia | 11155111 | ETH | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
+| Avalanche Fuji | 43113 | AVAX | `0x5425890298aed601595a70AB815c96711a31Bc65` |
+| Base Sepolia | 84532 | ETH | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Polygon Amoy | 80002 | POL | `0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582` |
+| Arbitrum Sepolia | 421614 | ETH | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
+| OP Sepolia | 11155420 | ETH | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
+| Celo Sepolia | 11142220 | CELO | *TBD* |
+| Monad Testnet | 10143 | MON | *Coming soon* |
+
+> **Note**: All USDC addresses are official Circle-issued tokens. See [Circle's developer docs](https://developers.circle.com/stablecoins/docs/usdc-on-main-networks) for verification.
 
 ## Quick Start
 
