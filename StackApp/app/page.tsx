@@ -20,6 +20,7 @@ interface NetworkStats {
 
 interface RecentTransaction {
   hash: string;
+  fullHash: string;
   network: string;
   amount: string;
   scheme: string;
@@ -44,6 +45,31 @@ interface DashboardStats {
   chartData: Array<{ day: number; value: number; date: string }>;
   recentTransactions: RecentTransaction[];
 }
+
+// Block explorer URLs for transaction links
+const blockExplorers: Record<string, string> = {
+  avalanche: "https://snowtrace.io/tx/",
+  "avalanche-fuji": "https://testnet.snowtrace.io/tx/",
+  celo: "https://celoscan.io/tx/",
+  "celo-sepolia": "https://alfajores.celoscan.io/tx/",
+  base: "https://basescan.org/tx/",
+  "base-sepolia": "https://sepolia.basescan.org/tx/",
+  ethereum: "https://etherscan.io/tx/",
+  sepolia: "https://sepolia.etherscan.io/tx/",
+  polygon: "https://polygonscan.com/tx/",
+  "polygon-amoy": "https://amoy.polygonscan.com/tx/",
+  arbitrum: "https://arbiscan.io/tx/",
+  "arbitrum-sepolia": "https://sepolia.arbiscan.io/tx/",
+  optimism: "https://optimistic.etherscan.io/tx/",
+  "optimism-sepolia": "https://sepolia-optimism.etherscan.io/tx/",
+  monad: "https://explorer.monad.xyz/tx/",
+  "monad-testnet": "https://testnet.explorer.monad.xyz/tx/",
+};
+
+const getExplorerUrl = (network: string, hash: string): string => {
+  const baseUrl = blockExplorers[network] || "https://etherscan.io/tx/";
+  return `${baseUrl}${hash}`;
+};
 
 export default function Home() {
   const account = useActiveAccount();
@@ -536,7 +562,7 @@ export default function Home() {
             </div>
 
             {/* Recent Transactions */}
-            <div className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
                   <h3 className="text-xl font-semibold text-gray-200">Recent Transactions</h3>
@@ -554,51 +580,79 @@ export default function Home() {
                   </svg>
                 </Link>
               </div>
-              {/* Scrollable container for 15 transactions */}
-              <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-blue-500/30 scrollbar-track-transparent">
-                {recentTransactions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <p className="text-sm">No transactions yet</p>
-                  </div>
-                ) : (
-                  recentTransactions.map((tx) => (
-                    <div
-                      key={tx.hash}
-                      className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:border-blue-500/30 transition-all duration-200"
-                    >
-                      <div className="flex items-center space-x-3 flex-1">
-                        <div className="text-lg">
-                          {networks.mainnet.find((n) => n.network === tx.network)?.icon ||
-                            networks.testnet.find((n) => n.network === tx.network)?.icon ||
-                            "🌐"}
+              {/* Card grid for 9 transactions */}
+              {recentTransactions.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <svg className="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-sm">No transactions yet</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {recentTransactions.map((tx) => {
+                    const networkIcon = networks.mainnet.find((n) => n.network === tx.network)?.icon ||
+                      networks.testnet.find((n) => n.network === tx.network)?.icon ||
+                      "🌐";
+                    const explorerUrl = getExplorerUrl(tx.network, tx.fullHash);
+
+                    return (
+                      <a
+                        key={tx.fullHash}
+                        href={explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-4 bg-slate-900/50 border border-slate-700/50 rounded-xl hover:border-cyan-400/30 hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
+                      >
+                        {/* Card Header */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{networkIcon}</span>
+                            <span className="text-xs text-gray-400 capitalize">{tx.network}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                              success
+                            </span>
+                            <svg className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </div>
                         </div>
-                        <div>
-                          <code className="text-cyan-400 text-sm">{tx.hash}</code>
-                          <div className="text-xs text-gray-400 mt-0.5">{tx.network}</div>
+
+                        {/* Transaction Hash */}
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-500 mb-1">Transaction Hash</div>
+                          <code className="text-sm text-cyan-400 font-mono">{tx.hash}</code>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
+
+                        {/* Amount and Time */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Amount</div>
+                            <div className="text-lg font-semibold text-green-400">{tx.amount}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Time</div>
+                            <div className="text-sm text-gray-300">{tx.time}</div>
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                          <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
                             tx.scheme === "exact"
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-blue-500/20 text-blue-400"
-                          }`}
-                        >
-                          {tx.scheme}
-                        </span>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold text-gray-200">{tx.amount}</div>
-                          <div className="text-xs text-gray-400">{tx.time}</div>
+                              ? "bg-blue-500/20 text-blue-400"
+                              : "bg-purple-500/20 text-purple-400"
+                          }`}>
+                            {tx.scheme}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </section>
