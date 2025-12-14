@@ -1,17 +1,29 @@
 /**
  * API Route: GET /api/x402/agents
  * Fetch x402 agents (members and providers) for the dashboard
+ *
+ * Members = payers (addresses that have sent payments)
+ * Providers = payees (addresses that have received payments)
+ *
+ * Data is derived from perkos_transactions table and perkos_agents table
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/db/supabase";
 
 export const dynamic = "force-dynamic";
+
+interface AgentData {
+  address: string;
+  name: string | null;
+  description: string | null;
+  total_transactions: number;
+  total_volume: number;
+  primary_network: string;
+  last_transaction_at: string | null;
+  created_at: string | null;
+  average_rating: number;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,99 +48,126 @@ export async function GET(request: NextRequest) {
         timeFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       default:
-        timeFilter = null;
+        timeFilter = null; // 'all' time
     }
 
-    // Build query for agents
-    let query = supabase
-      .from("perkos_x402_agents")
-      .select(
-        `
-        id,
-        wallet_address,
-        agent_type,
-        display_name,
-        total_transactions,
-        total_volume_usd,
-        primary_network,
-        first_seen_at,
-        last_active_at
-      `,
-        { count: "exact" }
-      )
-      .eq("agent_type", agentType)
-      .order("total_volume_usd", { ascending: false });
+    // First, try to get agents from perkos_agents table
+    const { data: registeredAgents, error: agentsError } = await supabase
+      .from("perkos_agents")
+      .select("address, name, description, total_transactions, total_volume, average_rating, last_transaction_at, created_at");
 
-    // Apply time filter on last_active_at
+    // Create a map of registered agents for quick lookup
+    const registeredAgentsMap = new Map<string, typeof registeredAgents extends (infer T)[] ? T : never>();
+    if (registeredAgents) {
+      for (const agent of registeredAgents) {
+        registeredAgentsMap.set(agent.address.toLowerCase(), agent);
+      }
+    }
+
+    // Fetch transactions to derive agent data
+    // Members = payers, Providers = payees
+    const addressField = agentType === "member" ? "payer" : "payee";
+
+    let txQuery = supabase
+      .from("perkos_transactions")
+      .select("payer, payee, amount, network, created_at, status")
+      .eq("status", "settled");
+
     if (timeFilter) {
-      query = query.gte("last_active_at", timeFilter.toISOString());
+      txQuery = txQuery.gte("created_at", timeFilter.toISOString());
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    const { data: transactions, error: txError } = await txQuery;
 
-    const { data: agents, error, count } = await query;
-
-    if (error) {
-      console.error("Error fetching agents:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch agents", details: error.message },
-        { status: 500 }
-      );
+    if (txError) {
+      console.error("Error fetching transactions:", txError);
+      return returnEmptyResponse(agentType);
     }
 
-    // Get overall stats for this agent type
-    let statsQuery = supabase
-      .from("perkos_x402_agents")
-      .select("id, total_volume_usd, last_active_at")
-      .eq("agent_type", agentType);
+    // Aggregate data by address
+    const agentDataMap = new Map<string, AgentData>();
 
-    const { data: allAgents } = await statsQuery;
+    for (const tx of transactions || []) {
+      const address = agentType === "member" ? tx.payer : tx.payee;
+      if (!address) continue;
+
+      const addressLower = address.toLowerCase();
+      const existing = agentDataMap.get(addressLower);
+      const amountUsd = Number(tx.amount || "0") / 1e6; // USDC has 6 decimals
+
+      // Check if this address has registered agent info
+      const registeredInfo = registeredAgentsMap.get(addressLower);
+
+      if (existing) {
+        existing.total_transactions += 1;
+        existing.total_volume += amountUsd;
+        if (!existing.last_transaction_at || new Date(tx.created_at) > new Date(existing.last_transaction_at)) {
+          existing.last_transaction_at = tx.created_at;
+        }
+      } else {
+        agentDataMap.set(addressLower, {
+          address: address,
+          name: registeredInfo?.name || null,
+          description: registeredInfo?.description || null,
+          total_transactions: 1,
+          total_volume: amountUsd,
+          primary_network: tx.network || "avalanche",
+          last_transaction_at: tx.created_at,
+          created_at: registeredInfo?.created_at || tx.created_at,
+          average_rating: registeredInfo?.average_rating || 0,
+        });
+      }
+    }
+
+    // Convert to array and sort by volume
+    const allAgents = Array.from(agentDataMap.values())
+      .sort((a, b) => b.total_volume - a.total_volume);
 
     // Calculate stats
-    const totalAgents = allAgents?.length || 0;
-    const activeAgents =
-      allAgents?.filter((a) => {
-        const lastActive = new Date(a.last_active_at);
-        const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        return lastActive >= cutoff;
-      }).length || 0;
+    const totalAgents = allAgents.length;
+    const activeAgents = allAgents.filter((a) => {
+      if (!a.last_transaction_at) return false;
+      const lastActive = new Date(a.last_transaction_at);
+      const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      return lastActive >= cutoff;
+    }).length;
 
     // Count new today
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
+    const newToday = allAgents.filter((a) => {
+      if (!a.created_at) return false;
+      return new Date(a.created_at) >= todayStart;
+    }).length;
 
-    const { count: newToday } = await supabase
-      .from("perkos_x402_agents")
-      .select("id", { count: "exact", head: true })
-      .eq("agent_type", agentType)
-      .gte("first_seen_at", todayStart.toISOString());
+    const totalVolumeUsd = allAgents.reduce((sum, a) => sum + a.total_volume, 0);
 
-    const totalVolumeUsd =
-      allAgents?.reduce((sum, a) => sum + (a.total_volume_usd || 0), 0) || 0;
+    // Apply pagination
+    const paginatedAgents = allAgents.slice(offset, offset + limit);
 
     // Format agents for frontend
-    const formattedAgents = agents?.map((agent) => ({
-      address: formatAddress(agent.wallet_address),
-      fullAddress: agent.wallet_address,
-      name: agent.display_name,
-      transactions: agent.total_transactions || 0,
-      volume: formatCurrency(agent.total_volume_usd || 0),
-      network: agent.primary_network || "avalanche",
+    const formattedAgents = paginatedAgents.map((agent) => ({
+      address: formatAddress(agent.address),
+      fullAddress: agent.address,
+      name: agent.name,
+      transactions: agent.total_transactions,
+      volume: formatCurrency(agent.total_volume),
+      network: agent.primary_network,
+      rating: agent.average_rating,
     }));
 
     return NextResponse.json({
-      agents: formattedAgents || [],
+      agents: formattedAgents,
       pagination: {
         limit,
         offset,
-        total: count || 0,
-        hasMore: offset + limit < (count || 0),
+        total: totalAgents,
+        hasMore: offset + limit < totalAgents,
       },
       stats: {
         total: totalAgents,
         active: activeAgents,
-        newToday: newToday || 0,
+        newToday: newToday,
         totalVolume: formatCurrency(totalVolumeUsd),
       },
     });
@@ -142,6 +181,25 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to return empty response on error
+function returnEmptyResponse(agentType: string) {
+  return NextResponse.json({
+    agents: [],
+    pagination: {
+      limit: 50,
+      offset: 0,
+      total: 0,
+      hasMore: false,
+    },
+    stats: {
+      total: 0,
+      active: 0,
+      newToday: 0,
+      totalVolume: "$0.00",
+    },
+  });
 }
 
 function formatAddress(address: string): string {

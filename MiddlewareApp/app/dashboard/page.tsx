@@ -555,16 +555,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Create Wallet Button - Avalanche Only */}
+          {/* Create Wallet Button - Multi-Chain EVM */}
           <div className="max-w-md mb-6">
             <button
-              onClick={() => createWallet('avalanche')}
-              disabled={loading || wallets.some(w => w.network === 'avalanche')}
-              className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-red-500/20 disabled:border-slate-600"
+              onClick={() => createWallet('evm')}
+              disabled={loading || wallets.length > 0}
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
             >
-              <span className="mr-2">🔺</span>
-              {wallets.some(w => w.network === 'avalanche') ? 'Avalanche Wallet Created' : 'Create Sponsor Wallet (Avalanche)'}
+              <span className="mr-2">⛓️</span>
+              {wallets.length > 0 ? 'EVM Wallet Created' : 'Create EVM Sponsor Wallet'}
             </button>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Works on all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
+            </p>
           </div>
 
           {/* Wallet List */}
@@ -577,19 +580,31 @@ export default function DashboardPage() {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-gray-200 capitalize">
-                        {wallet.network}
+                      <h3 className="font-semibold text-gray-200">
+                        {wallet.network === 'evm' ? 'EVM Multi-Chain Wallet' : wallet.network}
                       </h3>
                       <p className="text-sm text-gray-400 mt-1">
                         Created {new Date(wallet.created_at).toLocaleDateString()}
                       </p>
+                      {wallet.network === 'evm' && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">🔺 AVAX</span>
+                          <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">🔵 Base</span>
+                          <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">⟠ ETH</span>
+                          <span className="text-xs bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">🟣 Polygon</span>
+                          <span className="text-xs bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">🔷 Arbitrum</span>
+                          <span className="text-xs bg-red-600/20 text-red-300 px-1.5 py-0.5 rounded">🔴 OP</span>
+                          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">🟡 Celo</span>
+                          <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">🟢 Monad</span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <div>
                           <p className="text-sm text-gray-400">Balance</p>
                           <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                            {(Number(wallet.balance) / 1e18).toFixed(4)} {wallet.network === 'avalanche' ? 'AVAX' : wallet.network === 'base' ? 'ETH' : 'CELO'}
+                            {(Number(wallet.balance) / 1e18).toFixed(4)} {wallet.network === 'evm' ? 'Native' : wallet.network === 'avalanche' ? 'AVAX' : wallet.network === 'base' ? 'ETH' : 'CELO'}
                           </p>
                         </div>
                         <button
@@ -657,11 +672,11 @@ export default function DashboardPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">1.</span>
-              <span>Create a sponsor wallet for the network you want to support</span>
+              <span>Create an EVM sponsor wallet - <strong className="text-cyan-400">one wallet works on all EVM networks</strong></span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">2.</span>
-              <span>Fund the wallet by sending native tokens to the sponsor address</span>
+              <span>Fund the wallet by sending native tokens (AVAX, ETH, etc.) on any supported network</span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">3.</span>
@@ -672,6 +687,11 @@ export default function DashboardPage() {
               <span>Gas fees will be automatically paid from your sponsor wallet - no intervention needed!</span>
             </li>
           </ol>
+          <div className="mt-4 pt-4 border-t border-blue-500/20">
+            <p className="text-xs text-gray-400">
+              <strong className="text-cyan-400">Supported Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+            </p>
+          </div>
         </div>
         </main>
 

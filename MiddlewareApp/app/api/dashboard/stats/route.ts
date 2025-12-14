@@ -1,7 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/db/supabase";
+import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
+
+// Network configuration for all supported networks
+const NETWORK_CONFIG = {
+  mainnet: [
+    { name: "Avalanche", network: "avalanche", icon: "🔺", chainId: CHAIN_IDS.AVALANCHE },
+    { name: "Base", network: "base", icon: "🔵", chainId: CHAIN_IDS.BASE },
+    { name: "Ethereum", network: "ethereum", icon: "⟠", chainId: CHAIN_IDS.ETHEREUM },
+    { name: "Polygon", network: "polygon", icon: "🟣", chainId: CHAIN_IDS.POLYGON },
+    { name: "Arbitrum", network: "arbitrum", icon: "🔷", chainId: CHAIN_IDS.ARBITRUM },
+    { name: "Optimism", network: "optimism", icon: "🔴", chainId: CHAIN_IDS.OPTIMISM },
+    { name: "Celo", network: "celo", icon: "🟡", chainId: CHAIN_IDS.CELO },
+    { name: "Monad", network: "monad", icon: "🟢", chainId: CHAIN_IDS.MONAD },
+  ],
+  testnet: [
+    { name: "Avalanche Fuji", network: "avalanche-fuji", icon: "🔺", chainId: CHAIN_IDS.AVALANCHE_FUJI },
+    { name: "Base Sepolia", network: "base-sepolia", icon: "🔵", chainId: CHAIN_IDS.BASE_SEPOLIA },
+    { name: "Sepolia", network: "sepolia", icon: "⟠", chainId: CHAIN_IDS.SEPOLIA },
+    { name: "Polygon Amoy", network: "polygon-amoy", icon: "🟣", chainId: CHAIN_IDS.POLYGON_AMOY },
+    { name: "Arbitrum Sepolia", network: "arbitrum-sepolia", icon: "🔷", chainId: CHAIN_IDS.ARBITRUM_SEPOLIA },
+    { name: "OP Sepolia", network: "optimism-sepolia", icon: "🔴", chainId: CHAIN_IDS.OPTIMISM_SEPOLIA },
+    { name: "Celo Sepolia", network: "celo-sepolia", icon: "🟡", chainId: CHAIN_IDS.CELO_SEPOLIA },
+    { name: "Monad Testnet", network: "monad-testnet", icon: "🟢", chainId: CHAIN_IDS.MONAD_TESTNET },
+  ],
+};
 
 /**
  * GET /api/dashboard/stats
@@ -70,39 +95,24 @@ export async function GET(req: NextRequest) {
         : `$${num.toFixed(0)}`;
     };
 
+    // Build network stats from config, pulling data from aggregation
     const networkStats = {
-      mainnet: [
-        {
-          name: "Avalanche",
-          network: "avalanche",
-          txCount: networkAgg?.["avalanche"]?.txCount || 0,
-          volume: formatVolume(networkAgg?.["avalanche"]?.volume || 0n),
-          icon: "🔺",
-        },
-        {
-          name: "Base",
-          network: "base",
-          txCount: networkAgg?.["base"]?.txCount || 0,
-          volume: formatVolume(networkAgg?.["base"]?.volume || 0n),
-          icon: "🔵",
-        },
-      ],
-      testnet: [
-        {
-          name: "Avalanche Fuji",
-          network: "avalanche-fuji",
-          txCount: networkAgg?.["avalanche-fuji"]?.txCount || 0,
-          volume: formatVolume(networkAgg?.["avalanche-fuji"]?.volume || 0n),
-          icon: "🔺",
-        },
-        {
-          name: "Base Sepolia",
-          network: "base-sepolia",
-          txCount: networkAgg?.["base-sepolia"]?.txCount || 0,
-          volume: formatVolume(networkAgg?.["base-sepolia"]?.volume || 0n),
-          icon: "🔵",
-        },
-      ],
+      mainnet: NETWORK_CONFIG.mainnet.map((net) => ({
+        name: net.name,
+        network: net.network,
+        icon: net.icon,
+        chainId: net.chainId,
+        txCount: networkAgg?.[net.network]?.txCount || 0,
+        volume: formatVolume(networkAgg?.[net.network]?.volume || 0n),
+      })),
+      testnet: NETWORK_CONFIG.testnet.map((net) => ({
+        name: net.name,
+        network: net.network,
+        icon: net.icon,
+        chainId: net.chainId,
+        txCount: networkAgg?.[net.network]?.txCount || 0,
+        volume: formatVolume(networkAgg?.[net.network]?.volume || 0n),
+      })),
     };
 
     // Fetch chart data (daily transactions for the time range)
@@ -171,7 +181,7 @@ export async function GET(req: NextRequest) {
       totalTransactions: totalTransactions || 0,
       totalVolume: formatVolume(totalVolume),
       activeAgents: activeAgents || 0,
-      networks: 4, // Avalanche, Base (mainnet + testnet)
+      networks: NETWORK_CONFIG.mainnet.length, // Count of mainnet networks
       growth: {
         transactions: `${txGrowth >= "0" ? "+" : ""}${txGrowth}%`,
         volume: "+0%", // TODO: Calculate volume growth
@@ -195,21 +205,29 @@ export async function GET(req: NextRequest) {
       totalTransactions: 0,
       totalVolume: "$0",
       activeAgents: 0,
-      networks: 4,
+      networks: NETWORK_CONFIG.mainnet.length,
       growth: {
         transactions: "+0%",
         volume: "+0%",
         agents: "+0%",
       },
       networkStats: {
-        mainnet: [
-          { name: "Avalanche", network: "avalanche", txCount: 0, volume: "$0", icon: "🔺" },
-          { name: "Base", network: "base", txCount: 0, volume: "$0", icon: "🔵" },
-        ],
-        testnet: [
-          { name: "Avalanche Fuji", network: "avalanche-fuji", txCount: 0, volume: "$0", icon: "🔺" },
-          { name: "Base Sepolia", network: "base-sepolia", txCount: 0, volume: "$0", icon: "🔵" },
-        ],
+        mainnet: NETWORK_CONFIG.mainnet.map((net) => ({
+          name: net.name,
+          network: net.network,
+          icon: net.icon,
+          chainId: net.chainId,
+          txCount: 0,
+          volume: "$0",
+        })),
+        testnet: NETWORK_CONFIG.testnet.map((net) => ({
+          name: net.name,
+          network: net.network,
+          icon: net.icon,
+          chainId: net.chainId,
+          txCount: 0,
+          volume: "$0",
+        })),
       },
       chartData: [],
       recentTransactions: [],
