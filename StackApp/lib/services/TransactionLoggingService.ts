@@ -21,6 +21,8 @@ export interface TransactionLogData {
   vendorEndpoint?: string;
   status: "success" | "failed" | "pending";
   errorMessage?: string;
+  gasFeeWei?: string;
+  gasFeeUsd?: number;
 }
 
 /**
@@ -114,6 +116,8 @@ export class TransactionLoggingService {
         vendor_endpoint: data.vendorEndpoint,
         status: data.status,
         error_message: data.errorMessage,
+        gas_fee_wei: data.gasFeeWei,
+        gas_fee_usd: data.gasFeeUsd,
       });
 
       if (error) {
