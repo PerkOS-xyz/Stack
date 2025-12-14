@@ -139,13 +139,13 @@ export async function GET(req: NextRequest) {
       date,
     }));
 
-    // Fetch recent transactions (last 15 for landing page display)
+    // Fetch recent transactions (last 9 for landing page card display)
     const { data: recentTxs } = await supabase
       .from("perkos_x402_transactions")
       .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at")
       .eq("status", "success")
       .order("created_at", { ascending: false })
-      .limit(15);
+      .limit(9);
 
     const recentTransactions = recentTxs?.map((tx) => {
       const timeDiff = Date.now() - new Date(tx.created_at).getTime();
@@ -163,6 +163,7 @@ export async function GET(req: NextRequest) {
 
       return {
         hash: `${tx.transaction_hash.slice(0, 6)}...${tx.transaction_hash.slice(-4)}`,
+        fullHash: tx.transaction_hash,
         network: tx.network,
         amount: formattedAmount,
         scheme: tx.scheme,
