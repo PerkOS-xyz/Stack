@@ -30,10 +30,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "📊", requiresAuth: true },
+  { href: "/profile", label: "Profile", icon: "👤", requiresAuth: true },
   { href: "/networks", label: "Networks", icon: "🌐" },
   { href: "/transactions", label: "Transactions", icon: "💸" },
   { href: "/marketplace", label: "Marketplace", icon: "🏪" },
   { href: "/agents", label: "Agents", icon: "👥" },
+  { href: "/participants", label: "Participants", icon: "🤝" },
 ];
 
 export function Header() {
