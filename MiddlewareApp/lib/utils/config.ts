@@ -1,7 +1,15 @@
 import type { Address } from "../types/x402";
 
 // Supported networks
-export type SupportedNetwork = "avalanche" | "celo" | "base" | "avalanche-fuji" | "celo-sepolia" | "base-sepolia";
+export type SupportedNetwork =
+  | "avalanche" | "avalanche-fuji"
+  | "celo" | "celo-sepolia"
+  | "base" | "base-sepolia"
+  | "ethereum" | "sepolia"
+  | "polygon" | "polygon-amoy"
+  | "monad" | "monad-testnet"
+  | "arbitrum" | "arbitrum-sepolia"
+  | "optimism" | "optimism-sepolia";
 
 export const config = {
   // Blockchain
@@ -15,6 +23,16 @@ export const config = {
     "celo-sepolia": process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || "https://forno.celo-sepolia.celo-testnet.org",
     base: process.env.NEXT_PUBLIC_BASE_RPC_URL || "https://mainnet.base.org",
     "base-sepolia": process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+    ethereum: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL || "https://eth.llamarpc.com",
+    sepolia: process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://rpc.sepolia.org",
+    polygon: process.env.NEXT_PUBLIC_POLYGON_RPC_URL || "https://polygon-rpc.com",
+    "polygon-amoy": process.env.NEXT_PUBLIC_POLYGON_AMOY_RPC_URL || "https://rpc-amoy.polygon.technology",
+    monad: process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://rpc.monad.xyz",
+    "monad-testnet": process.env.NEXT_PUBLIC_MONAD_TESTNET_RPC_URL || "https://testnet-rpc.monad.xyz",
+    arbitrum: process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL || "https://arb1.arbitrum.io/rpc",
+    "arbitrum-sepolia": process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
+    optimism: process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL || "https://mainnet.optimism.io",
+    "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
   },
 
   privateKey: process.env.PRIVATE_KEY as Address | undefined,
@@ -27,6 +45,16 @@ export const config = {
     "celo-sepolia": (process.env.NEXT_PUBLIC_CELO_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
     base: (process.env.NEXT_PUBLIC_BASE_PAYMENT_TOKEN || "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913") as Address,
     "base-sepolia": (process.env.NEXT_PUBLIC_BASE_SEPOLIA_PAYMENT_TOKEN || "0x036CbD53842c5426634e7929541eC2318f3dCF7e") as Address,
+    ethereum: (process.env.NEXT_PUBLIC_ETHEREUM_PAYMENT_TOKEN || "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48") as Address,
+    sepolia: (process.env.NEXT_PUBLIC_SEPOLIA_PAYMENT_TOKEN || "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238") as Address,
+    polygon: (process.env.NEXT_PUBLIC_POLYGON_PAYMENT_TOKEN || "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359") as Address,
+    "polygon-amoy": (process.env.NEXT_PUBLIC_POLYGON_AMOY_PAYMENT_TOKEN || "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582") as Address,
+    monad: (process.env.NEXT_PUBLIC_MONAD_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    "monad-testnet": (process.env.NEXT_PUBLIC_MONAD_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    arbitrum: (process.env.NEXT_PUBLIC_ARBITRUM_PAYMENT_TOKEN || "0xaf88d065e77c8cC2239327C5EDb3A432268e5831") as Address,
+    "arbitrum-sepolia": (process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_PAYMENT_TOKEN || "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d") as Address,
+    optimism: (process.env.NEXT_PUBLIC_OPTIMISM_PAYMENT_TOKEN || "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85") as Address,
+    "optimism-sepolia": (process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_PAYMENT_TOKEN || "0x5fd84259d66Cd46123540766Be93DFE6D43130D7") as Address,
   },
 
   // Payment Receiver
@@ -41,6 +69,16 @@ export const config = {
     "celo-sepolia": process.env.NEXT_PUBLIC_CELO_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
     base: process.env.NEXT_PUBLIC_BASE_ESCROW_ADDRESS as Address | undefined,
     "base-sepolia": process.env.NEXT_PUBLIC_BASE_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
+    ethereum: process.env.NEXT_PUBLIC_ETHEREUM_ESCROW_ADDRESS as Address | undefined,
+    sepolia: process.env.NEXT_PUBLIC_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
+    polygon: process.env.NEXT_PUBLIC_POLYGON_ESCROW_ADDRESS as Address | undefined,
+    "polygon-amoy": process.env.NEXT_PUBLIC_POLYGON_AMOY_ESCROW_ADDRESS as Address | undefined,
+    monad: process.env.NEXT_PUBLIC_MONAD_ESCROW_ADDRESS as Address | undefined,
+    "monad-testnet": process.env.NEXT_PUBLIC_MONAD_TESTNET_ESCROW_ADDRESS as Address | undefined,
+    arbitrum: process.env.NEXT_PUBLIC_ARBITRUM_ESCROW_ADDRESS as Address | undefined,
+    "arbitrum-sepolia": process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
+    optimism: process.env.NEXT_PUBLIC_OPTIMISM_ESCROW_ADDRESS as Address | undefined,
+    "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
   },
 
   // Facilitator Info
