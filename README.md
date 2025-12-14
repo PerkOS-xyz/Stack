@@ -61,8 +61,10 @@ PerkOS Stack provides **granular gas sponsorship control** that puts YOU in char
 
 ```mermaid
 flowchart TB
-    subgraph Solution["PERKOS STACK: INTELLIGENT MULTI-WALLET CONTROL"]
+    subgraph Solution[" "]
         direction TB
+
+        Title["<b>PerkOS Stack</b><br/>Intelligent Multi<br/>Wallet Control"]
 
         subgraph Agents["Incoming Requests"]
             A1["Agent A"]
@@ -86,6 +88,8 @@ flowchart TB
             AN["Dashboard<br/>Spending Tracking<br/>ROI Analysis"]
         end
 
+        Title ~~~ Agents
+
         A1 --> R1
         A2 --> R1
         A3 --> R1
@@ -106,6 +110,7 @@ flowchart TB
     end
 
     style Solution fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000
+    style Title fill:#22c55e,stroke:#16a34a,color:#fff
     style Agents fill:#1e293b,stroke:#475569,color:#fff
     style Rules fill:#1e293b,stroke:#475569,color:#fff
     style Wallets fill:#1e293b,stroke:#475569,color:#fff
