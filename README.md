@@ -105,16 +105,23 @@ flowchart TB
         W3 --> AN
     end
 
-    style Solution fill:#ecfdf5,stroke:#10b981,color:#000
-    style R1 fill:#fef3c7,stroke:#f59e0b
-    style R2 fill:#fef3c7,stroke:#f59e0b
-    style R3 fill:#fef3c7,stroke:#f59e0b
-    style W1 fill:#dbeafe,stroke:#3b82f6
-    style W2 fill:#dbeafe,stroke:#3b82f6
-    style W3 fill:#dbeafe,stroke:#3b82f6
-    style X1 fill:#fee2e2,stroke:#dc2626
-    style X2 fill:#fee2e2,stroke:#dc2626
-    style AN fill:#f3e8ff,stroke:#9333ea
+    style Solution fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000
+    style Agents fill:#1e293b,stroke:#475569,color:#fff
+    style Rules fill:#1e293b,stroke:#475569,color:#fff
+    style Wallets fill:#1e293b,stroke:#475569,color:#fff
+    style Analytics fill:#1e293b,stroke:#475569,color:#fff
+    style A1 fill:#334155,stroke:#94a3b8,color:#fff
+    style A2 fill:#334155,stroke:#94a3b8,color:#fff
+    style A3 fill:#334155,stroke:#94a3b8,color:#fff
+    style R1 fill:#fbbf24,stroke:#d97706,color:#000
+    style R2 fill:#fbbf24,stroke:#d97706,color:#000
+    style R3 fill:#fbbf24,stroke:#d97706,color:#000
+    style W1 fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    style W2 fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    style W3 fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    style X1 fill:#ef4444,stroke:#b91c1c,color:#fff
+    style X2 fill:#ef4444,stroke:#b91c1c,color:#fff
+    style AN fill:#a855f7,stroke:#7c3aed,color:#fff
 ```
 
 ---
