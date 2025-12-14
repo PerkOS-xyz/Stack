@@ -526,6 +526,40 @@ export function getRpcUrl(chainId: number): string | undefined {
   return chain?.rpcUrls.default.http[0];
 }
 
+// Get native token symbol for network
+export function getNativeTokenSymbol(network: string): string {
+  const chain = chains[network];
+  return chain?.nativeCurrency?.symbol || "ETH";
+}
+
+// Get native token decimals for network
+export function getNativeTokenDecimals(network: string): number {
+  const chain = chains[network];
+  return chain?.nativeCurrency?.decimals || 18;
+}
+
+// Convert wei to native token decimal format
+export function weiToNativeToken(weiAmount: string, network: string): string {
+  try {
+    const decimals = getNativeTokenDecimals(network);
+    const wei = BigInt(weiAmount);
+    const divisor = BigInt(10 ** decimals);
+    const whole = wei / divisor;
+    const fraction = wei % divisor;
+
+    // Format with up to 6 decimal places
+    const fractionStr = fraction.toString().padStart(decimals, "0");
+    const trimmedFraction = fractionStr.slice(0, 6).replace(/0+$/, "");
+
+    if (trimmedFraction) {
+      return `${whole}.${trimmedFraction}`;
+    }
+    return whole.toString();
+  } catch {
+    return "0";
+  }
+}
+
 // Chain IDs constants
 export const CHAIN_IDS = {
   AVALANCHE: 43114,

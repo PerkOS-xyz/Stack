@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getNativeTokenSymbol, weiToNativeToken } from "@/lib/utils/chains";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "7d";
     const network = searchParams.get("network");
     const scheme = searchParams.get("scheme");
+    const search = searchParams.get("search");
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 500);
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
         timeFilter = null;
     }
 
-    // Build query
+    // Build query - Note: gas_fee_wei column may not exist yet in older databases
     let query = supabase
       .from("perkos_x402_transactions")
       .select(
@@ -58,7 +60,8 @@ export async function GET(request: NextRequest) {
         scheme,
         vendor_domain,
         status,
-        created_at
+        created_at,
+        gas_fee_wei
       `,
         { count: "exact" }
       )
@@ -77,6 +80,14 @@ export async function GET(request: NextRequest) {
       query = query.eq("scheme", scheme);
     }
 
+    // Apply search filter (searches transaction_hash, payer_address, recipient_address)
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      query = query.or(
+        `transaction_hash.ilike.%${searchTerm}%,payer_address.ilike.%${searchTerm}%,recipient_address.ilike.%${searchTerm}%`
+      );
+    }
+
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
@@ -93,7 +104,7 @@ export async function GET(request: NextRequest) {
     // Get summary stats
     let statsQuery = supabase
       .from("perkos_x402_transactions")
-      .select("amount_usd, status");
+      .select("amount_usd, status, transaction_hash, payer_address, recipient_address");
 
     if (timeFilter) {
       statsQuery = statsQuery.gte("created_at", timeFilter.toISOString());
@@ -105,6 +116,14 @@ export async function GET(request: NextRequest) {
 
     if (scheme && scheme !== "all") {
       statsQuery = statsQuery.eq("scheme", scheme);
+    }
+
+    // Apply search filter to stats query as well
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      statsQuery = statsQuery.or(
+        `transaction_hash.ilike.%${searchTerm}%,payer_address.ilike.%${searchTerm}%,recipient_address.ilike.%${searchTerm}%`
+      );
     }
 
     const { data: statsData } = await statsQuery;
@@ -123,16 +142,40 @@ export async function GET(request: NextRequest) {
         : "0";
 
     // Format transactions for frontend
-    const formattedTransactions = transactions?.map((tx) => ({
-      hash: tx.transaction_hash,
-      from: tx.payer_address,
-      to: tx.recipient_address,
-      amount: tx.amount_usd ? `$${tx.amount_usd.toFixed(2)}` : "$0.00",
-      scheme: tx.scheme,
-      network: tx.network,
-      status: tx.status,
-      timestamp: formatTimeAgo(new Date(tx.created_at)),
-    }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formattedTransactions = transactions?.map((tx: any) => {
+      const nativeSymbol = getNativeTokenSymbol(tx.network);
+      const gasFeeNative = tx.gas_fee_wei
+        ? weiToNativeToken(tx.gas_fee_wei, tx.network)
+        : null;
+
+      // Format amount with token symbol (usually USDC)
+      const tokenSymbol = tx.asset_symbol || "USDC";
+      const amountFormatted = tx.amount_usd
+        ? `${tx.amount_usd.toFixed(3)} ${tokenSymbol}`
+        : `0.000 ${tokenSymbol}`;
+
+      return {
+        hash: truncateAddress(tx.transaction_hash),
+        fullHash: tx.transaction_hash,
+        from: truncateAddress(tx.payer_address),
+        fullFrom: tx.payer_address,
+        to: truncateAddress(tx.recipient_address),
+        fullTo: tx.recipient_address,
+        amount: amountFormatted,
+        amountRaw: tx.amount_usd || 0,
+        assetSymbol: tokenSymbol,
+        gasFee: gasFeeNative ? `${gasFeeNative} ${nativeSymbol}` : "-",
+        gasFeeWei: tx.gas_fee_wei || null,
+        gasFeeNativeSymbol: nativeSymbol,
+        scheme: tx.scheme,
+        network: tx.network,
+        status: tx.status,
+        timestamp: formatTimeAgo(new Date(tx.created_at)),
+        datetime: formatDateTime(new Date(tx.created_at)),
+        datetimeRaw: tx.created_at,
+      };
+    });
 
     return NextResponse.json({
       transactions: formattedTransactions || [],
@@ -170,6 +213,19 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+function formatDateTime(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  };
+  return date.toLocaleString("en-US", options);
+}
+
 function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -180,4 +236,9 @@ function formatCurrency(amount: number): string {
   if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
   if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
   return `$${amount.toFixed(2)}`;
+}
+
+function truncateAddress(address: string): string {
+  if (!address || address.length < 10) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
