@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { supabaseAdmin } from "@/lib/db/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseAdmin
       .from("perkos_user_profiles")
       .select("*")
       .eq("wallet_address", address.toLowerCase())
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if profile already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("perkos_user_profiles")
       .select("id")
       .eq("wallet_address", walletAddress.toLowerCase())
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       // Update existing profile
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("perkos_user_profiles")
         .update(profileData)
         .eq("wallet_address", walletAddress.toLowerCase())
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
       result = data;
     } else {
       // Create new profile
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("perkos_user_profiles")
         .insert(profileData)
         .select()
@@ -234,7 +234,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("perkos_user_profiles")
       .delete()
       .eq("wallet_address", address.toLowerCase());

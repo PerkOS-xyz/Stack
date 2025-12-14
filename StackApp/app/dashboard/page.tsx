@@ -9,6 +9,22 @@ import { AddressDisplay } from '@/components/AddressDisplay';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import type { Address } from 'viem';
+import Link from 'next/link';
+
+interface UserProfile {
+  wallet_address: string;
+  display_name: string | null;
+  account_type: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  website: string | null;
+  twitter: string | null;
+  discord: string | null;
+  telegram: string | null;
+  github: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 interface SponsorWallet {
   id: string;
@@ -59,6 +75,8 @@ export default function DashboardPage() {
 
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [stats, setStats] = useState({
     totalTransactions: 0,
     totalVolume: '$0',
@@ -80,12 +98,33 @@ export default function DashboardPage() {
   const [addingRule, setAddingRule] = useState(false);
   const [activeTab, setActiveTab] = useState<'agent' | 'vendor' | 'spending' | 'time' | 'multichain' | 'notifications'>('agent');
 
+  // Check if profile is complete (has display_name and account_type)
+  const isProfileComplete = profile?.display_name && profile?.account_type;
+
   useEffect(() => {
     if (isConnected && address) {
+      loadProfile();
       loadWallets();
       loadStats();
     }
   }, [isConnected, address]);
+
+  const loadProfile = async () => {
+    if (!address) return;
+
+    setProfileLoading(true);
+    try {
+      const response = await fetch(`/api/profile?address=${address}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data.profile || null);
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const loadWallets = async () => {
     try {
@@ -419,6 +458,37 @@ export default function DashboardPage() {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Profile Completion Banner */}
+        {!profileLoading && !isProfileComplete && (
+          <div className="mb-8 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 backdrop-blur-sm rounded-xl p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start space-x-4">
+                <div className="bg-amber-500/30 rounded-full p-3 flex-shrink-0">
+                  <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-amber-300">Complete Your Profile</h3>
+                  <p className="text-sm text-amber-200/80 mt-1">
+                    Please complete your profile to unlock all features. You need to add a display name and select your account type to create sponsor wallets.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="inline-flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-lg shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all duration-300 flex-shrink-0"
+              >
+                <span>Complete Profile</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/50 transition-all duration-300">
@@ -469,7 +539,37 @@ export default function DashboardPage() {
         </div>
 
         {/* Sponsor Wallets Section */}
-        <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 mb-8">
+        <div className={`relative bg-slate-800/50 border backdrop-blur-sm rounded-xl p-6 mb-8 transition-all ${
+          !isProfileComplete && !profileLoading
+            ? 'border-slate-600/30 opacity-60'
+            : 'border-blue-500/30'
+        }`}>
+          {/* Disabled Overlay */}
+          {!isProfileComplete && !profileLoading && (
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] rounded-xl z-10 flex items-center justify-center">
+              <div className="text-center p-6">
+                <div className="bg-slate-800/90 border border-amber-500/30 rounded-xl p-6 max-w-md">
+                  <svg className="w-12 h-12 text-amber-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-amber-300 mb-2">Profile Required</h3>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Complete your profile to create and manage sponsor wallets.
+                  </p>
+                  <Link
+                    href="/profile"
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-lg transition-all"
+                  >
+                    <span>Complete Profile</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Sponsor Wallets</h2>
@@ -481,14 +581,27 @@ export default function DashboardPage() {
 
           {/* Create Wallet Button - Multi-Chain EVM */}
           <div className="max-w-md mb-6">
-            <button
-              onClick={() => createWallet('evm')}
-              disabled={loading || wallets.length > 0}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
-            >
-              <span className="mr-2">⛓️</span>
-              {wallets.length > 0 ? 'EVM Wallet Created' : 'Create EVM Sponsor Wallet'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => createWallet('evm')}
+                disabled={loading || wallets.length > 0 || !isProfileComplete}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
+              >
+                <span className="mr-2">⛓️</span>
+                {wallets.length > 0 ? 'EVM Wallet Created' : 'Create EVM Sponsor Wallet'}
+              </button>
+              {wallets.length > 0 && (
+                <Link
+                  href="/wallet"
+                  className="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg transition-all flex items-center justify-center border border-green-500/20"
+                  title="Open Wallet"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </Link>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
               Works on all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
             </p>

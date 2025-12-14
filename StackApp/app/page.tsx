@@ -176,12 +176,12 @@ export default function Home() {
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent leading-tight">
+              <h2 className="text-4xl md:text-6xl font-bold mb-8 py-4 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent leading-tight">
                 Empowering Community
                 <br />
                 Web3 Agents
               </h2>
-              <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
+              <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                 Multi-chain payment infrastructure built for communities. Supporting x402, service discovery, and gasless transactions across 8 networks including Ethereum, Avalanche, Base, Polygon, Arbitrum, and Optimism.
               </p>
 
@@ -202,7 +202,7 @@ export default function Home() {
             </div>
 
             {/* Main Stats Dashboard with Mini Charts */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 mt-8">
               <div className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm hover:border-blue-400/50 transition-all duration-300">
                 <div className="text-sm text-gray-400 mb-2">Total Transactions</div>
                 <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
@@ -420,9 +420,20 @@ export default function Home() {
         {/* Analytics & Charts Section */}
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-7xl mx-auto">
-            <h3 className="text-3xl font-bold text-center mb-8 text-gray-100">
-              Network Analytics
-            </h3>
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-3xl font-bold text-gray-100">
+                Network Analytics
+              </h3>
+              <Link
+                href="/networks"
+                className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-colors group"
+              >
+                <span className="text-sm font-medium">View All</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
 
             {/* Time Range Filter */}
             <div className="flex justify-center mb-6">
@@ -527,44 +538,66 @@ export default function Home() {
             {/* Recent Transactions */}
             <div className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-200">Recent Transactions</h3>
-                <a href="/transactions" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
-                  View All →
-                </a>
+                <div className="flex items-center space-x-3">
+                  <h3 className="text-xl font-semibold text-gray-200">Recent Transactions</h3>
+                  <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs font-medium rounded-full">
+                    {recentTransactions.length}
+                  </span>
+                </div>
+                <Link
+                  href="/transactions"
+                  className="flex items-center space-x-2 text-cyan-400 hover:text-cyan-300 transition-colors group"
+                >
+                  <span className="text-sm font-medium">View All</span>
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
               </div>
-              <div className="space-y-3">
-                {recentTransactions.map((tx) => (
-                  <div
-                    key={tx.hash}
-                    className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:border-blue-500/30 transition-all duration-200"
-                  >
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className="text-lg">
-                        {networks.mainnet.find((n) => n.network === tx.network)?.icon ||
-                          networks.testnet.find((n) => n.network === tx.network)?.icon}
-                      </div>
-                      <div>
-                        <code className="text-cyan-400 text-sm">{tx.hash}</code>
-                        <div className="text-xs text-gray-400 mt-0.5">{tx.network}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          tx.scheme === "exact"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-blue-500/20 text-blue-400"
-                        }`}
-                      >
-                        {tx.scheme}
-                      </span>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-gray-200">{tx.amount}</div>
-                        <div className="text-xs text-gray-400">{tx.time}</div>
-                      </div>
-                    </div>
+              {/* Scrollable container for 15 transactions */}
+              <div className="max-h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-blue-500/30 scrollbar-track-transparent">
+                {recentTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p className="text-sm">No transactions yet</p>
                   </div>
-                ))}
+                ) : (
+                  recentTransactions.map((tx) => (
+                    <div
+                      key={tx.hash}
+                      className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:border-blue-500/30 transition-all duration-200"
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div className="text-lg">
+                          {networks.mainnet.find((n) => n.network === tx.network)?.icon ||
+                            networks.testnet.find((n) => n.network === tx.network)?.icon ||
+                            "🌐"}
+                        </div>
+                        <div>
+                          <code className="text-cyan-400 text-sm">{tx.hash}</code>
+                          <div className="text-xs text-gray-400 mt-0.5">{tx.network}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            tx.scheme === "exact"
+                              ? "bg-green-500/20 text-green-400"
+                              : "bg-blue-500/20 text-blue-400"
+                          }`}
+                        >
+                          {tx.scheme}
+                        </span>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-gray-200">{tx.amount}</div>
+                          <div className="text-xs text-gray-400">{tx.time}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
