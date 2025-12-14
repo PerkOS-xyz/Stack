@@ -188,38 +188,49 @@ PerkOS Stack supports **4 types of granular control rules**:
 
 ```mermaid
 flowchart TB
-    subgraph RuleTypes["GAS SPONSORSHIP RULE TYPES"]
-        direction LR
+    subgraph RuleTypes[" "]
+        direction TB
 
-        subgraph R1["Agent Whitelist"]
-            A1["Control which wallets<br/>can use sponsorship"]
-            A2["Per-agent daily limits"]
-            A3["Per-transaction caps"]
+        Title["<b>Gas Sponsorship</b><br/>Rule Types"]
+
+        subgraph Rules[" "]
+            direction LR
+
+            subgraph R1["Agent Whitelist"]
+                A1["Control which wallets<br/>can use sponsorship"]
+                A2["Per-agent daily limits"]
+                A3["Per-transaction caps"]
+            end
+
+            subgraph R2["Domain Whitelist"]
+                D1["Restrict to your domains"]
+                D2["Wildcard support<br/>*.myapp.com"]
+                D3["Monthly budgets"]
+            end
+
+            subgraph R3["Spending Limits"]
+                S1["Daily limits"]
+                S2["Monthly limits"]
+                S3["Per-tx limits"]
+            end
+
+            subgraph R4["Time Restrictions"]
+                T1["Business hours only"]
+                T2["Specific days"]
+                T3["Scheduled availability"]
+            end
         end
 
-        subgraph R2["Domain Whitelist"]
-            D1["Restrict to your domains"]
-            D2["Wildcard support<br/>*.myapp.com"]
-            D3["Monthly budgets"]
-        end
-
-        subgraph R3["Spending Limits"]
-            S1["Daily limits"]
-            S2["Monthly limits"]
-            S3["Per-tx limits"]
-        end
-
-        subgraph R4["Time Restrictions"]
-            T1["Business hours only"]
-            T2["Specific days"]
-            T3["Scheduled availability"]
-        end
+        Title ~~~ Rules
     end
 
-    style R1 fill:#dbeafe,stroke:#3b82f6
-    style R2 fill:#fef3c7,stroke:#f59e0b
-    style R3 fill:#d1fae5,stroke:#10b981
-    style R4 fill:#f3e8ff,stroke:#9333ea
+    style RuleTypes fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000
+    style Title fill:#22c55e,stroke:#16a34a,color:#fff
+    style Rules fill:transparent,stroke:none
+    style R1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    style R2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style R3 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style R4 fill:#f3e8ff,stroke:#9333ea,color:#581c87
 ```
 
 #### 1. Agent Whitelist (`agent_whitelist`)
@@ -284,32 +295,45 @@ Create **multiple sponsor wallets per network** for complete isolation:
 
 ```mermaid
 flowchart TB
-    subgraph Stack["YOUR PERKOS STACK DEPLOYMENT"]
-        subgraph Base["BASE MAINNET (8453)"]
-            B1["Wallet A<br/>Production Agents<br/>$500/month"]
-            B2["Wallet B<br/>Development<br/>$100/month"]
-            B3["Wallet C<br/>Premium Partners<br/>$2,000/month"]
+    subgraph Stack[" "]
+        direction TB
+
+        Title["<b>Multi-Wallet</b><br/>Architecture"]
+
+        subgraph Networks[" "]
+            direction LR
+
+            subgraph Base["BASE MAINNET (8453)"]
+                B1["Wallet A<br/>Production Agents<br/>$500/month"]
+                B2["Wallet B<br/>Development<br/>$100/month"]
+                B3["Wallet C<br/>Premium Partners<br/>$2,000/month"]
+            end
+
+            subgraph Avax["AVALANCHE (43114)"]
+                A1["Wallet D<br/>AI Agent Fleet<br/>$1,000/month"]
+                A2["Wallet E<br/>Partner Integrations<br/>$500/month"]
+            end
+
+            subgraph Poly["POLYGON (137)"]
+                P1["Wallet F<br/>Mobile App Users<br/>$200/month"]
+            end
         end
 
-        subgraph Avax["AVALANCHE (43114)"]
-            A1["Wallet D<br/>AI Agent Fleet<br/>$1,000/month"]
-            A2["Wallet E<br/>Partner Integrations<br/>$500/month"]
-        end
-
-        subgraph Poly["POLYGON (137)"]
-            P1["Wallet F<br/>Mobile App Users<br/>$200/month"]
-        end
+        Title ~~~ Networks
     end
 
-    style Base fill:#dbeafe,stroke:#3b82f6
-    style Avax fill:#fef3c7,stroke:#f59e0b
-    style Poly fill:#f3e8ff,stroke:#9333ea
-    style B1 fill:#fff,stroke:#3b82f6
-    style B2 fill:#fff,stroke:#3b82f6
-    style B3 fill:#fff,stroke:#3b82f6
-    style A1 fill:#fff,stroke:#f59e0b
-    style A2 fill:#fff,stroke:#f59e0b
-    style P1 fill:#fff,stroke:#9333ea
+    style Stack fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#000
+    style Title fill:#22c55e,stroke:#16a34a,color:#fff
+    style Networks fill:transparent,stroke:none
+    style Base fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    style Avax fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style Poly fill:#f3e8ff,stroke:#9333ea,color:#581c87
+    style B1 fill:#fff,stroke:#3b82f6,color:#1e3a8a
+    style B2 fill:#fff,stroke:#3b82f6,color:#1e3a8a
+    style B3 fill:#fff,stroke:#3b82f6,color:#1e3a8a
+    style A1 fill:#fff,stroke:#f59e0b,color:#78350f
+    style A2 fill:#fff,stroke:#f59e0b,color:#78350f
+    style P1 fill:#fff,stroke:#9333ea,color:#581c87
 ```
 
 ### Real-Time Spending Analytics
@@ -629,8 +653,7 @@ flowchart TB
 
     subgraph Infra["INFRASTRUCTURE"]
         DB[("Supabase<br/>PostgreSQL")]
-        TW["Thirdweb<br/>Sponsorship"]
-        TK["Turnkey<br/>Wallets"]
+        TW["Thirdweb<br/>Server Wallets<br/>x402 & Sponsorship"]
     end
 
     subgraph Chains["BLOCKCHAIN NETWORKS"]
@@ -647,11 +670,11 @@ flowchart TB
     X402 --> Schemes
     Schemes --> Chains
     X402 --> Indexer
+    X402 --> TW
     Indexer --> DB
     Discovery --> DB
     Sponsor --> DB
     Sponsor --> TW
-    Sponsor --> TK
 
     style Stack fill:#4F46E5,color:#fff
     style Infra fill:#10B981,color:#fff
