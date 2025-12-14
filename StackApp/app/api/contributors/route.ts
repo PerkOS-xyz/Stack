@@ -74,16 +74,16 @@ export async function GET(req: NextRequest) {
       createdAt: profile.created_at,
     }));
 
-    // Calculate stats
+    // Calculate stats - these should always reflect the TOTAL counts, not filtered counts
     const stats = {
-      total: count || 0,
+      total: 0,
       personal: 0,
       community: 0,
       organization: 0,
       vendor: 0,
     };
 
-    // Get counts by type
+    // Get counts by type (always unfiltered to show true totals)
     const { data: typeCounts } = await supabase
       .from("perkos_user_profiles")
       .select("account_type")
@@ -96,6 +96,8 @@ export async function GET(req: NextRequest) {
           stats[type]++;
         }
       });
+      // Total is the sum of all type counts
+      stats.total = typeCounts.length;
     }
 
     return NextResponse.json({
