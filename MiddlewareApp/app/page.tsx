@@ -30,17 +30,17 @@ export default function Home() {
     totalTransactions: 0,
     totalVolume: "0",
     activeAgents: 0,
-    networks: 4,
+    networks: 8,
   });
 
   // Mock data - replace with actual API calls
   useEffect(() => {
     // Simulate fetching real-time data
     setStats({
-      totalTransactions: 12847,
-      totalVolume: "$2.4M",
+      totalTransactions: 22967,
+      totalVolume: "$4.9M",
       activeAgents: 1247,
-      networks: 4,
+      networks: 8,
     });
   }, [timeRange]);
 
@@ -72,10 +72,22 @@ export default function Home() {
     mainnet: [
       { name: "Avalanche", icon: "🔺", network: "avalanche", txCount: 5234, volume: "$1.2M" },
       { name: "Base", icon: "🔵", network: "base", txCount: 3490, volume: "$760K" },
+      { name: "Ethereum", icon: "⟠", network: "ethereum", txCount: 4521, volume: "$980K" },
+      { name: "Polygon", icon: "🟣", network: "polygon", txCount: 2876, volume: "$520K" },
+      { name: "Arbitrum", icon: "🔷", network: "arbitrum", txCount: 3156, volume: "$680K" },
+      { name: "Optimism", icon: "🔴", network: "optimism", txCount: 2234, volume: "$450K" },
+      { name: "Celo", icon: "🟡", network: "celo", txCount: 1456, volume: "$280K" },
+      { name: "Monad", icon: "🟢", network: "monad", txCount: 0, volume: "$0" },
     ],
     testnet: [
       { name: "Avalanche Fuji", icon: "🔺", network: "avalanche-fuji", txCount: 892, volume: "$234K" },
       { name: "Base Sepolia", icon: "🔵", network: "base-sepolia", txCount: 634, volume: "$145K" },
+      { name: "Sepolia", icon: "⟠", network: "sepolia", txCount: 756, volume: "$178K" },
+      { name: "Polygon Amoy", icon: "🟣", network: "polygon-amoy", txCount: 523, volume: "$98K" },
+      { name: "Arbitrum Sepolia", icon: "🔷", network: "arbitrum-sepolia", txCount: 445, volume: "$87K" },
+      { name: "OP Sepolia", icon: "🔴", network: "optimism-sepolia", txCount: 389, volume: "$72K" },
+      { name: "Celo Sepolia", icon: "🟡", network: "celo-sepolia", txCount: 234, volume: "$45K" },
+      { name: "Monad Testnet", icon: "🟢", network: "monad-testnet", txCount: 178, volume: "$32K" },
     ],
   };
 
@@ -297,7 +309,7 @@ export default function Home() {
                 Web3 Agents
               </h2>
               <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-                Multi-chain payment infrastructure built for communities. Supporting x402, service discovery, and gasless transactions across Avalanche and Base.
+                Multi-chain payment infrastructure built for communities. Supporting x402, service discovery, and gasless transactions across 8 networks including Ethereum, Avalanche, Base, Polygon, Arbitrum, and Optimism.
               </p>
             </div>
 
@@ -455,26 +467,28 @@ export default function Home() {
             </div>
 
             {/* Network Cards with Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {activeNetworks.map((network) => (
                 <div
                   key={network.network}
-                  className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-6 backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/70 transition-all duration-300"
+                  className="bg-slate-800/50 border border-blue-500/30 rounded-xl p-4 backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/70 transition-all duration-300"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-5xl">{network.icon}</span>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-400">Transactions</div>
-                      <div className="text-xl font-bold text-cyan-400">{network.txCount.toLocaleString()}</div>
+                  <div className="flex items-center space-x-3 mb-3">
+                    <span className="text-3xl">{network.icon}</span>
+                    <div>
+                      <div className="text-base font-semibold text-gray-200">{network.name}</div>
+                      <div className="text-xs text-gray-400 font-mono">{network.network}</div>
                     </div>
                   </div>
-                  <div className="text-lg font-semibold text-gray-200 mb-2">{network.name}</div>
-                  <div className="text-sm text-gray-400 font-mono bg-slate-900/50 px-3 py-1 rounded-md mb-3">
-                    {network.network}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Volume:</span>
-                    <span className="text-blue-400 font-semibold">{network.volume}</span>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <div className="text-xs text-gray-400">Transactions</div>
+                      <div className="text-base font-bold text-cyan-400">{network.txCount.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400">Volume</div>
+                      <div className="text-base font-bold text-blue-400">{network.volume}</div>
+                    </div>
                   </div>
                 </div>
               ))}

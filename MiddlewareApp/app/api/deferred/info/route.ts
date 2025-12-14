@@ -26,6 +26,16 @@ export async function GET(request: Request) {
     "celo-sepolia": CHAIN_IDS.CELO_SEPOLIA,
     base: CHAIN_IDS.BASE,
     "base-sepolia": CHAIN_IDS.BASE_SEPOLIA,
+    ethereum: CHAIN_IDS.ETHEREUM,
+    sepolia: CHAIN_IDS.SEPOLIA,
+    polygon: CHAIN_IDS.POLYGON,
+    "polygon-amoy": CHAIN_IDS.POLYGON_AMOY,
+    monad: CHAIN_IDS.MONAD,
+    "monad-testnet": CHAIN_IDS.MONAD_TESTNET,
+    arbitrum: CHAIN_IDS.ARBITRUM,
+    "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
+    optimism: CHAIN_IDS.OPTIMISM,
+    "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
   };
 
   return NextResponse.json({
