@@ -373,11 +373,11 @@ Returns ERC-8004 compliant agent registration:
     "totalTransactions": 0,
     "successRate": 0,
     "averageRating": 0,
-    "lastUpdated": "2024-01-01T00:00:00.000Z"
+    "lastUpdated": "2025-12-08T00:00:00.000Z"
   },
   "version": "1.0.0",
   "spec": "ERC-8004",
-  "created": "2024-01-01T00:00:00.000Z"
+  "created": "2025-12-08T00:00:00.000Z"
 }
 ```
 
