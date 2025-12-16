@@ -147,6 +147,13 @@ export default function Home() {
       features: ["Zero Gas Fees", "Community UX", "Easy Onboarding"],
       endpoint: "/.well-known/erc-8004.json",
     },
+    {
+      title: "Dynamic Pricing",
+      description: "Vendor-defined pricing strategies with full control. Fixed, tiered, usage-based pricing with idempotency guarantees.",
+      icon: "💰",
+      features: ["Tiered Discounts", "Usage-Based", "Idempotent"],
+      endpoint: "/api/v2/pricing",
+    },
   ];
 
   // Active networks based on tab selection (from API data)
@@ -702,7 +709,7 @@ const { isValid, payer } = await response.json();`}
               API Reference
             </h3>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* x402 Endpoints */}
               <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
                 <h4 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
@@ -745,6 +752,34 @@ const { isValid, payer } = await response.json();`}
                   ].map((endpoint) => (
                     <div key={endpoint.path} className="flex items-start space-x-2 text-sm">
                       <span className="px-2 py-0.5 rounded text-xs font-mono bg-green-500/20 text-green-400">
+                        {endpoint.method}
+                      </span>
+                      <div className="flex-1">
+                        <code className="text-cyan-400 text-xs">{endpoint.path}</code>
+                        <p className="text-gray-400 text-xs mt-1">{endpoint.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic Pricing Endpoints */}
+              <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <h4 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                  <span className="text-2xl mr-2">💰</span>
+                  Dynamic Pricing
+                </h4>
+                <div className="space-y-2">
+                  {[
+                    { method: "POST", path: "/api/v2/pricing/calculate", desc: "Calculate price" },
+                    { method: "GET", path: "/api/v2/pricing/config", desc: "Get vendor config" },
+                    { method: "POST", path: "/api/v2/pricing/config", desc: "Set pricing strategy" },
+                    { method: "GET", path: "/api/v2/pricing/analytics", desc: "Pricing analytics" },
+                  ].map((endpoint) => (
+                    <div key={endpoint.path} className="flex items-start space-x-2 text-sm">
+                      <span className={`px-2 py-0.5 rounded text-xs font-mono ${
+                        endpoint.method === "POST" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"
+                      }`}>
                         {endpoint.method}
                       </span>
                       <div className="flex-1">

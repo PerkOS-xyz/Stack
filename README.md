@@ -470,6 +470,51 @@ Track everything out of the box:
 - Daily/weekly/monthly spending trends
 - Automated alerts for budget overages
 
+### 6. Dynamic Pricing (NEW)
+
+**Vendor-defined pricing strategies** that give complete control over API monetization:
+
+```mermaid
+flowchart LR
+    subgraph Strategies["PRICING STRATEGIES"]
+        direction TB
+        F["Fixed<br/>$0.01/request"]
+        T["Tiered<br/>Volume discounts"]
+        U["Usage-Based<br/>Per token/byte"]
+    end
+
+    subgraph Features["KEY FEATURES"]
+        direction TB
+        I["Idempotent<br/>Same request = same price"]
+        C["Cached<br/>5-min TTL default"]
+        E["Extensible<br/>Custom strategies"]
+    end
+
+    Strategies --> Features
+
+    style Strategies fill:#dbeafe,stroke:#3b82f6
+    style Features fill:#d1fae5,stroke:#10b981
+```
+
+**Supported Strategies:**
+- **Fixed**: Simple per-request pricing
+- **Tiered**: Volume-based discounts (first 100 requests at $0.01, next 900 at $0.005, etc.)
+- **Usage-Based**: Per-token, per-byte, or per-compute-unit pricing
+- **Subscription**: Monthly plans with included requests *(coming soon)*
+- **Custom**: Register your own pricing logic
+
+**Idempotency Guarantee**: Same request characteristics always return the same price within the cache TTL, ensuring predictable costs for clients.
+
+```typescript
+// Calculate price for an endpoint
+const price = await pricingService.calculatePriceForEndpoint(
+  vendorId,
+  "/api/ai/generate",
+  { userAddress: "0x...", body: { prompt: "Hello world" } }
+);
+// Returns: { amount: "10000", asset: "0x...", network: "base-sepolia" }
+```
+
 ---
 
 ## Quick Start
@@ -789,6 +834,16 @@ PerkOS Stack uses **Supabase (PostgreSQL)** with 15 tables organized by function
 | `perkos_agents` | Agent reputation |
 | `perkos_reviews` | Community ratings |
 
+### Dynamic Pricing Tables (NEW)
+
+| Table | Purpose |
+|-------|---------|
+| `perkos_vendor_pricing_configs` | Vendor pricing strategy configurations |
+| `perkos_vendor_user_tiers` | User tier and usage tracking per vendor |
+| `perkos_vendor_subscription_plans` | Vendor-defined subscription plans |
+| `perkos_vendor_user_subscriptions` | Active user subscriptions |
+| `perkos_price_calculations` | Price calculation analytics log |
+
 See [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md) for complete schema.
 
 ---
@@ -843,6 +898,7 @@ PROXY_ADDRESS=0x... npm run upgrade:base
 | [Docs/DEPLOYMENT_CHECKLIST.md](Docs/DEPLOYMENT_CHECKLIST.md) | Production checklist |
 | [Docs/X402_DEFERRED_SCHEME.md](Docs/X402_DEFERRED_SCHEME.md) | Deferred payments guide |
 | [Docs/MULTI_CHAIN_GUIDE.md](Docs/MULTI_CHAIN_GUIDE.md) | Network configuration |
+| [Docs/DYNAMIC_PRICING_SPEC.md](Docs/DYNAMIC_PRICING_SPEC.md) | Dynamic pricing specification |
 
 ---
 
