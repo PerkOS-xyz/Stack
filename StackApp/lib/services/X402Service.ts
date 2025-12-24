@@ -43,8 +43,45 @@ export class X402Service {
     }
   }
 
+  /**
+   * Convert CAIP-2 network format to legacy format
+   * e.g., "eip155:43114" -> "avalanche"
+   */
+  private caip2ToLegacyNetwork(caip2: string): SupportedNetwork | null {
+    const caip2Map: Record<string, SupportedNetwork> = {
+      "eip155:43114": "avalanche",
+      "eip155:43113": "avalanche-fuji",
+      "eip155:42220": "celo",
+      "eip155:11142220": "celo-sepolia",
+      "eip155:8453": "base",
+      "eip155:84532": "base-sepolia",
+      "eip155:1": "ethereum",
+      "eip155:11155111": "sepolia",
+      "eip155:137": "polygon",
+      "eip155:80002": "polygon-amoy",
+      // Add more as needed
+    };
+    return caip2Map[caip2] || null;
+  }
+
+  /**
+   * Normalize network format (CAIP-2 or legacy) to legacy format
+   */
+  private normalizeNetwork(network: string): SupportedNetwork | null {
+    // If already in legacy format, return as-is
+    if (SUPPORTED_NETWORKS.includes(network as SupportedNetwork)) {
+      return network as SupportedNetwork;
+    }
+    // If in CAIP-2 format, convert to legacy
+    if (network.includes(":")) {
+      return this.caip2ToLegacyNetwork(network);
+    }
+    return null;
+  }
+
   private isValidNetwork(network: string): network is SupportedNetwork {
-    return SUPPORTED_NETWORKS.includes(network as SupportedNetwork);
+    // Accept both legacy format and CAIP-2 format
+    return this.normalizeNetwork(network) !== null;
   }
 
   private getExactScheme(network: SupportedNetwork): ExactSchemeService {
@@ -65,17 +102,25 @@ export class X402Service {
   async verify(request: X402VerifyRequest): Promise<VerifyResponse> {
     const { paymentPayload, paymentRequirements } = request;
 
-    // Validate versions
-    if (request.x402Version !== 1 || paymentPayload.x402Version !== 1) {
+    // Validate versions - support both V1 and V2
+    // V1: x402Version: 1, network: string (e.g., "base-sepolia")
+    // V2: x402Version: 2, network: CAIP-2 (e.g., "eip155:84532")
+    const isV1 = request.x402Version === 1 && paymentPayload.x402Version === 1;
+    const isV2 = request.x402Version === 2 && paymentPayload.x402Version === 2;
+    
+    if (!isV1 && !isV2) {
       return {
         isValid: false,
-        invalidReason: "Unsupported x402 version",
+        invalidReason: `Unsupported x402 version. Expected 1 or 2, got ${request.x402Version} (payload: ${paymentPayload.x402Version})`,
         payer: null,
       };
     }
 
-    // Validate network
-    if (!this.isValidNetwork(paymentPayload.network)) {
+    // Validate and normalize networks (support both legacy and CAIP-2)
+    const normalizedPayloadNetwork = this.normalizeNetwork(paymentPayload.network);
+    const normalizedRequirementsNetwork = this.normalizeNetwork(paymentRequirements.network);
+
+    if (!normalizedPayloadNetwork) {
       return {
         isValid: false,
         invalidReason: `Unsupported network: ${paymentPayload.network}`,
@@ -83,11 +128,19 @@ export class X402Service {
       };
     }
 
-    // Validate network consistency
-    if (paymentPayload.network !== paymentRequirements.network) {
+    if (!normalizedRequirementsNetwork) {
       return {
         isValid: false,
-        invalidReason: "Network mismatch between payload and requirements",
+        invalidReason: `Unsupported network: ${paymentRequirements.network}`,
+        payer: null,
+      };
+    }
+
+    // Validate network consistency (compare normalized networks)
+    if (normalizedPayloadNetwork !== normalizedRequirementsNetwork) {
+      return {
+        isValid: false,
+        invalidReason: `Network mismatch between payload (${paymentPayload.network} -> ${normalizedPayloadNetwork}) and requirements (${paymentRequirements.network} -> ${normalizedRequirementsNetwork})`,
         payer: null,
       };
     }
@@ -101,7 +154,8 @@ export class X402Service {
       };
     }
 
-    const network = paymentPayload.network;
+    // Use normalized network for scheme routing
+    const network = normalizedPayloadNetwork;
 
     // Route to appropriate scheme
     if (paymentPayload.scheme === "exact") {
@@ -139,19 +193,25 @@ export class X402Service {
   async settle(request: X402SettleRequest): Promise<SettleResponse> {
     const { paymentPayload, paymentRequirements } = request;
 
-    // Validate versions
-    if (request.x402Version !== 1 || paymentPayload.x402Version !== 1) {
+    // Validate versions - support both V1 and V2
+    // V1: x402Version: 1, network: string (e.g., "base-sepolia")
+    // V2: x402Version: 2, network: CAIP-2 (e.g., "eip155:84532")
+    const isV1 = request.x402Version === 1 && paymentPayload.x402Version === 1;
+    const isV2 = request.x402Version === 2 && paymentPayload.x402Version === 2;
+    
+    if (!isV1 && !isV2) {
       return {
         success: false,
-        errorReason: "Unsupported x402 version",
+        errorReason: `Unsupported x402 version. Expected 1 or 2, got ${request.x402Version} (payload: ${paymentPayload.x402Version})`,
         payer: null,
         transaction: null,
         network: paymentPayload.network || config.defaultNetwork,
       };
     }
 
-    // Validate network
-    if (!this.isValidNetwork(paymentPayload.network)) {
+    // Validate and normalize network (support both legacy and CAIP-2)
+    const normalizedNetwork = this.normalizeNetwork(paymentPayload.network);
+    if (!normalizedNetwork) {
       return {
         success: false,
         errorReason: `Unsupported network: ${paymentPayload.network}`,
@@ -183,7 +243,8 @@ export class X402Service {
       };
     }
 
-    const network = paymentPayload.network;
+    // Use normalized network for scheme routing
+    const network = normalizedNetwork;
 
     // Route to appropriate scheme
     if (paymentPayload.scheme === "exact") {
