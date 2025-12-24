@@ -58,6 +58,7 @@ export function Header() {
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensAvatar, setEnsAvatar] = useState<string | null>(null);
   const [hasSponsorWallet, setHasSponsorWallet] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const { disconnect } = useDisconnect();
@@ -140,6 +141,27 @@ export function Header() {
       }
     }
     checkSponsorWallet();
+  }, [account?.address]);
+
+  // Check if user is admin
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!account?.address) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const response = await fetch(`/api/admin/verify?address=${account.address}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsAdmin(data.isAdmin === true);
+        }
+      } catch (error) {
+        console.error("Failed to check admin status:", error);
+        setIsAdmin(false);
+      }
+    }
+    checkAdminStatus();
   }, [account?.address]);
 
   // Close user menu when clicking outside
@@ -322,6 +344,21 @@ export function Header() {
                         <span>Wallet</span>
                       </Link>
                     )}
+                    {/* Admin link - only shown for admin wallets */}
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2.5 text-sm transition-all ${
+                          isActive("/admin")
+                            ? "text-red-400 bg-red-500/10"
+                            : "text-gray-300 hover:text-red-400 hover:bg-red-500/10"
+                        }`}
+                      >
+                        <span>🛡️</span>
+                        <span>Admin</span>
+                      </Link>
+                    )}
                   </div>
 
                   {/* Logout */}
@@ -426,6 +463,21 @@ export function Header() {
                     >
                       <span>💰</span>
                       <span>Wallet</span>
+                    </Link>
+                  )}
+                  {/* Admin link - only shown for admin wallets */}
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`px-4 py-3 text-sm hover:bg-red-500/10 rounded-lg transition-all flex items-center space-x-3 ${
+                        isActive("/admin")
+                          ? "text-red-400 font-medium"
+                          : "text-gray-300 hover:text-red-400"
+                      }`}
+                    >
+                      <span>🛡️</span>
+                      <span>Admin</span>
                     </Link>
                   )}
                   <div className="border-t border-blue-500/20 my-2"></div>
