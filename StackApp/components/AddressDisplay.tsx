@@ -13,16 +13,18 @@ interface AddressDisplayProps {
   address: Address;
   showFullAddress?: boolean;
   className?: string;
+  skipEns?: boolean;
 }
 
 export function AddressDisplay({
   address,
   showFullAddress = false,
-  className = ''
+  className = '',
+  skipEns = false
 }: AddressDisplayProps) {
-  const { ensName, isLoading } = useEnsName(address);
+  const { ensName, isLoading } = useEnsName(skipEns ? undefined : address);
 
-  if (isLoading) {
+  if (isLoading && !skipEns) {
     return (
       <span className={`font-mono text-cyan-400 ${className}`}>
         Loading...
@@ -32,7 +34,7 @@ export function AddressDisplay({
 
   const displayText = showFullAddress && !ensName
     ? address
-    : formatAddressDisplay(address, ensName);
+    : formatAddressDisplay(address, skipEns ? null : ensName);
 
   return (
     <span className={`font-mono text-cyan-400 ${className}`} title={address}>
