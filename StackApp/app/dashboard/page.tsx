@@ -8,6 +8,7 @@ import { toast, Toaster } from 'sonner';
 import { AddressDisplay } from '@/components/AddressDisplay';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { NetworkBalanceGrid } from "@/components/NetworkBalanceGrid";
 import type { Address } from 'viem';
 import Link from 'next/link';
 
@@ -97,6 +98,8 @@ export default function DashboardPage() {
   const [newDomain, setNewDomain] = useState('');
   const [addingRule, setAddingRule] = useState(false);
   const [activeTab, setActiveTab] = useState<'agent' | 'vendor' | 'spending' | 'time' | 'multichain' | 'notifications'>('agent');
+  const [multiNetworkBalances, setMultiNetworkBalances] = useState<Record<string, any>>({});
+  const [loadingMultiNetworkBalances, setLoadingMultiNetworkBalances] = useState<Record<string, boolean>>({});
 
   // Check if profile is complete (has display_name and account_type)
   const isProfileComplete = profile?.display_name && profile?.account_type;
@@ -131,7 +134,15 @@ export default function DashboardPage() {
       const response = await fetch(`/api/sponsor/wallets?address=${address}`);
       if (response.ok) {
         const data = await response.json();
-        setWallets(data.wallets || []);
+        const loadedWallets = data.wallets || [];
+        setWallets(loadedWallets);
+
+        // Auto-load network balances for each wallet
+        loadedWallets.forEach((wallet: SponsorWallet) => {
+          if (wallet.sponsor_address) {
+            loadMultiNetworkBalances(wallet.sponsor_address);
+          }
+        });
       }
     } catch (error) {
       console.error('Failed to load wallets:', error);
@@ -195,6 +206,23 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Failed to refresh balance:', error);
+    }
+  };
+
+  const loadMultiNetworkBalances = async (sponsorAddress: string) => {
+    if (!sponsorAddress) return;
+    
+    setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: true }));
+    try {
+      const response = await fetch(`/api/sponsor/wallets/balance-all-networks?address=${sponsorAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: data }));
+      }
+    } catch (error) {
+      console.error('Failed to load multi-network balances:', error);
+    } finally {
+      setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: false }));
     }
   };
 
@@ -609,63 +637,54 @@ export default function DashboardPage() {
 
           {/* Wallet List */}
           {wallets.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {wallets.map((wallet) => (
                 <div
                   key={wallet.id}
-                  className="bg-slate-900/50 border border-blue-500/20 backdrop-blur-sm rounded-lg p-4 hover:border-blue-400/40 transition-all"
+                  className="bg-slate-900/50 border border-blue-500/20 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/40 transition-all"
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  {/* Wallet Header */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                     <div>
-                      <h3 className="font-semibold text-gray-200">
-                        {wallet.network === 'evm' ? 'EVM Multi-Chain Wallet' : wallet.network}
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                        EVM Multi-Chain Sponsor Wallet
                       </h3>
                       <p className="text-sm text-gray-400 mt-1">
                         Created {new Date(wallet.created_at).toLocaleDateString()}
                       </p>
-                      {wallet.network === 'evm' && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">🔺 AVAX</span>
-                          <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">🔵 Base</span>
-                          <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">⟠ ETH</span>
-                          <span className="text-xs bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">🟣 Polygon</span>
-                          <span className="text-xs bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">🔷 Arbitrum</span>
-                          <span className="text-xs bg-red-600/20 text-red-300 px-1.5 py-0.5 rounded">🔴 OP</span>
-                          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">🟡 Celo</span>
-                          <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">🟢 Monad</span>
-                        </div>
-                      )}
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div>
-                          <p className="text-sm text-gray-400">Balance</p>
-                          <p className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                            {(Number(wallet.balance) / 1e18).toFixed(4)} {wallet.network === 'evm' ? 'Native' : wallet.network === 'avalanche' ? 'AVAX' : wallet.network === 'base' ? 'ETH' : 'CELO'}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => refreshBalance(wallet.id)}
-                          className="text-cyan-400 hover:text-cyan-300 transition-colors p-1"
-                          title="Refresh balance"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        </button>
-                      </div>
+                    {/* Action Buttons - Top Right */}
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedWallet(wallet);
+                          setShowRulesModal(true);
+                          loadRules(wallet.id);
+                        }}
+                        className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all border border-purple-500/20"
+                      >
+                        Configure Rules
+                      </button>
+                      <button
+                        onClick={() => openAnalyticsModal(wallet)}
+                        className="flex-1 sm:flex-none bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-all"
+                      >
+                        View Analytics
+                      </button>
                     </div>
                   </div>
 
-                  <div className="bg-slate-800/80 border border-blue-500/20 rounded p-3 mb-3">
-                    <p className="text-xs text-gray-400 mb-1">Sponsor Address</p>
-                    <div className="flex items-center justify-between">
-                      <code className="text-sm font-mono text-gray-300">
+                  {/* Sponsor Address */}
+                  <div className="bg-slate-800/80 border border-blue-500/20 rounded-lg p-4 mb-6">
+                    <p className="text-xs text-gray-400 mb-2">Sponsor Address</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <code className="text-sm font-mono text-gray-300 break-all">
                         {wallet.sponsor_address}
                       </code>
                       <button
                         onClick={() => copyToClipboard(wallet.sponsor_address)}
-                        className="ml-2 text-cyan-400 hover:text-cyan-300 transition-colors"
+                        className="flex-shrink-0 text-cyan-400 hover:text-cyan-300 transition-colors p-2 hover:bg-slate-700/50 rounded"
+                        title="Copy address"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -674,31 +693,57 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedWallet(wallet);
-                        setShowRulesModal(true);
-                        loadRules(wallet.id);
-                      }}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all border border-purple-500/20"
-                    >
-                      Configure Rules
-                    </button>
-                    <button
-                      onClick={() => openAnalyticsModal(wallet)}
-                      className="flex-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-all"
-                    >
-                      View Analytics
-                    </button>
+                  {/* Network Balances Grid - Always show for EVM wallets */}
+                  <div>
+                    {multiNetworkBalances[wallet.sponsor_address] ? (
+                        <NetworkBalanceGrid
+                          balances={multiNetworkBalances[wallet.sponsor_address].balances}
+                          isLoading={loadingMultiNetworkBalances[wallet.sponsor_address] || false}
+                          onRefresh={() => {
+                            loadMultiNetworkBalances(wallet.sponsor_address);
+                            refreshBalance(wallet.id);
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-gray-400 mb-4">View gas balances across all supported networks</p>
+                          <button
+                            onClick={() => loadMultiNetworkBalances(wallet.sponsor_address)}
+                            disabled={loadingMultiNetworkBalances[wallet.sponsor_address]}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all disabled:opacity-50"
+                          >
+                            {loadingMultiNetworkBalances[wallet.sponsor_address] ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading Balances...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Load Network Balances
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-400">
-              <p>No sponsor wallets created yet.</p>
-              <p className="text-sm mt-2 text-gray-500">Create a wallet to start sponsoring gas fees.</p>
+            <div className="text-center py-12 text-gray-400">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium">No sponsor wallets created yet</p>
+              <p className="text-sm mt-2 text-gray-500">Create a wallet to start sponsoring gas fees for your agents</p>
             </div>
           )}
         </div>
