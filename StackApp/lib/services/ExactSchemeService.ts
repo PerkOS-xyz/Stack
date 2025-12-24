@@ -88,10 +88,17 @@ export class ExactSchemeService {
       }
 
       // 3. Verify signer matches 'from' address
+      logger.info("Signature verification details", {
+        network: this.network,
+        recoveredSigner: signer,
+        fromAddress: authorization.from,
+        signerMatch: signer.toLowerCase() === authorization.from.toLowerCase(),
+      });
+      
       if (signer.toLowerCase() !== authorization.from.toLowerCase()) {
         return {
           isValid: false,
-          invalidReason: "Signer does not match 'from' address",
+          invalidReason: `Signer does not match 'from' address. Recovered: ${signer}, Expected: ${authorization.from}`,
           payer: null,
         };
       }
@@ -345,6 +352,21 @@ export class ExactSchemeService {
         chainId,
         verifyingContract: tokenAddress,
       };
+      
+      logger.info("Recovering signer", {
+        network: this.network,
+        chainId,
+        tokenAddress,
+        domain,
+        authorization: {
+          from: authorization.from,
+          to: authorization.to,
+          value: authorization.value,
+          validAfter: authorization.validAfter,
+          validBefore: authorization.validBefore,
+          nonce: authorization.nonce,
+        },
+      });
 
       const types = {
         TransferWithAuthorization: [
@@ -372,6 +394,11 @@ export class ExactSchemeService {
         primaryType: "TransferWithAuthorization",
         message,
         signature,
+      });
+      
+      logger.info("Signature recovery result", {
+        recoveredAddress,
+        signature: signature.substring(0, 20) + "...",
       });
 
       return recoveredAddress;
