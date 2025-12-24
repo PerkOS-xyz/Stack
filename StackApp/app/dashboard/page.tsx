@@ -33,6 +33,8 @@ interface SponsorWallet {
   sponsor_address: string;
   balance: string;
   created_at: string;
+  wallet_name?: string;
+  is_public?: boolean;
 }
 
 interface SpendingTransaction {
@@ -75,7 +77,6 @@ export default function DashboardPage() {
   const isConnected = !!account;
 
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
-  const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -100,6 +101,16 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'agent' | 'vendor' | 'spending' | 'time' | 'multichain' | 'notifications'>('agent');
   const [multiNetworkBalances, setMultiNetworkBalances] = useState<Record<string, any>>({});
   const [loadingMultiNetworkBalances, setLoadingMultiNetworkBalances] = useState<Record<string, boolean>>({});
+
+  // New wallet creation state
+  const [showCreateWalletModal, setShowCreateWalletModal] = useState(false);
+  const [newWalletName, setNewWalletName] = useState('');
+  const [newWalletIsPublic, setNewWalletIsPublic] = useState(false);
+  const [creatingWallet, setCreatingWallet] = useState(false);
+
+  // Wallet name editing state
+  const [editingWalletId, setEditingWalletId] = useState<string | null>(null);
+  const [editingWalletName, setEditingWalletName] = useState('');
 
   // Check if profile is complete (has display_name and account_type)
   const isProfileComplete = profile?.display_name && profile?.account_type;
@@ -165,10 +176,10 @@ export default function DashboardPage() {
     }
   };
 
-  const createWallet = async (network: string) => {
+  const createWallet = async (network: string, walletName?: string, isPublic?: boolean) => {
     if (!address) return;
 
-    setLoading(true);
+    setCreatingWallet(true);
     try {
       const response = await fetch('/api/sponsor/wallets', {
         method: 'POST',
@@ -176,20 +187,54 @@ export default function DashboardPage() {
         body: JSON.stringify({
           userWalletAddress: address,
           network,
+          walletName: walletName || undefined,
+          isPublic: isPublic || false,
         }),
       });
 
       if (response.ok) {
+        toast.success('Sponsor wallet created successfully!');
+        setShowCreateWalletModal(false);
+        setNewWalletName('');
+        setNewWalletIsPublic(false);
         await loadWallets();
       } else {
         const error = await response.json();
-        alert(`Failed to create wallet: ${error.error}`);
+        toast.error(`Failed to create wallet: ${error.error}`);
       }
     } catch (error) {
       console.error('Failed to create wallet:', error);
-      alert('Failed to create wallet. Please try again.');
+      toast.error('Failed to create wallet. Please try again.');
     } finally {
-      setLoading(false);
+      setCreatingWallet(false);
+    }
+  };
+
+  const updateWallet = async (walletId: string, walletName?: string, isPublic?: boolean) => {
+    if (!address) return;
+
+    try {
+      const response = await fetch('/api/sponsor/wallets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletId,
+          userWalletAddress: address,
+          walletName,
+          isPublic,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Wallet updated successfully!');
+        await loadWallets();
+      } else {
+        const error = await response.json();
+        toast.error(`Failed to update wallet: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to update wallet:', error);
+      toast.error('Failed to update wallet. Please try again.');
     }
   };
 
@@ -611,12 +656,14 @@ export default function DashboardPage() {
           <div className="max-w-md mb-6">
             <div className="flex gap-2">
               <button
-                onClick={() => createWallet('evm')}
-                disabled={loading || wallets.length > 0 || !isProfileComplete}
+                onClick={() => setShowCreateWalletModal(true)}
+                disabled={creatingWallet || !isProfileComplete}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
               >
-                <span className="mr-2">⛓️</span>
-                {wallets.length > 0 ? 'EVM Wallet Created' : 'Create EVM Sponsor Wallet'}
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                {wallets.length > 0 ? 'Add Another Wallet' : 'Create EVM Sponsor Wallet'}
               </button>
               {wallets.length > 0 && (
                 <Link
@@ -645,10 +692,97 @@ export default function DashboardPage() {
                 >
                   {/* Wallet Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                        EVM Multi-Chain Sponsor Wallet
-                      </h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        {editingWalletId === wallet.id ? (
+                          // Inline edit mode
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingWalletName}
+                              onChange={(e) => setEditingWalletName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateWallet(wallet.id, editingWalletName);
+                                  setEditingWalletId(null);
+                                } else if (e.key === 'Escape') {
+                                  setEditingWalletId(null);
+                                }
+                              }}
+                              className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1 text-lg font-bold text-cyan-400 focus:outline-none focus:border-blue-400 w-48"
+                              autoFocus
+                              placeholder="Wallet name..."
+                            />
+                            <button
+                              onClick={() => {
+                                updateWallet(wallet.id, editingWalletName);
+                                setEditingWalletId(null);
+                              }}
+                              className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                              title="Save"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setEditingWalletId(null)}
+                              className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                              title="Cancel"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          // Display mode with edit button
+                          <div className="flex items-center gap-2 group">
+                            <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                              {wallet.wallet_name || 'Sponsor Wallet'}
+                            </h3>
+                            <button
+                              onClick={() => {
+                                setEditingWalletId(wallet.id);
+                                setEditingWalletName(wallet.wallet_name || '');
+                              }}
+                              className="p-1 text-gray-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
+                              title="Edit wallet name"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                        {/* Public/Private Badge */}
+                        <button
+                          onClick={() => updateWallet(wallet.id, undefined, !wallet.is_public)}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
+                            wallet.is_public
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
+                              : 'bg-slate-700/50 text-gray-400 border border-slate-600 hover:bg-slate-700'
+                          }`}
+                          title={wallet.is_public ? 'Click to make private' : 'Click to make public'}
+                        >
+                          {wallet.is_public ? (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                              </svg>
+                              Public
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                              Private
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500">EVM Multi-Chain</p>
                       <p className="text-sm text-gray-400 mt-1">
                         Created {new Date(wallet.created_at).toLocaleDateString()}
                       </p>
@@ -776,6 +910,119 @@ export default function DashboardPage() {
           </div>
         </div>
         </main>
+
+        {/* Create Wallet Modal */}
+        {showCreateWalletModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 border border-blue-500/30 rounded-xl max-w-md w-full">
+              {/* Modal Header */}
+              <div className="border-b border-blue-500/20 p-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                    Create New Sponsor Wallet
+                  </h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    EVM Multi-Chain Wallet
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCreateWalletModal(false);
+                    setNewWalletName('');
+                    setNewWalletIsPublic(false);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                {/* Wallet Name Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Wallet Name / Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={newWalletName}
+                    onChange={(e) => setNewWalletName(e.target.value)}
+                    placeholder="e.g., Production API, Testing, Marketing"
+                    className="w-full bg-slate-900/80 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Give your wallet a name to easily identify its purpose
+                  </p>
+                </div>
+
+                {/* Public/Private Toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-300">Make Wallet Public</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Public wallets appear in the community directory
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setNewWalletIsPublic(!newWalletIsPublic)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      newWalletIsPublic ? 'bg-green-500' : 'bg-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                        newWalletIsPublic ? 'left-6' : 'left-0.5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Info Box */}
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm text-gray-300">
+                      <p className="font-medium text-blue-400 mb-1">Multi-Chain Wallet</p>
+                      <p className="text-gray-400">
+                        This wallet works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Create Button */}
+                <button
+                  onClick={() => createWallet('evm', newWalletName, newWalletIsPublic)}
+                  disabled={creatingWallet}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center"
+                >
+                  {creatingWallet ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating Wallet...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create Sponsor Wallet
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Configure Rules Modal */}
         {showRulesModal && selectedWallet && (
