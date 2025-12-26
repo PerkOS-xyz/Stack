@@ -10,9 +10,11 @@ Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across mul
 
 - 🔌 **REST APIs**: Standards-compliant x402 facilitator endpoints for payment verification and settlement
 - 💰 **x402 Micropayments**: Dual payment schemes (exact + deferred) with gasless transactions
-- 🔍 **Agent Discovery**: ERC-8004 compliant identity and reputation system
-- ⛓️ **Multi-Chain**: Avalanche (43114), Base (8453), and Celo (42220) with testnet support
-- 🔐 **Production-Ready**: Upgradeable contracts, event indexing, and enterprise security
+- 🪪 **ERC-8004 Identity**: On-chain agent identity NFTs (ERC-721) with metadata storage
+- ⭐ **Reputation System**: On-chain feedback with EIP-712 signatures and aggregated ratings
+- 🛡️ **Validation Registry**: Stake-based validator attestations with confidence scoring
+- ⛓️ **Multi-Chain**: 16 networks including Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism
+- 🔐 **Production-Ready**: UUPS upgradeable contracts, event indexing, and enterprise security
 - 📊 **Analytics & Monitoring**: Real-time dashboards and network statistics
 
 ## Project Structure
@@ -26,15 +28,24 @@ PerkOS-Stack/
 │   ├── X402_DEFERRED_SCHEME.md  # Deferred payments guide
 │   ├── MULTI_CHAIN_GUIDE.md     # Multi-chain configuration
 │   └── COMPARISON.md            # Solution comparison
-├── Contracts/                    # Smart contracts directory (Hardhat 3.x)
-│   ├── contracts/                # Solidity smart contracts
+├── SmartContracts/               # Smart contracts directory (Foundry)
+│   ├── src/                      # Solidity smart contracts
 │   │   ├── DeferredPaymentEscrow.sol            # Legacy non-upgradeable
-│   │   └── DeferredPaymentEscrowUpgradeable.sol # UUPS upgradeable (recommended)
+│   │   ├── DeferredPaymentEscrowUpgradeable.sol # UUPS upgradeable (recommended)
+│   │   └── erc8004/              # ERC-8004 Registry Contracts
+│   │       ├── IIdentityRegistry.sol            # Identity interface
+│   │       ├── IdentityRegistry.sol             # ERC-721 agent identity NFT
+│   │       ├── IReputationRegistry.sol          # Reputation interface
+│   │       ├── ReputationRegistry.sol           # On-chain feedback system
+│   │       ├── IValidationRegistry.sol          # Validation interface
+│   │       └── ValidationRegistry.sol           # Third-party attestations
 │   ├── scripts/                  # Deployment scripts
-│   │   └── deploy-upgradeable.ts # UUPS proxy deployment
-│   ├── hardhat.config.ts         # Hardhat configuration
-│   └── package.json              # Contract dependencies
-└── MiddlewareApp/                # PerkOS Stack middleware server (port 3402)
+│   │   └── deploy-erc8004.ts     # ERC-8004 registry deployment
+│   ├── script/                   # Foundry scripts
+│   │   └── DeployUpgradeable.s.sol
+│   ├── lib/                      # Dependencies (forge-std, openzeppelin)
+│   └── foundry.toml              # Foundry configuration
+└── StackApp/                     # PerkOS Stack middleware server (port 3402)
     ├── app/                      # Next.js 15 App Router
     │   ├── page.tsx              # Landing page with analytics
     │   ├── dashboard/            # Admin dashboard
@@ -42,7 +53,7 @@ PerkOS-Stack/
     │   ├── transactions/         # Transaction history
     │   ├── marketplace/          # Service provider marketplace
     │   ├── agents/               # Community agents directory
-    │   └── api/                  # API routes (15+ endpoints)
+    │   └── api/                  # API routes (20+ endpoints)
     │       ├── v2/x402/          # x402 protocol endpoints
     │       │   ├── verify/       # Payment verification
     │       │   ├── settle/       # Payment settlement
@@ -53,6 +64,10 @@ PerkOS-Stack/
     │       │   ├── agent-card.json/     # Agent metadata (ActivityPub-style)
     │       │   ├── erc-8004.json/       # ERC-8004 agent registration
     │       │   └── x402-payment.json/   # x402 payment metadata
+    │       ├── erc8004/          # ERC-8004 Registry API endpoints
+    │       │   ├── identity/     # Agent identity registration
+    │       │   ├── reputation/   # Feedback and ratings
+    │       │   └── validation/   # Third-party attestations
     │       ├── deferred/         # Deferred scheme endpoints
     │       │   ├── info/         # Deferred scheme info
     │       │   ├── vouchers/     # Voucher management
@@ -73,12 +88,17 @@ PerkOS-Stack/
     │   ├── db/                   # Database layer (Supabase)
     │   │   └── supabase.ts       # Supabase client
     │   ├── utils/                # Utilities
-    │   │   ├── chains.ts         # Multi-chain config (6 networks)
+    │   │   ├── chains.ts         # Multi-chain config (16 networks)
     │   │   ├── config.ts         # Application configuration
     │   │   └── logger.ts         # Logging utilities
     │   ├── types/                # TypeScript types
     │   │   └── x402.ts           # x402 protocol types
     │   ├── contracts/            # Smart contract ABIs
+    │   │   └── erc8004/          # ERC-8004 registry ABIs
+    │   │       ├── IdentityRegistry.ts
+    │   │       ├── ReputationRegistry.ts
+    │   │       ├── ValidationRegistry.ts
+    │   │       └── index.ts
     │   └── config/               # Configuration files
     ├── scripts/                  # Deployment and utility scripts
     │   ├── deploy-upgradeable.ts # UUPS proxy deployment (recommended)
@@ -116,10 +136,11 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
 - **Database**: Supabase (PostgreSQL) with 5 core tables (perkos_* prefix)
-- **Smart Contracts**: Hardhat, Solidity, OpenZeppelin
+- **Smart Contracts**: Foundry, Solidity 0.8.20+, OpenZeppelin Upgradeable
 - **Blockchain**: Viem 2.40+, Thirdweb 5.114+, multi-chain RPC providers
 - **Wallet Integration**: Thirdweb SDK, Turnkey wallet service
 - **Event Indexing**: Custom blockchain event listener service (EventIndexer)
+- **ERC-8004**: Three on-chain registries (Identity, Reputation, Validation)
 
 ### Middleware Server Architecture
 
@@ -278,7 +299,135 @@ POST /api/v2/x402/verify
 
 ## ERC-8004: Trustless Agent Discovery
 
-PerkOS x402 implements **ERC-8004** for standardized agent discovery and trust mechanisms.
+PerkOS Stack implements **ERC-8004** for standardized agent discovery and trust mechanisms with three on-chain registries.
+
+### On-Chain Registry Architecture
+
+ERC-8004 defines three interconnected registries for complete agent lifecycle management:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ERC-8004 Registry System                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐ │
+│  │    Identity     │    │   Reputation    │    │   Validation    │ │
+│  │    Registry     │───▶│    Registry     │◀───│    Registry     │ │
+│  │   (ERC-721)     │    │  (On-chain)     │    │  (Attestations) │ │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘ │
+│         │                       │                       │          │
+│         ▼                       ▼                       ▼          │
+│  • Agent NFT mint        • Feedback/ratings      • Validator stake │
+│  • Metadata storage      • EIP-712 signatures    • Attestations    │
+│  • Owner management      • Summary aggregation   • Confidence score│
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 1. Identity Registry (ERC-721)
+
+The Identity Registry mints unique NFTs representing agent identities on-chain.
+
+**Smart Contract**: `SmartContracts/src/erc8004/IdentityRegistry.sol`
+
+```solidity
+// Core functions
+function register(string memory tokenURI_) external returns (uint256 agentId);
+function register(string memory tokenURI_, Metadata[] memory metadata) external returns (uint256 agentId);
+function setMetadata(uint256 agentId, string memory key, bytes memory value) external;
+function getMetadata(uint256 agentId, string memory key) external view returns (bytes memory);
+function getAgentsByOwner(address owner) external view returns (uint256[] memory);
+function totalAgents() external view returns (uint256);
+```
+
+**Key Features**:
+- ERC-721 compliant agent identity NFT
+- URIStorage for metadata management
+- Owner-controlled metadata updates
+- Enumerable agent queries
+
+### 2. Reputation Registry (On-Chain Feedback)
+
+The Reputation Registry enables cryptographically-signed feedback from clients.
+
+**Smart Contract**: `SmartContracts/src/erc8004/ReputationRegistry.sol`
+
+```solidity
+// Feedback with EIP-712 authorization
+struct FeedbackAuth {
+    uint256 agentId;
+    address client;
+    uint256 nonce;
+    uint256 deadline;
+}
+
+struct Feedback {
+    address client;
+    int8 rating;        // -100 to +100
+    string comment;
+    uint256 timestamp;
+    bool revoked;
+    string response;    // Agent's response
+}
+
+// Core functions
+function giveFeedback(uint256 agentId, int8 rating, string memory comment) external returns (uint256);
+function giveFeedback(uint256 agentId, int8 rating, string memory comment, FeedbackAuth memory auth, bytes memory signature) external returns (uint256);
+function revokeFeedback(uint256 agentId, uint256 index) external;
+function appendResponse(uint256 agentId, uint256 index, string memory response) external;
+function getSummary(uint256 agentId) external view returns (ReputationSummary memory);
+```
+
+**Key Features**:
+- EIP-712 typed signature support for delegated feedback
+- Rating scale from -100 (worst) to +100 (best)
+- Agent response capability
+- Aggregated reputation summary (average, positive/negative counts)
+
+### 3. Validation Registry (Third-Party Attestations)
+
+The Validation Registry allows trusted validators to provide attestations about agents.
+
+**Smart Contract**: `SmartContracts/src/erc8004/ValidationRegistry.sol`
+
+```solidity
+struct Validator {
+    string name;
+    string metadataURI;
+    uint256 stake;
+    uint256 registeredAt;
+    bool active;
+    uint256 attestationCount;
+}
+
+struct Attestation {
+    address validator;
+    string attestationType;     // e.g., "security-audit", "performance", "compliance"
+    bytes32 dataHash;
+    string dataURI;
+    uint256 createdAt;
+    uint256 expiresAt;
+    bool revoked;
+    uint8 confidenceScore;      // 0-100
+}
+
+// Validator management (requires minimum stake)
+function registerValidator(string memory name, string memory metadataURI) external payable;
+function updateStake() external payable;
+function withdrawStake(uint256 amount) external;
+
+// Attestation management
+function attest(uint256 agentId, string memory attestationType, bytes32 dataHash, string memory dataURI, uint256 validityPeriod, uint8 confidenceScore) external returns (uint256);
+function revokeAttestation(uint256 agentId, uint256 attestationId) external;
+function getValidationSummary(uint256 agentId) external view returns (ValidationSummary memory);
+function hasValidAttestation(uint256 agentId, string memory attestationType) external view returns (bool);
+```
+
+**Key Features**:
+- Stake-based validator registration (cryptoeconomic security)
+- Multiple attestation types (security, compliance, performance, etc.)
+- Expiring attestations with confidence scores
+- Aggregated validation summary per agent
 
 ### Discovery Endpoints
 
@@ -324,99 +473,141 @@ Returns agent metadata with payment capabilities:
 GET /.well-known/erc-8004.json
 ```
 
-Returns ERC-8004 compliant agent registration:
+Returns ERC-8004 compliant agent registration with on-chain registry integration:
 
 ```json
 {
-  "name": "PerkOS x402 Middleware",
-  "description": "Community-friendly multi-chain payment facilitator",
-  "image": "https://x402.perkos.io/logo.png",
-  "agentId": "0x...",
-  "url": "https://x402.perkos.io",
+  "schemaVersion": "1.0.0",
+  "spec": "ERC-8004",
+  "agent": {
+    "name": "Stack",
+    "description": "Multi-chain x402 payment infrastructure",
+    "image": "https://x402.perkos.io/logo.png"
+  },
+  "identity": {
+    "format": "caip-2",
+    "chains": [
+      {
+        "chainId": "eip155:43114",
+        "registryAddress": "0x...",
+        "agentId": null
+      }
+    ]
+  },
   "endpoints": {
     "a2a": "https://x402.perkos.io/api/v2/x402",
     "mcp": null,
-    "ens": null,
-    "did": null,
-    "wallet": "0x..."
+    "discovery": "https://x402.perkos.io/api/.well-known/erc-8004.json"
   },
-  "capabilities": [
-    "x402-payment-exact",
-    "x402-payment-deferred",
-    "erc-8004-discovery",
-    "multi-chain-support"
-  ],
-  "paymentMethods": [...],
+  "registries": {
+    "identity": {
+      "address": "0x...",
+      "network": "avalanche"
+    },
+    "reputation": {
+      "address": "0x...",
+      "network": "avalanche"
+    },
+    "validation": {
+      "address": "0x...",
+      "network": "avalanche"
+    }
+  },
   "trustModels": [
     {
       "type": "reputation",
-      "description": "On-chain transaction history and community feedback",
-      "enabled": true
+      "description": "On-chain feedback from clients with EIP-712 signatures",
+      "enabled": true,
+      "registry": "reputation"
     },
     {
       "type": "cryptoeconomic",
-      "description": "Stake-secured validation for critical operations",
-      "enabled": false
-    },
-    {
-      "type": "tee-attestation",
-      "description": "Trusted Execution Environment verification",
-      "enabled": false
+      "description": "Stake-secured validator attestations",
+      "enabled": true,
+      "registry": "validation"
     }
-  ],
-  "registration": {
-    "registryAddress": null,
-    "tokenId": null,
-    "registered": false
-  },
-  "reputation": {
-    "totalTransactions": 0,
-    "successRate": 0,
-    "averageRating": 0,
-    "lastUpdated": "2025-12-08T00:00:00.000Z"
-  },
-  "version": "1.0.0",
-  "spec": "ERC-8004",
-  "created": "2025-12-08T00:00:00.000Z"
+  ]
 }
+```
+
+### ERC-8004 API Endpoints
+
+#### Identity Registry API
+
+```
+GET  /api/erc8004/identity?network=avalanche                    # Get identity info
+POST /api/erc8004/identity                                       # Register new agent
+PUT  /api/erc8004/identity                                       # Update metadata
+```
+
+#### Reputation Registry API
+
+```
+GET  /api/erc8004/reputation?network=avalanche&agentId=1        # Get reputation
+POST /api/erc8004/reputation                                     # Submit feedback
+```
+
+#### Validation Registry API
+
+```
+GET  /api/erc8004/validation?network=avalanche&agentId=1        # Get attestations
+POST /api/erc8004/validation                                     # Create attestation
 ```
 
 ### ERC-8004 Trust Models
 
-1. **Reputation System** (✅ Enabled)
-   - On-chain transaction history
-   - Community feedback and ratings
-   - Success rate tracking
+1. **Reputation System** (✅ Implemented)
+   - On-chain feedback with EIP-712 signatures
+   - Rating scale from -100 to +100
+   - Agent response capability
+   - Aggregated reputation metrics
 
-2. **Crypto-economic Validation** (🔜 Planned)
-   - Stake-secured validation
-   - Economic incentives for honest behavior
-   - Slashing for malicious actions
+2. **Crypto-economic Validation** (✅ Implemented)
+   - Stake-based validator registration
+   - Multiple attestation types
+   - Confidence scoring (0-100)
+   - Expiring attestations
 
 3. **TEE Attestation** (🔜 Planned)
    - Trusted Execution Environment verification
    - Hardware-based security guarantees
    - Confidential computing support
 
-### Agent Registration (Future)
+### Environment Configuration
 
-```solidity
-// ERC-721 NFT-based agent registry (planned)
-interface IAgentRegistry {
-    function registerAgent(
-        string memory name,
-        string memory metadataURI
-    ) external returns (uint256 tokenId);
+```bash
+# ERC-8004 Registry Addresses (per network)
+NEXT_PUBLIC_AVALANCHE_IDENTITY_REGISTRY=0x...
+NEXT_PUBLIC_AVALANCHE_REPUTATION_REGISTRY=0x...
+NEXT_PUBLIC_AVALANCHE_VALIDATION_REGISTRY=0x...
 
-    function updateMetadata(
-        uint256 tokenId,
-        string memory metadataURI
-    ) external;
+NEXT_PUBLIC_BASE_IDENTITY_REGISTRY=0x...
+NEXT_PUBLIC_BASE_REPUTATION_REGISTRY=0x...
+NEXT_PUBLIC_BASE_VALIDATION_REGISTRY=0x...
 
-    function getAgentInfo(uint256 tokenId)
-        external view returns (AgentInfo memory);
-}
+# ... similar for all 16 supported networks
 ```
+
+### Deployment
+
+Deploy all three registries using the Foundry deployment script:
+
+```bash
+cd SmartContracts
+
+# Deploy to testnet
+forge script scripts/deploy-erc8004.ts --rpc-url avalanche-fuji --broadcast
+
+# Deploy to mainnet
+forge script scripts/deploy-erc8004.ts --rpc-url avalanche --broadcast
+```
+
+The deployment script automatically:
+1. Deploys IdentityRegistry first
+2. Deploys ReputationRegistry linked to IdentityRegistry
+3. Deploys ValidationRegistry linked to IdentityRegistry
+4. Sets minimum stake for validators
+5. Outputs all contract addresses for `.env` configuration
 
 ## API Reference
 
@@ -496,6 +687,20 @@ GET /api/.well-known/x402-payment.json    # x402 payment metadata
 GET /api/v2/x402/config                   # Configuration endpoint
 GET /api/v2/x402/health                   # Health check endpoint
 GET /api/dashboard/stats                  # Dashboard statistics
+```
+
+### ERC-8004 Registry Endpoints
+
+```
+GET  /api/erc8004/identity                # Get agent identity info
+POST /api/erc8004/identity                # Register new agent identity
+PUT  /api/erc8004/identity                # Update agent metadata
+
+GET  /api/erc8004/reputation              # Get agent reputation summary
+POST /api/erc8004/reputation              # Submit feedback for agent
+
+GET  /api/erc8004/validation              # Get agent attestations
+POST /api/erc8004/validation              # Create new attestation (validators only)
 ```
 
 ### Deferred Payment Endpoints
@@ -766,26 +971,30 @@ See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_G
 
 ### Phase 1: Foundation (✅ Complete)
 - [x] x402 protocol implementation (exact + deferred)
-- [x] Multi-chain support (Avalanche, Base, Celo)
+- [x] Multi-chain support (Avalanche, Base, Celo + 13 additional networks)
 - [x] ERC-8004 agent discovery endpoints
 - [x] Dashboard and analytics UI
 - [x] Service marketplace
 - [x] UUPS upgradeable contracts (OpenZeppelin)
 
-### Phase 2: Trust & Reputation (🚧 In Progress)
-- [ ] On-chain reputation tracking
-- [ ] ERC-721 agent registry deployment
-- [ ] Community feedback system
-- [ ] Rating and review mechanism
+### Phase 2: Trust & Reputation (✅ Complete)
+- [x] On-chain reputation tracking (ReputationRegistry)
+- [x] ERC-721 agent registry (IdentityRegistry)
+- [x] Community feedback system with EIP-712 signatures
+- [x] Rating and review mechanism (-100 to +100 scale)
+- [x] Third-party validator attestations (ValidationRegistry)
+- [x] Stake-based validator registration (cryptoeconomic security)
+- [x] ERC-8004 API endpoints (/api/erc8004/*)
+- [x] Frontend ABIs for all registries
 
-### Phase 3: Advanced Features (🔜 Planned)
-- [ ] Crypto-economic validation (staking)
+### Phase 3: Advanced Features (🚧 In Progress)
 - [ ] TEE attestation support
 - [ ] zkML verification
 - [ ] Cross-chain messaging (LayerZero/Axelar)
 - [ ] Advanced analytics and reporting
+- [ ] Agent reputation dashboards
 
-### Phase 4: Ecosystem Growth (🔮 Future)
+### Phase 4: Ecosystem Growth (🔜 Planned)
 - [ ] Developer SDK/libraries
 - [ ] Plugin system for wallets
 - [ ] Integration with major DeFi protocols

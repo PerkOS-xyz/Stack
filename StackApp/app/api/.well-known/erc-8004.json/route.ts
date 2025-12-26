@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { config, type SupportedNetwork } from "@/lib/utils/config";
+import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { supabase } from "@/lib/db/supabase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
@@ -7,11 +7,14 @@ import { CHAIN_IDS } from "@/lib/utils/chains";
 export const dynamic = "force-dynamic";
 
 /**
- * ERC-8004: Trustless Agent Discovery
+ * ERC-8004: Agent Registration File
  * Standard endpoint: /.well-known/erc-8004.json
  *
- * Provides agent metadata, capabilities, and trust mechanisms.
- * Updated to x402 V2 with live reputation data and multi-chain support.
+ * Provides agent registration data per ERC-8004 specification.
+ * This file is pointed to by the Identity Registry tokenURI.
+ *
+ * @see https://eips.ethereum.org/EIPS/eip-8004
+ * @see https://8004.org/spec
  */
 export async function GET() {
   const x402Service = new X402Service();
@@ -67,50 +70,163 @@ export async function GET() {
     console.error("Failed to fetch reputation stats:", error);
   }
 
-  // Build payment methods with chain IDs
-  const paymentMethods = supportedKinds.map((kind) => ({
-    scheme: kind.scheme,
-    network: kind.network,
-    asset: config.paymentTokens[kind.network as SupportedNetwork],
-    chainId: getChainId(kind.network),
-    caip2: `eip155:${getChainId(kind.network)}`, // CAIP-2 format
-  }));
+  // Build registrations array (ERC-8004 format)
+  // Each network where we have deployed registries gets an entry
+  const registrations: Array<{
+    chainId: string;  // CAIP-2 format
+    registryAddress: string;
+    agentId: string | null;
+    tokenURI: string;
+  }> = [];
 
+  // Check each network for deployed registries
+  for (const kind of supportedKinds) {
+    const network = kind.network as SupportedNetwork;
+    const chainId = getChainId(network);
+
+    if (chainId && hasErc8004Registries(network)) {
+      const registryInfo = getErc8004Registries(network);
+      registrations.push({
+        chainId: `eip155:${chainId}`,  // CAIP-2 format
+        registryAddress: registryInfo.identity || "",
+        agentId: null,  // Will be set when agent registers on-chain
+        tokenURI: `${config.facilitatorUrl}/api/.well-known/erc-8004.json`,
+      });
+    }
+  }
+
+  // Build endpoints object per ERC-8004 spec
+  const endpoints = {
+    // Primary communication endpoints
+    a2a: `${config.facilitatorUrl}/api/v2/x402`,  // Agent-to-Agent messaging
+    mcp: null as string | null,  // Model Context Protocol endpoint
+
+    // Identity endpoints
+    ens: null as string | null,  // ENS name (e.g., "perkos.eth")
+    did: null as string | null,  // Decentralized Identifier
+
+    // Payment endpoint
+    wallet: config.paymentReceiver,
+
+    // Discovery endpoints
+    discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
+    agentCard: `${config.facilitatorUrl}/api/.well-known/agent-card.json`,
+  };
+
+  // Build supportedTrust array per ERC-8004 spec
+  const supportedTrust: Array<{
+    type: string;
+    description: string;
+    enabled: boolean;
+    config?: Record<string, unknown>;
+  }> = [
+    {
+      type: "reputation",
+      description: "On-chain feedback via Reputation Registry with cryptographic signatures",
+      enabled: true,
+      config: {
+        reputationRegistries: Object.fromEntries(
+          supportedKinds
+            .filter(k => hasErc8004Registries(k.network as SupportedNetwork))
+            .map(k => {
+              const network = k.network as SupportedNetwork;
+              const chainId = getChainId(network);
+              const registries = getErc8004Registries(network);
+              return [`eip155:${chainId}`, registries.reputation];
+            })
+        ),
+      },
+    },
+    {
+      type: "validation",
+      description: "Third-party validator attestations via Validation Registry",
+      enabled: true,
+      config: {
+        validationRegistries: Object.fromEntries(
+          supportedKinds
+            .filter(k => hasErc8004Registries(k.network as SupportedNetwork))
+            .map(k => {
+              const network = k.network as SupportedNetwork;
+              const chainId = getChainId(network);
+              const registries = getErc8004Registries(network);
+              return [`eip155:${chainId}`, registries.validation];
+            })
+        ),
+        minimumStake: "0.1",  // Native token
+        attestationTypes: [
+          "security-audit",
+          "performance-verified",
+          "api-compliance",
+          "uptime-verified",
+        ],
+      },
+    },
+    {
+      type: "cryptoeconomic",
+      description: "Stake-secured validation for critical operations",
+      enabled: false,
+    },
+    {
+      type: "tee-attestation",
+      description: "Trusted Execution Environment verification",
+      enabled: false,
+    },
+  ];
+
+  // ERC-8004 Agent Registration File format
   const agentRegistration = {
-    // ERC-8004 metadata
-    name: config.facilitatorName,
-    description: config.facilitatorDescription,
-    image: `${config.facilitatorUrl}/logo.png`,
+    // === Required ERC-8004 Fields ===
 
-    // Agent identity
+    // Agent type classification
+    type: "service",  // Options: service, autonomous, hybrid
+
+    // Human-readable name
+    name: config.facilitatorName,
+
+    // Agent description
+    description: config.facilitatorDescription,
+
+    // Communication endpoints
+    endpoints,
+
+    // On-chain registrations (one per chain where registered)
+    registrations,
+
+    // Supported trust mechanisms
+    supportedTrust,
+
+    // === Extended Metadata ===
+
+    // Visual identity
+    image: `${config.facilitatorUrl}/logo.png`,
+    icon: `${config.facilitatorUrl}/icon.png`,
+
+    // Agent identifier (wallet address)
     agentId: config.paymentReceiver,
+
+    // Primary URL
     url: config.facilitatorUrl,
 
-    // Communication endpoints (V2 format)
-    endpoints: {
-      a2a: `${config.facilitatorUrl}/api/v2/x402`, // Agent-to-Agent
-      verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-      settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-      discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
-      mcp: null, // Model Context Protocol
-      ens: null, // ENS name
-      did: null, // Decentralized Identifier
-      wallet: config.paymentReceiver,
-    },
-
-    // Capabilities (V2 format)
+    // Capabilities (x402 specific)
     capabilities: [
-      "x402-v2", // x402 V2 protocol
-      "x402-payment-exact", // EIP-3009 exact payments
+      "x402-v2",                    // x402 V2 protocol
+      "x402-payment-exact",          // EIP-3009 exact payments
       ...(config.deferredEnabled ? ["x402-payment-deferred"] : []),
-      "erc-8004-discovery", // Agent discovery
-      "multi-chain-support", // 16 networks
-      "bazaar-indexable", // Bazaar discovery
-      "gasless-transactions", // Sponsored gas
+      "erc-8004-discovery",          // Agent discovery
+      "erc-8004-reputation",         // Reputation registry
+      "erc-8004-validation",         // Validation registry
+      "multi-chain-support",         // Multiple networks
+      "bazaar-indexable",            // Bazaar discovery
+      "gasless-transactions",        // Sponsored gas
     ],
 
-    // Payment methods with V2 multi-chain format
-    paymentMethods,
+    // Payment methods with CAIP-2 chain IDs
+    paymentMethods: supportedKinds.map((kind) => ({
+      scheme: kind.scheme,
+      network: kind.network,
+      asset: config.paymentTokens[kind.network as SupportedNetwork],
+      chainId: `eip155:${getChainId(kind.network)}`,  // CAIP-2 format
+    })),
 
     // Networks summary
     networks: {
@@ -123,40 +239,13 @@ export async function GET() {
       total: supportedKinds.length,
     },
 
-    // Trust models (ERC-8004 standard)
-    trustModels: [
-      {
-        type: "reputation",
-        description: "On-chain transaction history and community feedback",
-        enabled: true,
-        data: reputationStats,
-      },
-      {
-        type: "cryptoeconomic",
-        description: "Stake-secured validation for critical operations",
-        enabled: false,
-      },
-      {
-        type: "tee-attestation",
-        description: "Trusted Execution Environment verification",
-        enabled: false,
-      },
-    ],
-
-    // Registration details
-    registration: {
-      registryAddress: null, // ERC-721 NFT registry
-      tokenId: null,
-      registered: false,
-    },
-
-    // Live reputation (from database)
+    // Live reputation data
     reputation: reputationStats,
 
-    // Protocol version
+    // Protocol versions
     protocolVersion: {
-      x402: "2.0.0",
       erc8004: "1.0.0",
+      x402: "2.0.0",
     },
 
     // Metadata
@@ -168,7 +257,8 @@ export async function GET() {
   return NextResponse.json(agentRegistration, {
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=300", // 5 minute cache
+      "Cache-Control": "public, max-age=300",  // 5 minute cache
+      "X-ERC8004-Version": "1.0.0",
       "X-x402-Version": "2.0.0",
     },
   });
