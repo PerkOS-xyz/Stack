@@ -85,6 +85,90 @@ export const config = {
   facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
   facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
   facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "http://localhost:3402",
+
+  // ERC-8004 Registry Addresses (by network)
+  erc8004Registries: {
+    avalanche: {
+      identity: process.env.NEXT_PUBLIC_AVALANCHE_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_AVALANCHE_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_AVALANCHE_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "avalanche-fuji": {
+      identity: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_VALIDATION_REGISTRY as Address | undefined,
+    },
+    base: {
+      identity: process.env.NEXT_PUBLIC_BASE_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_BASE_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_BASE_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "base-sepolia": {
+      identity: process.env.NEXT_PUBLIC_BASE_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_BASE_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_BASE_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+    celo: {
+      identity: process.env.NEXT_PUBLIC_CELO_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_CELO_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_CELO_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "celo-sepolia": {
+      identity: process.env.NEXT_PUBLIC_CELO_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_CELO_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_CELO_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+    ethereum: {
+      identity: process.env.NEXT_PUBLIC_ETHEREUM_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_ETHEREUM_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_ETHEREUM_VALIDATION_REGISTRY as Address | undefined,
+    },
+    sepolia: {
+      identity: process.env.NEXT_PUBLIC_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+    polygon: {
+      identity: process.env.NEXT_PUBLIC_POLYGON_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_POLYGON_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_POLYGON_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "polygon-amoy": {
+      identity: process.env.NEXT_PUBLIC_POLYGON_AMOY_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_POLYGON_AMOY_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_POLYGON_AMOY_VALIDATION_REGISTRY as Address | undefined,
+    },
+    monad: {
+      identity: process.env.NEXT_PUBLIC_MONAD_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_MONAD_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_MONAD_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "monad-testnet": {
+      identity: process.env.NEXT_PUBLIC_MONAD_TESTNET_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_MONAD_TESTNET_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_MONAD_TESTNET_VALIDATION_REGISTRY as Address | undefined,
+    },
+    arbitrum: {
+      identity: process.env.NEXT_PUBLIC_ARBITRUM_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_ARBITRUM_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_ARBITRUM_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "arbitrum-sepolia": {
+      identity: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+    optimism: {
+      identity: process.env.NEXT_PUBLIC_OPTIMISM_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_OPTIMISM_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_OPTIMISM_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "optimism-sepolia": {
+      identity: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+  },
 } as const;
 
 // Helper functions
@@ -102,6 +186,19 @@ export function getRpcUrl(network: SupportedNetwork): string {
 
 export function isDeferredEnabledForNetwork(network: SupportedNetwork): boolean {
   return config.deferredEnabled && !!config.deferredEscrowAddresses[network];
+}
+
+export function getErc8004Registries(network: SupportedNetwork): {
+  identity: Address | undefined;
+  reputation: Address | undefined;
+  validation: Address | undefined;
+} {
+  return config.erc8004Registries[network] || { identity: undefined, reputation: undefined, validation: undefined };
+}
+
+export function hasErc8004Registries(network: SupportedNetwork): boolean {
+  const registries = config.erc8004Registries[network];
+  return !!(registries?.identity && registries?.reputation && registries?.validation);
 }
 
 // Validation
