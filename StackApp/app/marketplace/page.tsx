@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
+interface Endpoint {
+  id: string;
+  path: string;
+  method: string;
+  description: string | null;
+  price_usd: string;
+  parameters: any;
+}
+
 interface Vendor {
   id: string;
   name: string;
@@ -21,6 +30,7 @@ interface Vendor {
   website_url: string | null;
   docs_url: string | null;
   price_usd: string | null;
+  endpoints?: Endpoint[];
 }
 
 interface VendorsResponse {
@@ -40,6 +50,9 @@ export default function MarketplacePage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [showEndpoints, setShowEndpoints] = useState(false);
+  const [loadingEndpoints, setLoadingEndpoints] = useState(false);
   const [stats, setStats] = useState({
     activeProviders: 0,
     totalVolume: "$0",
@@ -98,6 +111,23 @@ export default function MarketplacePage() {
     }
   };
 
+  const fetchVendorEndpoints = async (vendorId: string) => {
+    if (selectedVendor?.endpoints) return; // Already loaded
+
+    setLoadingEndpoints(true);
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}`);
+      const data = await response.json();
+      if (data.success && data.endpoints) {
+        setSelectedVendor(prev => prev ? { ...prev, endpoints: data.endpoints } : null);
+      }
+    } catch (error) {
+      console.error('Failed to load endpoints:', error);
+    } finally {
+      setLoadingEndpoints(false);
+    }
+  };
+
   useEffect(() => {
     fetchVendors();
   }, [categoryFilter]);
@@ -140,11 +170,10 @@ export default function MarketplacePage() {
                     <button
                       key={range}
                       onClick={() => setTimeRange(range)}
-                      className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                        timeRange === range
+                      className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${timeRange === range
                           ? "bg-slate-700 text-cyan-400"
                           : "text-gray-400 hover:text-gray-200"
-                      }`}
+                        }`}
                     >
                       {range.toUpperCase()}
                     </button>
@@ -182,11 +211,10 @@ export default function MarketplacePage() {
                   <button
                     key={category}
                     onClick={() => setCategoryFilter(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize flex items-center space-x-2 ${
-                      categoryFilter === category
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize flex items-center space-x-2 ${categoryFilter === category
                         ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
                         : "bg-slate-800/50 border border-blue-500/30 text-gray-400 hover:text-gray-200 hover:border-blue-400/50"
-                    }`}
+                      }`}
                   >
                     <span>{icon}</span>
                     <span>{category === "all" ? "All" : category.toUpperCase()}</span>
@@ -313,6 +341,21 @@ export default function MarketplacePage() {
                           <span className="text-xs text-gray-400 capitalize">{vendor.network}</span>
                         </div>
                         <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedVendor(vendor);
+                              setShowEndpoints(true);
+                              fetchVendorEndpoints(vendor.id);
+                            }}
+                            className="px-3 py-2 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-lg text-sm hover:bg-purple-600/30 transition-colors flex items-center space-x-1"
+                          >
+                            <span>Endpoints</span>
+                            {vendor.endpoints && (
+                              <span className="text-xs bg-purple-500/30 px-1.5 py-0.5 rounded">
+                                {vendor.endpoints.length}
+                              </span>
+                            )}
+                          </button>
                           {vendor.docs_url && (
                             <a
                               href={vendor.docs_url}
@@ -340,6 +383,86 @@ export default function MarketplacePage() {
             )}
           </div>
         </div>
+
+        {/* Endpoints Modal */}
+        {showEndpoints && selectedVendor && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowEndpoints(false)}>
+            <div className="bg-slate-900 border border-blue-500/30 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-100">{selectedVendor.name}</h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {selectedVendor.endpoints?.length || 0} API Endpoints
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowEndpoints(false)}
+                    className="text-gray-400 hover:text-gray-200 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+                {loadingEndpoints ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                  </div>
+                ) : selectedVendor.endpoints && selectedVendor.endpoints.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedVendor.endpoints.map((endpoint) => (
+                      <div
+                        key={endpoint.id}
+                        className="bg-slate-800/30 border border-slate-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                                {endpoint.method}
+                              </span>
+                              <code className="text-cyan-400 font-mono text-sm">
+                                {endpoint.path}
+                              </code>
+                            </div>
+                            <p className="text-gray-400 text-sm">
+                              {endpoint.description || 'No description provided'}
+                            </p>
+                            {endpoint.parameters && Object.keys(endpoint.parameters).length > 0 && (
+                              <details className="mt-2">
+                                <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-400">
+                                  Parameters →
+                                </summary>
+                                <pre className="mt-2 bg-slate-900/50 rounded p-2 text-xs text-gray-300 overflow-x-auto">
+                                  {JSON.stringify(endpoint.parameters, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            <span className="px-3 py-1 bg-green-600/20 text-green-400 text-sm font-semibold rounded-full border border-green-600/30">
+                              ${endpoint.price_usd}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400">No endpoints registered</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <Footer />
       </div>
