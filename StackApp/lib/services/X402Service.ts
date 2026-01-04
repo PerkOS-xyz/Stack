@@ -49,17 +49,30 @@ export class X402Service {
    */
   private caip2ToLegacyNetwork(caip2: string): SupportedNetwork | null {
     const caip2Map: Record<string, SupportedNetwork> = {
+      // Avalanche
       "eip155:43114": "avalanche",
       "eip155:43113": "avalanche-fuji",
+      // Celo
       "eip155:42220": "celo",
       "eip155:11142220": "celo-sepolia",
+      // Base
       "eip155:8453": "base",
       "eip155:84532": "base-sepolia",
+      // Ethereum
       "eip155:1": "ethereum",
       "eip155:11155111": "sepolia",
+      // Polygon
       "eip155:137": "polygon",
       "eip155:80002": "polygon-amoy",
-      // Add more as needed
+      // Monad
+      "eip155:10142": "monad",
+      "eip155:10143": "monad-testnet",
+      // Arbitrum
+      "eip155:42161": "arbitrum",
+      "eip155:421614": "arbitrum-sepolia",
+      // Optimism
+      "eip155:10": "optimism",
+      "eip155:11155420": "optimism-sepolia",
     };
     return caip2Map[caip2] || null;
   }
@@ -209,9 +222,11 @@ export class X402Service {
       };
     }
 
-    // Validate and normalize network (support both legacy and CAIP-2)
-    const normalizedNetwork = this.normalizeNetwork(paymentPayload.network);
-    if (!normalizedNetwork) {
+    // Validate and normalize networks (support both legacy and CAIP-2)
+    const normalizedPayloadNetwork = this.normalizeNetwork(paymentPayload.network);
+    const normalizedRequirementsNetwork = this.normalizeNetwork(paymentRequirements.network);
+
+    if (!normalizedPayloadNetwork) {
       return {
         success: false,
         errorReason: `Unsupported network: ${paymentPayload.network}`,
@@ -221,14 +236,24 @@ export class X402Service {
       };
     }
 
-    // Validate network consistency
-    if (paymentPayload.network !== paymentRequirements.network) {
+    if (!normalizedRequirementsNetwork) {
       return {
         success: false,
-        errorReason: "Network mismatch between payload and requirements",
+        errorReason: `Unsupported network: ${paymentRequirements.network}`,
         payer: null,
         transaction: null,
-        network: paymentPayload.network,
+        network: paymentPayload.network || config.defaultNetwork,
+      };
+    }
+
+    // Validate network consistency (compare normalized networks to support mixed formats)
+    if (normalizedPayloadNetwork !== normalizedRequirementsNetwork) {
+      return {
+        success: false,
+        errorReason: `Network mismatch between payload (${paymentPayload.network} -> ${normalizedPayloadNetwork}) and requirements (${paymentRequirements.network} -> ${normalizedRequirementsNetwork})`,
+        payer: null,
+        transaction: null,
+        network: normalizedPayloadNetwork,
       };
     }
 
@@ -239,12 +264,12 @@ export class X402Service {
         errorReason: "Scheme mismatch",
         payer: null,
         transaction: null,
-        network: paymentPayload.network,
+        network: normalizedPayloadNetwork,
       };
     }
 
     // Use normalized network for scheme routing
-    const network = normalizedNetwork;
+    const network = normalizedPayloadNetwork;
 
     // Route to appropriate scheme
     if (paymentPayload.scheme === "exact") {
