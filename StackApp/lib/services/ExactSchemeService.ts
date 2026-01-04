@@ -139,6 +139,25 @@ export class ExactSchemeService {
         };
       }
 
+      // 6. Check if nonce is already used on-chain (EIP-3009 authorizationState)
+      const isNonceUsed = await this.checkNonceState(
+        authorization.from,
+        authorization.nonce as `0x${string}`,
+        requirements.asset
+      );
+
+      if (isNonceUsed) {
+        logger.warn("Authorization nonce already used or canceled", {
+          from: authorization.from,
+          nonce: authorization.nonce,
+        });
+        return {
+          isValid: false,
+          invalidReason: "Authorization nonce already used or canceled. Please sign a new payment.",
+          payer: null,
+        };
+      }
+
       logger.info("Exact scheme payment verified", {
         from: authorization.from,
         to: authorization.to,
@@ -435,6 +454,53 @@ export class ExactSchemeService {
     } catch (error) {
       logger.error("Error checking balance", {
         error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if a nonce has already been used or canceled on-chain
+   * EIP-3009 FiatTokenV2 tracks authorization state per (authorizer, nonce)
+   */
+  private async checkNonceState(
+    authorizer: Address,
+    nonce: `0x${string}`,
+    tokenAddress: Address
+  ): Promise<boolean> {
+    try {
+      const isUsed = await this.publicClient.readContract({
+        address: tokenAddress,
+        abi: [
+          {
+            name: "authorizationState",
+            type: "function",
+            stateMutability: "view",
+            inputs: [
+              { name: "authorizer", type: "address" },
+              { name: "nonce", type: "bytes32" },
+            ],
+            outputs: [{ name: "", type: "bool" }],
+          },
+        ],
+        functionName: "authorizationState",
+        args: [authorizer, nonce],
+      });
+
+      logger.info("Nonce state check", {
+        authorizer,
+        nonce,
+        isUsed,
+      });
+
+      return isUsed as boolean;
+    } catch (error) {
+      // If the check fails, log warning but don't block the payment
+      // (some tokens may not implement authorizationState)
+      logger.warn("Error checking nonce state (token may not support EIP-3009)", {
+        error: error instanceof Error ? error.message : String(error),
+        authorizer,
+        nonce,
       });
       return false;
     }
