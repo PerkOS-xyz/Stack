@@ -192,11 +192,56 @@ export class ExactSchemeService {
    *    - The sponsor wallet pays gas fees
    *    - USDC moves from payer to vendor
    */
+  // Track in-flight settlements to prevent duplicates
+  private static pendingSettlements = new Map<string, Promise<SettleResponse>>();
+
   async settle(
     payload: ExactPayload,
     requirements: PaymentRequirements
   ): Promise<SettleResponse> {
+    const { authorization } = payload;
+
+    // Create unique settlement key from nonce + from address
+    const settlementKey = `${authorization.from.toLowerCase()}-${authorization.nonce}`;
+
+    // Check if this exact settlement is already in progress
+    const existingSettlement = ExactSchemeService.pendingSettlements.get(settlementKey);
+    if (existingSettlement) {
+      logger.warn("Settlement already in progress for this nonce, waiting for result", {
+        settlementKey,
+        nonce: authorization.nonce,
+        from: authorization.from,
+      });
+      return existingSettlement;
+    }
+
+    // Create promise for this settlement
+    const settlementPromise = this.executeSettlement(payload, requirements, settlementKey);
+    ExactSchemeService.pendingSettlements.set(settlementKey, settlementPromise);
+
     try {
+      return await settlementPromise;
+    } finally {
+      ExactSchemeService.pendingSettlements.delete(settlementKey);
+    }
+  }
+
+  private async executeSettlement(
+    payload: ExactPayload,
+    requirements: PaymentRequirements,
+    settlementKey: string
+  ): Promise<SettleResponse> {
+    try {
+      const { authorization, signature } = payload;
+
+      logger.info("Starting settlement", {
+        settlementKey,
+        nonce: authorization.nonce,
+        from: authorization.from,
+        to: authorization.to,
+        value: authorization.value,
+      });
+
       // First verify
       const verifyResult = await this.verify(payload, requirements);
       if (!verifyResult.isValid) {
@@ -208,8 +253,6 @@ export class ExactSchemeService {
           network: this.network,
         };
       }
-
-      const { authorization, signature } = payload;
 
       // Look up sponsor wallet for the payer (consumer/client)
       const thirdwebTxService = getThirdwebTransactionService();
@@ -238,7 +281,9 @@ export class ExactSchemeService {
       const sig = this.parseSignature(signature);
 
       // Execute transferWithAuthorization via Thirdweb server wallet
-      const result = await thirdwebTxService.executeTransferWithAuthorization({
+      // Retry once with a delay if we get "authorization is used or canceled" error
+      // (can happen due to RPC state sync timing issues)
+      let result = await thirdwebTxService.executeTransferWithAuthorization({
         network: this.network,
         tokenAddress: requirements.asset,
         sponsorWalletAddress: sponsorWallet.sponsor_address,
@@ -252,6 +297,96 @@ export class ExactSchemeService {
         r: sig.r,
         s: sig.s,
       });
+
+      // If we get an "authorization is used" error, check if the nonce is actually used on-chain
+      // This handles the race condition where Thirdweb reports failure but tx actually succeeded
+      const errorLower = result.error?.toLowerCase() || "";
+      const isAuthorizationError = errorLower.includes("authorization is used or canceled") ||
+        errorLower.includes("authorization is used") ||
+        errorLower.includes("already used");
+
+      if (!result.success && isAuthorizationError) {
+        logger.warn("Got authorization error, checking if nonce was already used on-chain...", {
+          originalError: result.error,
+          nonce: authorization.nonce,
+        });
+
+        // Wait a moment for chain state to sync
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Re-check nonce state on-chain
+        const isNonceActuallyUsed = await this.checkNonceState(
+          authorization.from,
+          authorization.nonce as `0x${string}`,
+          requirements.asset
+        );
+
+        if (isNonceActuallyUsed) {
+          // The nonce IS used on-chain - this means a previous transaction succeeded!
+          // Try to find the transaction hash by looking at recent sponsor wallet transactions
+          logger.info("Nonce confirmed used on-chain - previous transaction likely succeeded", {
+            nonce: authorization.nonce,
+            from: authorization.from,
+          });
+
+          // Look for the transaction in recent sponsor wallet activity
+          const txHash = await this.findRecentTransferWithAuthorizationTx(
+            sponsorWallet.sponsor_address as Address,
+            authorization.from,
+            authorization.to,
+            requirements.asset
+          );
+
+          if (txHash) {
+            logger.info("Found existing successful transaction for this authorization", {
+              txHash,
+              nonce: authorization.nonce,
+            });
+            return {
+              success: true,
+              payer: authorization.from,
+              transaction: txHash,
+              network: this.network,
+            };
+          } else {
+            // Nonce is used but we can't find the tx hash - the payment DID succeed, just return success
+            // This can happen if the tx was mined in a block we didn't search or if there's indexing delay
+            logger.warn("Nonce used on-chain but could not find transaction hash - treating as success", {
+              nonce: authorization.nonce,
+            });
+            return {
+              success: true,  // Payment succeeded (nonce is used on-chain!)
+              payer: authorization.from,
+              transaction: null,  // Can't provide tx hash but payment went through
+              network: this.network,
+            };
+          }
+        } else {
+          // Nonce is NOT used on-chain - this might be a transient error, retry
+          logger.info("Nonce not used on-chain, retrying transaction...", {
+            nonce: authorization.nonce,
+          });
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          result = await thirdwebTxService.executeTransferWithAuthorization({
+            network: this.network,
+            tokenAddress: requirements.asset,
+            sponsorWalletAddress: sponsorWallet.sponsor_address,
+            from: authorization.from,
+            to: authorization.to,
+            value: BigInt(authorization.value),
+            validAfter: BigInt(authorization.validAfter),
+            validBefore: BigInt(authorization.validBefore),
+            nonce: authorization.nonce as Hex,
+            v: sig.v,
+            r: sig.r,
+            s: sig.s,
+          });
+
+          logger.info("Retry result", { success: result.success, error: result.error });
+        }
+      }
 
       if (result.success && result.transactionHash) {
         logger.info("Exact scheme payment settled via Thirdweb", {
@@ -513,5 +648,76 @@ export class ExactSchemeService {
     const v = parseInt(sig.slice(128, 130), 16);
 
     return { v, r, s };
+  }
+
+  /**
+   * Find a recent transferWithAuthorization transaction from sponsor to recipient
+   * This helps recover the tx hash when Thirdweb reports failure but tx actually succeeded
+   */
+  private async findRecentTransferWithAuthorizationTx(
+    sponsorAddress: Address,
+    fromAddress: Address,
+    toAddress: Address,
+    tokenAddress: Address
+  ): Promise<Hex | null> {
+    try {
+      // Wait a moment for block to be indexed (tx may have just been mined)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Get current block AFTER the wait
+      const currentBlock = await this.publicClient.getBlockNumber();
+      // Look back further (~60 seconds worth of blocks) to catch tx that may have been mined during our wait
+      const blocksToSearch = 30n; // ~60 seconds on Avalanche (2s block time)
+      const fromBlock = currentBlock - blocksToSearch;
+
+      logger.info("Searching for recent transferWithAuthorization tx", {
+        sponsorAddress,
+        fromAddress,
+        toAddress,
+        tokenAddress,
+        fromBlock: fromBlock.toString(),
+        toBlock: currentBlock.toString(),
+      });
+
+      // Look for Transfer events from the USDC contract where:
+      // - from = fromAddress (the payer)
+      // - to = toAddress (the vendor)
+      const logs = await this.publicClient.getLogs({
+        address: tokenAddress,
+        event: {
+          type: "event",
+          name: "Transfer",
+          inputs: [
+            { name: "from", type: "address", indexed: true },
+            { name: "to", type: "address", indexed: true },
+            { name: "value", type: "uint256", indexed: false },
+          ],
+        },
+        args: {
+          from: fromAddress,
+          to: toAddress,
+        },
+        fromBlock,
+        toBlock: "latest", // Use "latest" to ensure we catch very recent blocks
+      });
+
+      if (logs.length > 0) {
+        // Return the most recent matching transaction
+        const mostRecent = logs[logs.length - 1];
+        logger.info("Found matching Transfer event", {
+          txHash: mostRecent.transactionHash,
+          blockNumber: mostRecent.blockNumber?.toString(),
+        });
+        return mostRecent.transactionHash as Hex;
+      }
+
+      logger.info("No matching Transfer events found in recent blocks");
+      return null;
+    } catch (error) {
+      logger.warn("Error searching for recent transaction", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 }

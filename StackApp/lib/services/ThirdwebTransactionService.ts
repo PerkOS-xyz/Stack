@@ -506,9 +506,13 @@ export class ThirdwebTransactionService {
               }
             }
 
+            // Extract full error message - prioritize detailed message over just errorCode
+            const executionError = data.result?.executionResult?.error;
+            const fullExecutionErrorMessage = executionError?.message || executionError?.errorCode;
+
             const errorMessage =
               detailedError ||
-              data.result?.executionResult?.error?.errorCode ||
+              fullExecutionErrorMessage ||
               data.result?.errorMessage ||
               data.errorMessage ||
               data.result?.error ||
