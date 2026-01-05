@@ -1,203 +1,55 @@
-export type Address = `0x${string}`;
-export type Hex = `0x${string}`;
+/**
+ * x402 Types - Re-exported from @perkos/types-x402
+ *
+ * This file re-exports all types from the @perkos/types-x402 package
+ * for backward compatibility with existing imports.
+ */
 
-// ============ Standard x402 Types ============
+export {
+  // Base Types
+  type Address,
+  type Hex,
 
-export interface X402VerifyRequest {
-  x402Version: number;
-  paymentPayload: PaymentPayload;
-  paymentRequirements: PaymentRequirements;
-}
+  // Standard x402 Types
+  type X402VerifyRequest,
+  type X402SettleRequest,
+  type PaymentPayload,
+  type PaymentRequirements,
+  type DeferredExtra,
 
-export interface X402SettleRequest extends X402VerifyRequest {}
+  // Exact Scheme (EIP-3009)
+  type ExactPayload,
+  type TransferAuthorization,
 
-export interface PaymentPayload {
-  x402Version: number;
-  scheme: "exact" | "deferred";
-  network: string;
-  payload: ExactPayload | DeferredPayload;
-}
+  // Deferred Scheme (EIP-712)
+  type DeferredPayload,
+  type Voucher,
 
-export interface PaymentRequirements {
-  scheme: "exact" | "deferred";
-  network: string;
-  maxAmountRequired: string;
-  resource: string;
-  description?: string;
-  mimeType?: string;
-  payTo: Address;
-  maxTimeoutSeconds: number;
-  asset: Address;
-  extra?: DeferredExtra;
-}
+  // Response Types
+  type VerifyResponse,
+  type SettleResponse,
+  type SupportedResponse,
 
-export interface DeferredExtra {
-  type: "new" | "aggregation";
-  escrow: Address;
-  facilitator?: string;
-}
+  // Deferred Scheme Extended
+  type DeferredInfoResponse,
+  type StoredVoucher,
 
-// ============ Exact Scheme (EIP-3009) ============
+  // ERC-8004 Agent Discovery
+  type AgentInfo,
+  type PaymentMethod,
+  type ReputationScore,
 
-export interface ExactPayload {
-  signature: Hex;
-  authorization: TransferAuthorization;
-}
+  // Bazaar Discovery
+  type BazaarService,
+  type ServicePricing,
 
-export interface TransferAuthorization {
-  from: Address;
-  to: Address;
-  value: string;
-  validAfter: string;
-  validBefore: string;
-  nonce: Hex;
-}
+  // Well-Known Types
+  type AgentCard,
+  type X402PaymentConfig,
 
-// ============ Deferred Scheme ============
-
-export interface DeferredPayload {
-  voucher: Voucher;
-  signature: Hex;
-}
-
-export interface Voucher {
-  id: Hex;
-  buyer: Address;
-  seller: Address;
-  valueAggregate: bigint | string;
-  asset: Address;
-  timestamp: bigint | string;
-  nonce: bigint | string;
-  escrow: Address;
-  chainId: bigint | string;
-}
-
-// ============ Response Types ============
-
-export interface VerifyResponse {
-  isValid: boolean;
-  invalidReason: string | null;
-  payer: Address | null;
-}
-
-export interface SettleResponse {
-  success: boolean;
-  errorReason?: string;  // x402 standard uses errorReason, not error
-  payer?: Address | null;
-  transaction?: Hex | null;
-  network: string;
-}
-
-export interface SupportedResponse {
-  kinds: Array<{
-    scheme: "exact" | "deferred";
-    network: string;
-  }>;
-}
-
-// ============ Deferred Scheme Extended ============
-
-export interface DeferredInfoResponse {
-  enabled: boolean;
-  escrowAddress: Address;
-  network: string;
-  chainId: number;
-  thawPeriod: number;
-  maxDeposit: string;
-}
-
-export interface StoredVoucher {
-  id: Hex;
-  voucher: Voucher;
-  signature: Hex;
-  buyer: Address;
-  seller: Address;
-  asset: Address;
-  nonce: bigint;
-  valueAggregate: bigint;
-  timestamp: bigint;
-  settled: boolean;
-  settledTxHash?: Hex;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// ============ ERC-8004 Agent Discovery ============
-
-export interface AgentInfo {
-  id: Address;
-  name: string;
-  description: string;
-  endpoint: string;
-  capabilities: string[];
-  paymentMethods: PaymentMethod[];
-  reputation?: ReputationScore;
-}
-
-export interface PaymentMethod {
-  scheme: "exact" | "deferred";
-  network: string;
-  asset: Address;
-  minAmount?: string;
-  maxAmount?: string;
-}
-
-export interface ReputationScore {
-  totalTransactions: number;
-  successfulTransactions: number;
-  totalVolume: string;
-  averageRating: number;
-  lastUpdated: Date;
-}
-
-// ============ Bazaar Discovery ============
-
-export interface BazaarService {
-  id: string;
-  name: string;
-  description: string;
-  endpoint: string;
-  category: string;
-  pricing: ServicePricing;
-  capabilities: string[];
-  tags: string[];
-}
-
-export interface ServicePricing {
-  scheme: "exact" | "deferred";
-  network: string;
-  asset: Address;
-  amount: string;
-  unit: "per-request" | "per-minute" | "per-hour" | "per-day";
-}
-
-// ============ Well-Known Types ============
-
-export interface AgentCard {
-  "@context": string;
-  id: Address;
-  type: "Agent";
-  name: string;
-  description: string;
-  url: string;
-  capabilities: string[];
-  paymentMethods: PaymentMethod[];
-  endpoints: {
-    x402: string;
-    discovery: string;
-  };
-}
-
-export interface X402PaymentConfig {
-  version: number;
-  facilitator: string;
-  supportedSchemes: Array<{
-    scheme: "exact" | "deferred";
-    network: string;
-  }>;
-  endpoints: {
-    verify: string;
-    settle: string;
-    supported: string;
-  };
-}
+  // Type Guards
+  isExactPayload,
+  isDeferredPayload,
+  isAddress,
+  isHex,
+} from "@perkos/types-x402";

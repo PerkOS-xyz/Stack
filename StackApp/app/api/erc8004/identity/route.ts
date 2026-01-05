@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { chains } from "@/lib/utils/chains";
-import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004/IdentityRegistry";
+import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
 
 export const dynamic = "force-dynamic";
 

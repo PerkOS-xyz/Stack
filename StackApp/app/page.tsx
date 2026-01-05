@@ -776,7 +776,7 @@ const { isValid, payer } = await response.json();`}
                     { method: "POST", path: "/api/v2/pricing/config", desc: "Set pricing strategy" },
                     { method: "GET", path: "/api/v2/pricing/analytics", desc: "Pricing analytics" },
                   ].map((endpoint) => (
-                    <div key={endpoint.path} className="flex items-start space-x-2 text-sm">
+                    <div key={`${endpoint.method}-${endpoint.path}`} className="flex items-start space-x-2 text-sm">
                       <span className={`px-2 py-0.5 rounded text-xs font-mono ${
                         endpoint.method === "POST" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"
                       }`}>
