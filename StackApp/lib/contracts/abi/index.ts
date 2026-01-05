@@ -1,7 +1,4 @@
-// Auto-generated ABI exports
-import DeferredPaymentEscrowUpgradeableABI from './DeferredPaymentEscrowUpgradeable.abi.json';
-
-export { DeferredPaymentEscrowUpgradeableABI };
-
-// Type-safe ABI for TypeScript
-export const DEFERRED_ESCROW_ABI = DeferredPaymentEscrowUpgradeableABI as const;
+/**
+ * Contract ABIs - re-exports from @perkos packages
+ */
+export { DEFERRED_ESCROW_ABI, type DeferredEscrowAbi, type Voucher, type DepositAuthorization, type FlushRequest, type ThawInfo, ESCROW_ADDRESSES, getEscrowAddress } from "@perkos/contracts-escrow";
