@@ -4,46 +4,38 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./IValidationRegistry.sol";
 import "./IIdentityRegistry.sol";
 
 /**
  * @title ValidationRegistry
- * @notice ERC-8004 Validation Registry - Third-party validator attestations
- * @dev Validators stake tokens to provide credible attestations for agents
- *      Attestations have expiration and can be revoked
+ * @notice ERC-8004 Validation Registry - Request-response validation model
+ * @dev Implements standardized validation request/response per EIP-8004:
+ *      - Anyone can request validation from any validator address
+ *      - Validators respond with score (0-100) and categorization tag
+ *      - Filtering by validator addresses and tags
+ *      - Tracking by requestHash for unique identification
  */
 contract ValidationRegistry is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
-    ReentrancyGuardUpgradeable,
     IValidationRegistry
 {
     /// @notice Reference to the Identity Registry
     address private _identityRegistry;
 
-    /// @notice Minimum stake required for validators
-    uint256 private _minimumStake;
+    /// @notice Mapping from requestHash => ValidationRequest
+    mapping(bytes32 => ValidationRequest) private _validations;
 
-    /// @notice Cooldown period for stake withdrawal (in seconds)
-    uint256 private _withdrawalCooldown;
+    /// @notice Mapping from agentId => array of request hashes
+    mapping(uint256 => bytes32[]) private _agentValidations;
 
-    /// @notice Mapping from validator address to Validator struct
-    mapping(address => Validator) private _validators;
+    /// @notice Mapping from validator address => array of request hashes
+    mapping(address => bytes32[]) private _validatorRequests;
 
-    /// @notice Mapping from agentId => attestations array
-    mapping(uint256 => Attestation[]) private _attestations;
-
-    /// @notice Mapping from agentId => validator => attestation count
-    mapping(uint256 => mapping(address => uint256)) private _validatorAttestationCount;
-
-    /// @notice List of all validators
-    address[] private _validatorList;
-
-    /// @notice Withdrawal requests (validator => timestamp)
-    mapping(address => uint256) private _withdrawalRequests;
+    /// @notice Counter for generating unique request IDs
+    uint256 private _requestCounter;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -53,383 +45,339 @@ contract ValidationRegistry is
     /**
      * @notice Initialize the contract
      * @param identityRegistry_ Address of the Identity Registry
-     * @param minimumStake_ Minimum stake required for validators
-     * @param withdrawalCooldown_ Cooldown period for stake withdrawal
      */
-    function initialize(
-        address identityRegistry_,
-        uint256 minimumStake_,
-        uint256 withdrawalCooldown_
-    ) public initializer {
+    function initialize(address identityRegistry_) public initializer {
         require(identityRegistry_ != address(0), "Invalid identity registry");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
         _identityRegistry = identityRegistry_;
-        _minimumStake = minimumStake_;
-        _withdrawalCooldown = withdrawalCooldown_;
+        _requestCounter = 0;
     }
 
-    // ============ Validator Functions ============
+    // ============ Request Functions (EIP-8004 Compliant) ============
 
     /**
-     * @notice Register as a validator with stake
-     * @param name Validator name
-     * @param metadataURI URI to validator metadata
+     * @notice Request validation from a specific validator
+     * @param validatorAddress Address of the validator to request
+     * @param agentId The agent's ID in the Identity Registry
+     * @param requestURI URI to validation request details
+     * @param requestDataHash Hash of request data for verification
+     * @return requestHash Unique identifier for this validation request
      */
-    function registerValidator(
-        string calldata name,
-        string calldata metadataURI
-    ) external payable override {
-        require(!_validators[msg.sender].active, "Already registered");
-        require(msg.value >= _minimumStake, "Insufficient stake");
-        require(bytes(name).length > 0, "Name required");
+    function validationRequest(
+        address validatorAddress,
+        uint256 agentId,
+        string calldata requestURI,
+        bytes32 requestDataHash
+    ) external override returns (bytes32 requestHash) {
+        require(validatorAddress != address(0), "Invalid validator address");
+        require(_agentExists(agentId), "Agent does not exist");
 
-        _validators[msg.sender] = Validator({
-            name: name,
-            metadataURI: metadataURI,
-            stake: msg.value,
-            registeredAt: block.timestamp,
-            active: true,
-            attestationCount: 0
+        // Generate unique request hash
+        _requestCounter++;
+        requestHash = keccak256(abi.encodePacked(
+            agentId,
+            validatorAddress,
+            msg.sender,
+            block.timestamp,
+            _requestCounter
+        ));
+
+        // Ensure uniqueness (should always be unique due to counter)
+        require(_validations[requestHash].requestedAt == 0, "Request already exists");
+
+        // Create validation request
+        _validations[requestHash] = ValidationRequest({
+            agentId: agentId,
+            requester: msg.sender,
+            validatorAddress: validatorAddress,
+            requestURI: requestURI,
+            requestDataHash: requestDataHash,
+            requestedAt: block.timestamp,
+            status: ValidationStatus.Pending,
+            response: 0,
+            responseURI: "",
+            responseDataHash: bytes32(0),
+            tag: "",
+            respondedAt: 0
         });
 
-        _validatorList.push(msg.sender);
-        emit ValidatorRegistered(msg.sender, name, msg.value);
+        // Track request for agent and validator
+        _agentValidations[agentId].push(requestHash);
+        _validatorRequests[validatorAddress].push(requestHash);
+
+        emit ValidationRequested(requestHash, agentId, validatorAddress, requestURI, requestDataHash);
     }
 
     /**
-     * @notice Add more stake
+     * @notice Respond to a validation request (validator only)
+     * @param requestHash The unique request identifier
+     * @param response Response score from 0 to 100
+     * @param responseURI URI to detailed response
+     * @param responseDataHash Hash of response data
+     * @param tag Categorization tag
      */
-    function updateStake() external payable override {
-        require(_validators[msg.sender].active, "Not a validator");
-        require(msg.value > 0, "Must send stake");
+    function validationResponse(
+        bytes32 requestHash,
+        uint8 response,
+        string calldata responseURI,
+        bytes32 responseDataHash,
+        string calldata tag
+    ) external override {
+        ValidationRequest storage request = _validations[requestHash];
 
-        uint256 oldStake = _validators[msg.sender].stake;
-        _validators[msg.sender].stake += msg.value;
+        require(request.requestedAt > 0, "Request does not exist");
+        require(request.status == ValidationStatus.Pending, "Request not pending");
+        require(request.validatorAddress == msg.sender, "Not the assigned validator");
+        require(response <= 100, "Response must be 0-100");
 
-        emit StakeUpdated(msg.sender, oldStake, _validators[msg.sender].stake);
+        // Update request with response
+        request.response = response;
+        request.responseURI = responseURI;
+        request.responseDataHash = responseDataHash;
+        request.tag = tag;
+        request.respondedAt = block.timestamp;
+
+        // Set status based on response score (>50 = approved)
+        request.status = response > 50 ? ValidationStatus.Approved : ValidationStatus.Rejected;
+
+        emit ValidationResponseSubmitted(requestHash, request.agentId, msg.sender, response, tag);
     }
 
     /**
-     * @notice Request stake withdrawal (starts cooldown)
-     * @param amount Amount to withdraw
+     * @notice Cancel a pending validation request
+     * @param requestHash The unique request identifier
      */
-    function withdrawStake(uint256 amount) external override nonReentrant {
-        Validator storage validator = _validators[msg.sender];
-        require(validator.active || validator.stake > 0, "Not a validator");
-        require(amount <= validator.stake, "Insufficient stake");
+    function cancelValidation(bytes32 requestHash) external override {
+        ValidationRequest storage request = _validations[requestHash];
 
-        // Check if cooldown has passed
-        if (_withdrawalRequests[msg.sender] == 0) {
-            // Start cooldown
-            _withdrawalRequests[msg.sender] = block.timestamp;
-            return;
-        }
+        require(request.requestedAt > 0, "Request does not exist");
+        require(request.status == ValidationStatus.Pending, "Request not pending");
 
-        require(
-            block.timestamp >= _withdrawalRequests[msg.sender] + _withdrawalCooldown,
-            "Cooldown not complete"
+        // Only requester or agent owner can cancel
+        bool isRequester = request.requester == msg.sender;
+        bool isAgentOwner = _isAgentOwner(request.agentId, msg.sender);
+        require(isRequester || isAgentOwner, "Not authorized to cancel");
+
+        request.status = ValidationStatus.Cancelled;
+
+        emit ValidationCancelled(requestHash, request.agentId, msg.sender);
+    }
+
+    // ============ Query Functions (EIP-8004 Compliant) ============
+
+    /**
+     * @notice Get the status and key details of a validation request
+     */
+    function getValidationStatus(
+        bytes32 requestHash
+    ) external view override returns (
+        ValidationStatus status,
+        uint256 agentId,
+        address validatorAddress,
+        uint8 response,
+        string memory tag
+    ) {
+        ValidationRequest storage request = _validations[requestHash];
+        return (
+            request.status,
+            request.agentId,
+            request.validatorAddress,
+            request.response,
+            request.tag
         );
-
-        // Ensure remaining stake meets minimum if still active
-        if (validator.active) {
-            require(
-                validator.stake - amount >= _minimumStake,
-                "Would fall below minimum stake"
-            );
-        }
-
-        uint256 oldStake = validator.stake;
-        validator.stake -= amount;
-        _withdrawalRequests[msg.sender] = 0;
-
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Transfer failed");
-
-        emit StakeUpdated(msg.sender, oldStake, validator.stake);
     }
 
     /**
-     * @notice Deactivate validator
+     * @notice Get full validation request details
      */
-    function deactivateValidator() external override {
-        require(_validators[msg.sender].active, "Not active validator");
-        _validators[msg.sender].active = false;
-        emit ValidatorRemoved(msg.sender);
+    function getValidation(
+        bytes32 requestHash
+    ) external view override returns (ValidationRequest memory request) {
+        return _validations[requestHash];
     }
 
     /**
-     * @notice Get validator information
-     * @param validator Validator address
-     * @return info Validator struct
+     * @notice Get validation summary with filtering
      */
-    function getValidator(address validator) external view override returns (Validator memory) {
-        return _validators[validator];
-    }
-
-    /**
-     * @notice Check if an address is an active validator
-     * @param validator Address to check
-     * @return isActive True if active validator
-     */
-    function isActiveValidator(address validator) external view override returns (bool) {
-        return _validators[validator].active && _validators[validator].stake >= _minimumStake;
-    }
-
-    // ============ Attestation Functions ============
-
-    /**
-     * @notice Create an attestation for an agent
-     * @param agentId The agent's ID
-     * @param attestationType Type of attestation
-     * @param dataHash Hash of attestation data
-     * @param dataURI URI to attestation details
-     * @param validityPeriod How long the attestation is valid (seconds)
-     * @param confidenceScore Confidence level (0-100)
-     * @return attestationId The attestation ID
-     */
-    function attest(
+    function getSummary(
         uint256 agentId,
-        string calldata attestationType,
-        bytes32 dataHash,
-        string calldata dataURI,
-        uint256 validityPeriod,
-        uint8 confidenceScore
-    ) external override returns (uint256 attestationId) {
-        require(_validators[msg.sender].active, "Not active validator");
-        require(_validators[msg.sender].stake >= _minimumStake, "Insufficient stake");
-        require(_agentExists(agentId), "Agent does not exist");
-        require(confidenceScore <= 100, "Invalid confidence score");
-        require(validityPeriod > 0, "Invalid validity period");
+        address[] calldata validatorAddresses,
+        string calldata tag
+    ) external view override returns (uint64 count, uint8 averageResponse) {
+        bytes32[] storage requestHashes = _agentValidations[agentId];
 
-        attestationId = _attestations[agentId].length;
-
-        _attestations[agentId].push(Attestation({
-            validator: msg.sender,
-            attestationType: attestationType,
-            dataHash: dataHash,
-            dataURI: dataURI,
-            createdAt: block.timestamp,
-            expiresAt: block.timestamp + validityPeriod,
-            revoked: false,
-            confidenceScore: confidenceScore
-        }));
-
-        _validators[msg.sender].attestationCount++;
-        _validatorAttestationCount[agentId][msg.sender]++;
-
-        emit AttestationCreated(agentId, msg.sender, attestationId, attestationType);
-    }
-
-    /**
-     * @notice Revoke an attestation
-     * @param agentId The agent's ID
-     * @param attestationId The attestation ID
-     */
-    function revokeAttestation(uint256 agentId, uint256 attestationId) external override {
-        require(attestationId < _attestations[agentId].length, "Invalid attestation");
-        Attestation storage attestation = _attestations[agentId][attestationId];
-        require(attestation.validator == msg.sender, "Not attestation creator");
-        require(!attestation.revoked, "Already revoked");
-
-        attestation.revoked = true;
-        emit AttestationRevoked(agentId, msg.sender, attestationId);
-    }
-
-    /**
-     * @notice Get attestation details
-     * @param agentId The agent's ID
-     * @param attestationId The attestation ID
-     * @return attestation The attestation struct
-     */
-    function getAttestation(
-        uint256 agentId,
-        uint256 attestationId
-    ) external view override returns (Attestation memory) {
-        require(attestationId < _attestations[agentId].length, "Invalid attestation");
-        return _attestations[agentId][attestationId];
-    }
-
-    /**
-     * @notice Get all attestations for an agent
-     * @param agentId The agent's ID
-     * @return attestations Array of attestations
-     */
-    function getAllAttestations(uint256 agentId) external view override returns (Attestation[] memory) {
-        return _attestations[agentId];
-    }
-
-    /**
-     * @notice Get active (non-expired, non-revoked) attestations
-     * @param agentId The agent's ID
-     * @return Array of active attestations
-     */
-    function getActiveAttestations(uint256 agentId) external view override returns (Attestation[] memory) {
-        Attestation[] storage all = _attestations[agentId];
-        uint256 activeCount = 0;
-
-        // Count active attestations
-        for (uint256 i = 0; i < all.length; i++) {
-            if (!all[i].revoked && all[i].expiresAt > block.timestamp) {
-                activeCount++;
-            }
-        }
-
-        // Build active array
-        Attestation[] memory active = new Attestation[](activeCount);
-        uint256 index = 0;
-        for (uint256 i = 0; i < all.length; i++) {
-            if (!all[i].revoked && all[i].expiresAt > block.timestamp) {
-                active[index] = all[i];
-                index++;
-            }
-        }
-
-        return active;
-    }
-
-    /**
-     * @notice Get attestations by type
-     * @param agentId The agent's ID
-     * @param attestationType Type to filter by
-     * @return Array of matching attestations
-     */
-    function getAttestationsByType(
-        uint256 agentId,
-        string calldata attestationType
-    ) external view override returns (Attestation[] memory) {
-        Attestation[] storage all = _attestations[agentId];
-        bytes32 typeHash = keccak256(bytes(attestationType));
+        uint256 totalResponse = 0;
         uint256 matchCount = 0;
+        bytes32 tagHash = bytes(tag).length > 0 ? keccak256(bytes(tag)) : bytes32(0);
 
-        // Count matches
-        for (uint256 i = 0; i < all.length; i++) {
-            if (keccak256(bytes(all[i].attestationType)) == typeHash) {
-                matchCount++;
+        for (uint256 i = 0; i < requestHashes.length; i++) {
+            ValidationRequest storage request = _validations[requestHashes[i]];
+
+            // Skip if not completed (approved or rejected)
+            if (request.status != ValidationStatus.Approved &&
+                request.status != ValidationStatus.Rejected) {
+                continue;
             }
-        }
 
-        // Build result array
-        Attestation[] memory matches = new Attestation[](matchCount);
-        uint256 index = 0;
-        for (uint256 i = 0; i < all.length; i++) {
-            if (keccak256(bytes(all[i].attestationType)) == typeHash) {
-                matches[index] = all[i];
-                index++;
-            }
-        }
-
-        return matches;
-    }
-
-    /**
-     * @notice Get validation summary for an agent
-     * @param agentId The agent's ID
-     * @return summary Validation summary struct
-     */
-    function getValidationSummary(uint256 agentId) external view override returns (ValidationSummary memory summary) {
-        Attestation[] storage all = _attestations[agentId];
-        uint256 active = 0;
-        uint256 expired = 0;
-        uint256 revoked = 0;
-        uint256 confidenceSum = 0;
-        uint256 validatorCount = 0;
-
-        // Track unique validators
-        address[] memory uniqueValidators = new address[](all.length);
-
-        for (uint256 i = 0; i < all.length; i++) {
-            if (all[i].revoked) {
-                revoked++;
-            } else if (all[i].expiresAt <= block.timestamp) {
-                expired++;
-            } else {
-                active++;
-                confidenceSum += all[i].confidenceScore;
-
-                // Track unique validator
-                bool found = false;
-                for (uint256 j = 0; j < validatorCount; j++) {
-                    if (uniqueValidators[j] == all[i].validator) {
-                        found = true;
+            // Check validator filter
+            if (validatorAddresses.length > 0) {
+                bool validatorMatch = false;
+                for (uint256 j = 0; j < validatorAddresses.length; j++) {
+                    if (request.validatorAddress == validatorAddresses[j]) {
+                        validatorMatch = true;
                         break;
                     }
                 }
-                if (!found) {
-                    uniqueValidators[validatorCount] = all[i].validator;
-                    validatorCount++;
-                }
+                if (!validatorMatch) continue;
             }
+
+            // Check tag filter
+            if (tagHash != bytes32(0) && keccak256(bytes(request.tag)) != tagHash) {
+                continue;
+            }
+
+            totalResponse += request.response;
+            matchCount++;
         }
 
-        summary = ValidationSummary({
-            totalAttestations: all.length,
-            activeAttestations: active,
-            expiredAttestations: expired,
-            revokedAttestations: revoked,
-            validatorCount: validatorCount,
-            averageConfidence: active > 0 ? uint8(confidenceSum / active) : 0,
-            lastUpdated: block.timestamp
-        });
+        count = uint64(matchCount);
+        averageResponse = matchCount > 0 ? uint8(totalResponse / matchCount) : 0;
     }
 
     /**
-     * @notice Check if an agent has a valid attestation of a specific type
-     * @param agentId The agent's ID
-     * @param attestationType Type to check
-     * @return hasValid True if valid attestation exists
+     * @notice Get all validation request hashes for an agent
      */
-    function hasValidAttestation(
-        uint256 agentId,
-        string calldata attestationType
-    ) external view override returns (bool) {
-        Attestation[] storage all = _attestations[agentId];
-        bytes32 typeHash = keccak256(bytes(attestationType));
+    function getAgentValidations(
+        uint256 agentId
+    ) external view override returns (bytes32[] memory requestHashes) {
+        return _agentValidations[agentId];
+    }
 
-        for (uint256 i = 0; i < all.length; i++) {
-            if (
-                !all[i].revoked &&
-                all[i].expiresAt > block.timestamp &&
-                keccak256(bytes(all[i].attestationType)) == typeHash
-            ) {
+    /**
+     * @notice Get all validation request hashes assigned to a validator
+     */
+    function getValidatorRequests(
+        address validatorAddress
+    ) external view override returns (bytes32[] memory requestHashes) {
+        return _validatorRequests[validatorAddress];
+    }
+
+    /**
+     * @notice Check if an agent has an approved validation with specific tag
+     */
+    function hasApprovedValidation(
+        uint256 agentId,
+        string calldata tag
+    ) external view override returns (bool hasApproval) {
+        bytes32[] storage requestHashes = _agentValidations[agentId];
+        bytes32 tagHash = bytes(tag).length > 0 ? keccak256(bytes(tag)) : bytes32(0);
+
+        for (uint256 i = 0; i < requestHashes.length; i++) {
+            ValidationRequest storage request = _validations[requestHashes[i]];
+
+            if (request.status != ValidationStatus.Approved) {
+                continue;
+            }
+
+            // If no tag filter, any approved validation counts
+            if (tagHash == bytes32(0)) {
+                return true;
+            }
+
+            // Check tag match
+            if (keccak256(bytes(request.tag)) == tagHash) {
                 return true;
             }
         }
+
         return false;
     }
 
     /**
      * @notice Get the Identity Registry address
-     * @return registry The Identity Registry contract address
      */
     function identityRegistry() external view override returns (address) {
         return _identityRegistry;
     }
 
+    // ============ Extended Query Functions (Non-EIP-8004) ============
+
     /**
-     * @notice Get minimum stake required for validators
-     * @return minStake Minimum stake amount
+     * @notice Get pending validation requests for a validator
+     * @param validatorAddress The validator's address
+     * @return requestHashes Array of pending request hashes
      */
-    function minimumStake() external view override returns (uint256) {
-        return _minimumStake;
+    function getPendingRequests(
+        address validatorAddress
+    ) external view returns (bytes32[] memory) {
+        bytes32[] storage allRequests = _validatorRequests[validatorAddress];
+
+        // Count pending requests
+        uint256 pendingCount = 0;
+        for (uint256 i = 0; i < allRequests.length; i++) {
+            if (_validations[allRequests[i]].status == ValidationStatus.Pending) {
+                pendingCount++;
+            }
+        }
+
+        // Build pending array
+        bytes32[] memory pending = new bytes32[](pendingCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < allRequests.length; i++) {
+            if (_validations[allRequests[i]].status == ValidationStatus.Pending) {
+                pending[index] = allRequests[i];
+                index++;
+            }
+        }
+
+        return pending;
     }
 
     /**
-     * @notice Update minimum stake (owner only)
-     * @param newMinimum New minimum stake amount
+     * @notice Get validation statistics for an agent
+     * @param agentId The agent's ID
+     * @return summary Detailed validation summary
      */
-    function setMinimumStake(uint256 newMinimum) external onlyOwner {
-        _minimumStake = newMinimum;
+    function getValidationStatistics(
+        uint256 agentId
+    ) external view returns (ValidationSummary memory summary) {
+        bytes32[] storage requestHashes = _agentValidations[agentId];
+
+        uint64 totalRequests = uint64(requestHashes.length);
+        uint64 approvedCount = 0;
+        uint64 rejectedCount = 0;
+        uint64 pendingCount = 0;
+        uint256 totalResponse = 0;
+        uint256 respondedCount = 0;
+
+        for (uint256 i = 0; i < requestHashes.length; i++) {
+            ValidationRequest storage request = _validations[requestHashes[i]];
+
+            if (request.status == ValidationStatus.Approved) {
+                approvedCount++;
+                totalResponse += request.response;
+                respondedCount++;
+            } else if (request.status == ValidationStatus.Rejected) {
+                rejectedCount++;
+                totalResponse += request.response;
+                respondedCount++;
+            } else if (request.status == ValidationStatus.Pending) {
+                pendingCount++;
+            }
+            // Cancelled requests are not counted
+        }
+
+        summary = ValidationSummary({
+            totalRequests: totalRequests,
+            approvedCount: approvedCount,
+            rejectedCount: rejectedCount,
+            pendingCount: pendingCount,
+            averageResponse: respondedCount > 0 ? uint8(totalResponse / respondedCount) : 0
+        });
     }
 
-    /**
-     * @notice Update withdrawal cooldown (owner only)
-     * @param newCooldown New cooldown period in seconds
-     */
-    function setWithdrawalCooldown(uint256 newCooldown) external onlyOwner {
-        _withdrawalCooldown = newCooldown;
-    }
+    // ============ Internal Functions ============
 
     /**
      * @notice Check if agent exists in Identity Registry
@@ -443,15 +391,22 @@ contract ValidationRegistry is
     }
 
     /**
+     * @notice Check if address is the owner of an agent
+     */
+    function _isAgentOwner(uint256 agentId, address account) internal view returns (bool) {
+        try IIdentityRegistry(_identityRegistry).ownerOf(agentId) returns (address owner) {
+            return owner == account;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
      * @notice Get contract version
-     * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "1.0.0";
+        return "2.0.0";
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    /// @notice Receive function to accept stake deposits
-    receive() external payable {}
 }

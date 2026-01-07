@@ -1,28 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, http, type Address } from "viem";
-import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
+import { createPublicClient, http, type Address, type Hex } from "viem";
+import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { chains } from "@/lib/utils/chains";
-import { VALIDATION_REGISTRY_ABI } from "@/lib/contracts/erc8004";
+import {
+  VALIDATION_REGISTRY_ABI,
+  ValidationStatus,
+  type ValidationRequest,
+  type ValidationSummary,
+  isValidationApproved,
+  getValidationStatusString,
+} from "@/lib/contracts/erc8004";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/erc8004/validation
- * Get validation data from Validation Registry
+ * Get validation data from Validation Registry (EIP-8004 request-response model)
  *
  * Query params:
  * - network: Network name (required)
- * - agentId: Agent ID to lookup (optional)
- * - validator: Validator address to lookup (optional)
- * - attestationType: Filter by attestation type (optional)
+ * - requestHash: Specific validation request hash (optional)
+ * - agentId: Get all validations for agent (optional)
+ * - validatorAddress: Get all requests assigned to validator (optional)
+ * - tag: Filter by categorization tag (optional, requires agentId)
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const network = searchParams.get("network") as SupportedNetwork;
+    const requestHash = searchParams.get("requestHash");
     const agentId = searchParams.get("agentId");
-    const validator = searchParams.get("validator");
-    const attestationType = searchParams.get("attestationType");
+    const validatorAddress = searchParams.get("validatorAddress");
+    const tag = searchParams.get("tag") || "";
 
     if (!network) {
       return NextResponse.json(
@@ -53,80 +62,130 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // If validator address provided, get validator info
-    if (validator) {
-      const validatorInfo = await client.readContract({
+    // If requestHash provided, get specific validation request
+    if (requestHash) {
+      const [status, validationAgentId, validator, response, responseTag] = await client.readContract({
         address: registries.validation as Address,
         abi: VALIDATION_REGISTRY_ABI,
-        functionName: "getValidator",
-        args: [validator as Address],
-      });
+        functionName: "getValidationStatus",
+        args: [requestHash as Hex],
+      }) as [number, bigint, Address, number, string];
 
-      const isActive = await client.readContract({
+      // Get full validation details
+      const validation = await client.readContract({
         address: registries.validation as Address,
         abi: VALIDATION_REGISTRY_ABI,
-        functionName: "isActiveValidator",
-        args: [validator as Address],
-      });
+        functionName: "getValidation",
+        args: [requestHash as Hex],
+      }) as ValidationRequest;
 
       return NextResponse.json({
-        validator,
-        info: formatValidator(validatorInfo),
-        isActive,
+        requestHash,
+        status: getValidationStatusString(status as ValidationStatus),
+        statusCode: status,
+        agentId: validationAgentId.toString(),
+        validatorAddress: validator,
+        response,
+        tag: responseTag,
+        isApproved: isValidationApproved(status as ValidationStatus),
+        validation: formatValidationRequest(validation),
         network,
         registryAddress: registries.validation,
       });
     }
 
-    // If agentId provided, get attestations
-    if (agentId) {
-      let attestations;
-
-      if (attestationType) {
-        // Filter by type
-        attestations = await client.readContract({
-          address: registries.validation as Address,
-          abi: VALIDATION_REGISTRY_ABI,
-          functionName: "getAttestationsByType",
-          args: [BigInt(agentId), attestationType],
-        });
-      } else {
-        // Get all active attestations
-        attestations = await client.readContract({
-          address: registries.validation as Address,
-          abi: VALIDATION_REGISTRY_ABI,
-          functionName: "getActiveAttestations",
-          args: [BigInt(agentId)],
-        });
-      }
-
-      const summary = await client.readContract({
+    // If validatorAddress provided, get requests assigned to this validator
+    if (validatorAddress) {
+      const requestHashes = await client.readContract({
         address: registries.validation as Address,
         abi: VALIDATION_REGISTRY_ABI,
-        functionName: "getValidationSummary",
-        args: [BigInt(agentId)],
+        functionName: "getValidatorRequests",
+        args: [validatorAddress as Address],
+      }) as Hex[];
+
+      // Get pending requests count
+      const pendingRequests = await client.readContract({
+        address: registries.validation as Address,
+        abi: VALIDATION_REGISTRY_ABI,
+        functionName: "getPendingRequests",
+        args: [validatorAddress as Address],
+      }) as Hex[];
+
+      return NextResponse.json({
+        validatorAddress,
+        totalRequests: requestHashes.length,
+        pendingCount: pendingRequests.length,
+        requestHashes,
+        pendingRequestHashes: pendingRequests,
+        network,
+        registryAddress: registries.validation,
       });
+    }
+
+    // If agentId provided, get all validations for this agent
+    if (agentId) {
+      const requestHashes = await client.readContract({
+        address: registries.validation as Address,
+        abi: VALIDATION_REGISTRY_ABI,
+        functionName: "getAgentValidations",
+        args: [BigInt(agentId)],
+      }) as Hex[];
+
+      // Get summary with optional tag and validator filtering
+      const validatorAddresses: Address[] = [];
+      const [count, averageResponse] = await client.readContract({
+        address: registries.validation as Address,
+        abi: VALIDATION_REGISTRY_ABI,
+        functionName: "getSummary",
+        args: [BigInt(agentId), validatorAddresses, tag],
+      }) as [bigint, number];
+
+      // Check if agent has any approved validation with the tag
+      const hasApproval = await client.readContract({
+        address: registries.validation as Address,
+        abi: VALIDATION_REGISTRY_ABI,
+        functionName: "hasApprovedValidation",
+        args: [BigInt(agentId), tag],
+      }) as boolean;
+
+      // Get validation statistics
+      const statistics = await client.readContract({
+        address: registries.validation as Address,
+        abi: VALIDATION_REGISTRY_ABI,
+        functionName: "getValidationStatistics",
+        args: [BigInt(agentId)],
+      }) as ValidationSummary;
 
       return NextResponse.json({
         agentId,
-        summary: formatValidationSummary(summary),
-        attestations: (attestations as unknown[]).map(formatAttestation),
+        summary: {
+          count: count.toString(),
+          averageResponse,
+          isPositiveAverage: averageResponse > 50,
+        },
+        hasApproval,
+        statistics: formatValidationSummary(statistics),
+        requestHashes,
+        totalRequests: requestHashes.length,
+        tag: tag || null,
         network,
         registryAddress: registries.validation,
       });
     }
 
     // Return registry info
-    const minimumStake = await client.readContract({
+    const identityRegistry = await client.readContract({
       address: registries.validation as Address,
       abi: VALIDATION_REGISTRY_ABI,
-      functionName: "minimumStake",
-    });
+      functionName: "identityRegistry",
+    }) as Address;
 
     return NextResponse.json({
       network,
       registryAddress: registries.validation,
-      minimumStake: (minimumStake as bigint).toString(),
+      identityRegistry,
+      model: "request-response",
+      description: "EIP-8004 compliant validation registry using request-response model",
     });
   } catch (error) {
     console.error("Error in GET /api/erc8004/validation:", error);
@@ -139,24 +198,29 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/erc8004/validation
- * Create attestation or register as validator (returns unsigned transaction)
+ * Create validation request or submit response (returns unsigned transaction)
  *
- * Body for attestation:
+ * Body for validation request:
  * - network: Network name (required)
- * - action: "attest" (required)
- * - agentId: Agent ID (required)
- * - attestationType: Type of attestation (required)
- * - dataHash: Hash of attestation data (required)
- * - dataURI: URI to attestation details (required)
- * - validityPeriod: Validity in seconds (required)
- * - confidenceScore: 0-100 (required)
+ * - action: "request" (required)
+ * - validatorAddress: Address of validator to request (required)
+ * - agentId: Agent ID being validated (required)
+ * - requestURI: URI to validation request details (optional)
+ * - requestDataHash: Hash of request data for verification (optional)
  *
- * Body for validator registration:
+ * Body for validation response (validator only):
  * - network: Network name (required)
- * - action: "registerValidator" (required)
- * - name: Validator name (required)
- * - metadataURI: URI to validator info (required)
- * - stakeAmount: Amount to stake (required)
+ * - action: "respond" (required)
+ * - requestHash: The unique request identifier (required)
+ * - response: Response score from 0 to 100 (required)
+ * - responseURI: URI to detailed response (optional)
+ * - responseDataHash: Hash of response data (optional)
+ * - tag: Categorization tag (required)
+ *
+ * Body for cancel request:
+ * - network: Network name (required)
+ * - action: "cancel" (required)
+ * - requestHash: The unique request identifier (required)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -179,66 +243,116 @@ export async function POST(req: NextRequest) {
 
     const registries = getErc8004Registries(network as SupportedNetwork);
 
-    if (action === "attest") {
-      const { agentId, attestationType, dataHash, dataURI, validityPeriod, confidenceScore } = body;
+    // Request validation from a validator
+    if (action === "request") {
+      const { validatorAddress, agentId, requestURI, requestDataHash } = body;
 
-      if (!agentId || !attestationType || !dataHash || !dataURI || !validityPeriod || confidenceScore === undefined) {
+      if (!validatorAddress || !agentId) {
         return NextResponse.json(
-          { error: "Missing required attestation parameters" },
+          { error: "validatorAddress and agentId required for validation request" },
           { status: 400 }
         );
       }
 
-      if (confidenceScore < 0 || confidenceScore > 100) {
-        return NextResponse.json(
-          { error: "Confidence score must be between 0 and 100" },
-          { status: 400 }
-        );
-      }
-
-      const attestData = {
+      const requestData = {
         to: registries.validation,
         network,
-        function: "attest(uint256,string,bytes32,string,uint256,uint8)",
-        args: [agentId, attestationType, dataHash, dataURI, validityPeriod, confidenceScore],
-        description: `Create ${attestationType} attestation for agent ${agentId}`,
+        function: "validationRequest(address,uint256,string,bytes32)",
+        args: [
+          validatorAddress,
+          agentId,
+          requestURI || "",
+          requestDataHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+        description: `Request validation for agent ${agentId} from validator ${validatorAddress}`,
       };
 
       return NextResponse.json({
         success: true,
-        transaction: attestData,
-        message: "Sign and submit this transaction to create an attestation",
+        transaction: requestData,
+        message: "Sign and submit this transaction to request validation",
+        info: {
+          model: "request-response",
+          note: "The validator will respond with a score (0-100) and categorization tag",
+        },
       });
     }
 
-    if (action === "registerValidator") {
-      const { name, metadataURI, stakeAmount } = body;
+    // Respond to a validation request (validator only)
+    if (action === "respond") {
+      const { requestHash, response, responseURI, responseDataHash, tag } = body;
 
-      if (!name || !metadataURI || !stakeAmount) {
+      if (!requestHash || response === undefined || !tag) {
         return NextResponse.json(
-          { error: "Missing required validator registration parameters" },
+          { error: "requestHash, response, and tag required for validation response" },
           { status: 400 }
         );
       }
 
-      const registerData = {
+      if (response < 0 || response > 100) {
+        return NextResponse.json(
+          { error: "Response must be between 0 and 100 (EIP-8004 compliant)" },
+          { status: 400 }
+        );
+      }
+
+      const responseData = {
         to: registries.validation,
         network,
-        function: "registerValidator(string,string)",
-        args: [name, metadataURI],
-        value: stakeAmount,
-        description: `Register as validator "${name}" with stake ${stakeAmount}`,
+        function: "validationResponse(bytes32,uint8,string,bytes32,string)",
+        args: [
+          requestHash,
+          response,
+          responseURI || "",
+          responseDataHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
+          tag,
+        ],
+        description: `Respond to validation request ${requestHash} with score ${response}`,
       };
 
       return NextResponse.json({
         success: true,
-        transaction: registerData,
-        message: "Sign and submit this transaction to register as a validator",
+        transaction: responseData,
+        message: "Sign and submit this transaction to respond to validation request",
+        responseInfo: {
+          response,
+          willBeApproved: response > 50,
+          tag,
+          threshold: 50,
+          description: response > 50 ? "Will be approved" : "Will be rejected",
+        },
+      });
+    }
+
+    // Cancel a pending validation request
+    if (action === "cancel") {
+      const { requestHash } = body;
+
+      if (!requestHash) {
+        return NextResponse.json(
+          { error: "requestHash required for cancel action" },
+          { status: 400 }
+        );
+      }
+
+      const cancelData = {
+        to: registries.validation,
+        network,
+        function: "cancelValidation(bytes32)",
+        args: [requestHash],
+        description: `Cancel validation request ${requestHash}`,
+      };
+
+      return NextResponse.json({
+        success: true,
+        transaction: cancelData,
+        message: "Sign and submit this transaction to cancel the validation request",
+        note: "Only the original requester or agent owner can cancel",
       });
     }
 
     return NextResponse.json(
-      { error: `Unknown action: ${action}` },
+      { error: `Unknown action: ${action}. Valid actions: request, respond, cancel` },
       { status: 400 }
     );
   } catch (error) {
@@ -251,69 +365,33 @@ export async function POST(req: NextRequest) {
 }
 
 // Helper functions to format contract responses
-function formatValidator(validator: unknown): Record<string, unknown> {
-  const v = validator as {
-    name: string;
-    metadataURI: string;
-    stake: bigint;
-    registeredAt: bigint;
-    active: boolean;
-    attestationCount: bigint;
-  };
-
+function formatValidationRequest(validation: ValidationRequest): Record<string, unknown> {
   return {
-    name: v.name,
-    metadataURI: v.metadataURI,
-    stake: v.stake.toString(),
-    registeredAt: v.registeredAt.toString(),
-    active: v.active,
-    attestationCount: v.attestationCount.toString(),
+    agentId: validation.agentId.toString(),
+    requester: validation.requester,
+    validatorAddress: validation.validatorAddress,
+    requestURI: validation.requestURI,
+    requestDataHash: validation.requestDataHash,
+    requestedAt: validation.requestedAt.toString(),
+    status: getValidationStatusString(validation.status),
+    statusCode: validation.status,
+    response: validation.response,
+    responseURI: validation.responseURI,
+    responseDataHash: validation.responseDataHash,
+    tag: validation.tag,
+    respondedAt: validation.respondedAt.toString(),
+    isApproved: isValidationApproved(validation.status),
+    isPending: validation.status === ValidationStatus.Pending,
   };
 }
 
-function formatAttestation(attestation: unknown): Record<string, unknown> {
-  const a = attestation as {
-    validator: string;
-    attestationType: string;
-    dataHash: string;
-    dataURI: string;
-    createdAt: bigint;
-    expiresAt: bigint;
-    revoked: boolean;
-    confidenceScore: number;
-  };
-
+function formatValidationSummary(summary: ValidationSummary): Record<string, unknown> {
   return {
-    validator: a.validator,
-    attestationType: a.attestationType,
-    dataHash: a.dataHash,
-    dataURI: a.dataURI,
-    createdAt: a.createdAt.toString(),
-    expiresAt: a.expiresAt.toString(),
-    revoked: a.revoked,
-    confidenceScore: a.confidenceScore,
-    isExpired: BigInt(Date.now() / 1000) > a.expiresAt,
-  };
-}
-
-function formatValidationSummary(summary: unknown): Record<string, unknown> {
-  const s = summary as {
-    totalAttestations: bigint;
-    activeAttestations: bigint;
-    expiredAttestations: bigint;
-    revokedAttestations: bigint;
-    validatorCount: bigint;
-    averageConfidence: number;
-    lastUpdated: bigint;
-  };
-
-  return {
-    totalAttestations: s.totalAttestations.toString(),
-    activeAttestations: s.activeAttestations.toString(),
-    expiredAttestations: s.expiredAttestations.toString(),
-    revokedAttestations: s.revokedAttestations.toString(),
-    validatorCount: s.validatorCount.toString(),
-    averageConfidence: s.averageConfidence,
-    lastUpdated: s.lastUpdated.toString(),
+    totalRequests: summary.totalRequests.toString(),
+    approvedCount: summary.approvedCount.toString(),
+    rejectedCount: summary.rejectedCount.toString(),
+    pendingCount: summary.pendingCount.toString(),
+    averageResponse: summary.averageResponse,
+    isPositiveAverage: summary.averageResponse > 50,
   };
 }

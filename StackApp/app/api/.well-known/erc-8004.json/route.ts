@@ -122,7 +122,7 @@ export async function GET() {
   }> = [
     {
       type: "reputation",
-      description: "On-chain feedback via Reputation Registry with cryptographic signatures",
+      description: "On-chain feedback via Reputation Registry (EIP-8004 compliant: score 0-100, tag1/tag2 filtering)",
       enabled: true,
       config: {
         reputationRegistries: Object.fromEntries(
@@ -135,11 +135,20 @@ export async function GET() {
               return [`eip155:${chainId}`, registries.reputation];
             })
         ),
+        scoreRange: { min: 0, max: 100 },
+        approvalThreshold: 50,
+        features: [
+          "score-0-100",
+          "tag1-tag2-filtering",
+          "feedback-uri-hash",
+          "agent-response",
+          "revocation",
+        ],
       },
     },
     {
       type: "validation",
-      description: "Third-party validator attestations via Validation Registry",
+      description: "Request-response validation model via Validation Registry (EIP-8004 compliant)",
       enabled: true,
       config: {
         validationRegistries: Object.fromEntries(
@@ -152,19 +161,24 @@ export async function GET() {
               return [`eip155:${chainId}`, registries.validation];
             })
         ),
-        minimumStake: "0.1",  // Native token
-        attestationTypes: [
-          "security-audit",
-          "performance-verified",
-          "api-compliance",
-          "uptime-verified",
+        model: "request-response",
+        scoreRange: { min: 0, max: 100 },
+        approvalThreshold: 50,
+        features: [
+          "request-response-model",
+          "validator-address-targeting",
+          "tag-based-categorization",
+          "request-hash-tracking",
+          "request-cancellation",
+        ],
+        exampleTags: [
+          "security",
+          "compliance",
+          "performance",
+          "api-quality",
+          "uptime",
         ],
       },
-    },
-    {
-      type: "cryptoeconomic",
-      description: "Stake-secured validation for critical operations",
-      enabled: false,
     },
     {
       type: "tee-attestation",
