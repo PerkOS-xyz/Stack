@@ -69,7 +69,7 @@ export async function GET() {
       mediaType: "image/png",
     },
 
-    // x402 V2 capabilities
+    // x402 V2 capabilities (EIP-8004 compliant)
     capabilities: [
       "x402-v2", // V2 protocol support
       "x402-payment-exact", // EIP-3009 exact payments
@@ -77,6 +77,8 @@ export async function GET() {
       "multi-chain", // Multi-chain support
       "evm-compatible", // EVM chains
       "erc-8004-discovery", // Agent discovery
+      "erc-8004-reputation", // On-chain reputation (score 0-100, tag filtering)
+      "erc-8004-validation", // Request-response validation model
       "bazaar-indexable", // Bazaar discovery
       "gasless-transactions", // Sponsored gas
     ],
@@ -106,11 +108,23 @@ export async function GET() {
       discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
     },
 
-    // Trust indicators
+    // Trust indicators (EIP-8004 compliant)
     trust: {
       totalTransactions: stats.totalTransactions,
       successRate: `${stats.successRate}%`,
       verified: false, // Update when on-chain registry deployed
+      erc8004: {
+        reputation: {
+          enabled: true,
+          model: "score-0-100",
+          features: ["tag1-tag2-filtering", "feedback-uri-hash"],
+        },
+        validation: {
+          enabled: true,
+          model: "request-response",
+          features: ["validator-targeting", "tag-categorization"],
+        },
+      },
     },
 
     // Protocol version
