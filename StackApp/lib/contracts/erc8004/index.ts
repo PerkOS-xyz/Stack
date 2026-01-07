@@ -15,24 +15,115 @@ export {
   REPUTATION_REGISTRY_ABI,
   VALIDATION_REGISTRY_ABI,
 
-  // Identity Types
-  type MetadataEntry,
-
-  // Reputation Types (EIP-8004: score 0-100, tag filtering)
-  type Feedback,
-  type ReputationSummary,
-
-  // Validation Types (EIP-8004: request-response model)
-  ValidationStatus,
-  type ValidationRequest,
-  type ValidationSummary,
-
   // Utility Functions
   encodeMetadataValue,
   decodeMetadataValue,
-
-  // Validation utilities (EIP-8004 compliant)
-  isValidationApproved,
-  getValidationStatusString,
-  isScoreApproved,
 } from "@perkos/contracts-erc8004";
+
+// ============ Local Type Definitions ============
+
+/**
+ * Metadata entry for Identity Registry
+ */
+export interface MetadataEntry {
+  key: string;
+  value: `0x${string}`;
+}
+
+/**
+ * Feedback entry from Reputation Registry (EIP-8004: score 0-100)
+ */
+export interface Feedback {
+  client: `0x${string}`;
+  score: number;
+  tag1: string;
+  tag2: string;
+  endpoint: string;
+  feedbackURI: string;
+  feedbackHash: `0x${string}`;
+  timestamp: bigint;
+  revoked: boolean;
+  response: string;
+}
+
+/**
+ * Reputation summary from Reputation Registry
+ */
+export interface ReputationSummary {
+  totalFeedback: bigint;
+  averageScore: number;
+  positiveCount: bigint;
+  negativeCount: bigint;
+}
+
+/**
+ * Validation status enum (EIP-8004 request-response model)
+ */
+export enum ValidationStatus {
+  None = 0,
+  Pending = 1,
+  Approved = 2,
+  Rejected = 3,
+  Cancelled = 4,
+}
+
+/**
+ * Validation request from Validation Registry
+ */
+export interface ValidationRequest {
+  agentId: bigint;
+  requester: `0x${string}`;
+  validatorAddress: `0x${string}`;
+  requestURI: string;
+  requestDataHash: `0x${string}`;
+  requestedAt: bigint;
+  status: ValidationStatus;
+  response: number;
+  responseURI: string;
+  responseDataHash: `0x${string}`;
+  tag: string;
+  respondedAt: bigint;
+}
+
+/**
+ * Validation summary from Validation Registry
+ */
+export interface ValidationSummary {
+  totalRequests: bigint;
+  approvedCount: bigint;
+  rejectedCount: bigint;
+  pendingCount: bigint;
+  averageResponse: number;
+}
+
+// ============ Utility Functions ============
+
+/**
+ * Check if a validation is approved (response > 50)
+ * EIP-8004 compliant approval threshold
+ */
+export function isValidationApproved(status: ValidationStatus): boolean {
+  return status === ValidationStatus.Approved;
+}
+
+/**
+ * Get human-readable validation status string
+ */
+export function getValidationStatusString(status: ValidationStatus): string {
+  const statusMap: Record<ValidationStatus, string> = {
+    [ValidationStatus.None]: "None",
+    [ValidationStatus.Pending]: "Pending",
+    [ValidationStatus.Approved]: "Approved",
+    [ValidationStatus.Rejected]: "Rejected",
+    [ValidationStatus.Cancelled]: "Cancelled",
+  };
+  return statusMap[status] || "Unknown";
+}
+
+/**
+ * Check if a score is considered approved (> 50)
+ * EIP-8004 compliant: scores 0-100, threshold at 50
+ */
+export function isScoreApproved(score: number): boolean {
+  return score > 50;
+}
