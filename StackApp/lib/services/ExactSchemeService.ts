@@ -11,9 +11,11 @@ import type {
   PaymentRequirements,
   Address,
 } from "../types/x402";
+import { getPaymentAmount, getResourceUrl } from "../types/x402";
 import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
+import { networkToCAIP2 } from "../utils/x402-headers";
 import { getThirdwebTransactionService } from "./ThirdwebTransactionService";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
 
@@ -58,6 +60,13 @@ export class ExactSchemeService {
   }
 
   /**
+   * Get network in V2 CAIP-2 format for responses
+   */
+  private getNetworkCAIP2(): string {
+    return networkToCAIP2(this.network) || this.network;
+  }
+
+  /**
    * Verify exact scheme payment (EIP-3009)
    */
   async verify(
@@ -89,7 +98,7 @@ export class ExactSchemeService {
 
       // 3. Verify signer matches 'from' address
       logger.info("Signature verification details", {
-        network: this.network,
+        network: this.getNetworkCAIP2(),
         recoveredSigner: signer,
         fromAddress: authorization.from,
         signerMatch: signer.toLowerCase() === authorization.from.toLowerCase(),
@@ -250,7 +259,7 @@ export class ExactSchemeService {
           errorReason: verifyResult.invalidReason || undefined,
           payer: null,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -267,7 +276,7 @@ export class ExactSchemeService {
           errorReason: "No sponsor wallet configured for this payer",
           payer: authorization.from,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -283,6 +292,7 @@ export class ExactSchemeService {
       // Execute transferWithAuthorization via Thirdweb server wallet
       // Retry once with a delay if we get "authorization is used or canceled" error
       // (can happen due to RPC state sync timing issues)
+      // Note: ThirdwebTransactionService expects legacy network format, not CAIP-2
       let result = await thirdwebTxService.executeTransferWithAuthorization({
         network: this.network,
         tokenAddress: requirements.asset,
@@ -298,15 +308,13 @@ export class ExactSchemeService {
         s: sig.s,
       });
 
-      // If we get an "authorization is used" error, check if the nonce is actually used on-chain
-      // This handles the race condition where Thirdweb reports failure but tx actually succeeded
-      const errorLower = result.error?.toLowerCase() || "";
-      const isAuthorizationError = errorLower.includes("authorization is used or canceled") ||
-        errorLower.includes("authorization is used") ||
-        errorLower.includes("already used");
-
-      if (!result.success && isAuthorizationError) {
-        logger.warn("Got authorization error, checking if nonce was already used on-chain...", {
+      // On ANY settlement failure, check if the nonce is actually used on-chain
+      // This handles multiple scenarios:
+      // 1. Race condition where Thirdweb reports failure but tx actually succeeded
+      // 2. Malformed error responses that hide the actual "authorization used" error
+      // 3. Client retrying a previously successful payment
+      if (!result.success) {
+        logger.warn("Settlement failed, checking if nonce was already used on-chain...", {
           originalError: result.error,
           nonce: authorization.nonce,
         });
@@ -346,7 +354,7 @@ export class ExactSchemeService {
               success: true,
               payer: authorization.from,
               transaction: txHash,
-              network: this.network,
+              network: this.getNetworkCAIP2(),
             };
           } else {
             // Nonce is used but we can't find the tx hash - the payment DID succeed, just return success
@@ -358,7 +366,7 @@ export class ExactSchemeService {
               success: true,  // Payment succeeded (nonce is used on-chain!)
               payer: authorization.from,
               transaction: null,  // Can't provide tx hash but payment went through
-              network: this.network,
+              network: this.getNetworkCAIP2(),
             };
           }
         } else {
@@ -369,6 +377,7 @@ export class ExactSchemeService {
 
           await new Promise(resolve => setTimeout(resolve, 1000));
 
+          // Note: ThirdwebTransactionService expects legacy network format, not CAIP-2
           result = await thirdwebTxService.executeTransferWithAuthorization({
             network: this.network,
             tokenAddress: requirements.asset,
@@ -423,7 +432,7 @@ export class ExactSchemeService {
           amountWei: authorization.value,
           assetAddress: requirements.asset,
           assetSymbol: "USDC",
-          network: this.network,
+          network: this.getNetworkCAIP2(),
           scheme: "exact",
           status: "success",
           vendorDomain,
@@ -448,7 +457,7 @@ export class ExactSchemeService {
           success: true,
           payer: authorization.from,
           transaction: result.transactionHash,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       } else {
         return {
@@ -456,7 +465,7 @@ export class ExactSchemeService {
           errorReason: result.error || "Transaction failed",
           payer: authorization.from,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
     } catch (error) {
@@ -469,7 +478,7 @@ export class ExactSchemeService {
         errorReason: error instanceof Error ? error.message : "Settlement failed",
         payer: null,
         transaction: null,
-        network: this.network,
+        network: this.getNetworkCAIP2(),
       };
     }
   }
@@ -483,9 +492,9 @@ export class ExactSchemeService {
       return false;
     }
 
-    // Validate amount
+    // Validate amount - use V2 helper for both amount and maxAmountRequired fields
     const value = BigInt(auth.value);
-    const maxAmount = BigInt(requirements.maxAmountRequired);
+    const maxAmount = BigInt(getPaymentAmount(requirements));
     if (value > maxAmount) {
       return false;
     }
@@ -508,7 +517,7 @@ export class ExactSchemeService {
       };
       
       logger.info("Recovering signer", {
-        network: this.network,
+        network: this.getNetworkCAIP2(),
         chainId,
         tokenAddress,
         domain,

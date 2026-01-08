@@ -17,9 +17,11 @@ import type {
   Address,
   StoredVoucher,
 } from "../types/x402";
+import { getPaymentAmount } from "../types/x402";
 import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
+import { networkToCAIP2 } from "../utils/x402-headers";
 import { DEFERRED_ESCROW_ABI } from "../contracts/abi/index";
 
 // Use full compiled ABI from deployed contract
@@ -81,6 +83,13 @@ export class DeferredSchemeService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
     };
     return chainIdMap[network];
+  }
+
+  /**
+   * Get network in V2 CAIP-2 format for responses
+   */
+  private getNetworkCAIP2(): string {
+    return networkToCAIP2(this.network) || this.network;
   }
 
   /**
@@ -190,7 +199,7 @@ export class DeferredSchemeService {
           errorReason: verifyResult.invalidReason || undefined,
           payer: null,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -225,7 +234,7 @@ export class DeferredSchemeService {
         success: true,
         payer: voucher.buyer,
         transaction: null, // No on-chain tx yet
-        network: this.network,
+        network: this.getNetworkCAIP2(),
       };
     } catch (error) {
       logger.error("Error storing deferred scheme voucher", {
@@ -237,7 +246,7 @@ export class DeferredSchemeService {
         errorReason: error instanceof Error ? error.message : "Storage failed",
         payer: null,
         transaction: null,
-        network: this.network,
+        network: this.getNetworkCAIP2(),
       };
     }
   }
@@ -253,7 +262,7 @@ export class DeferredSchemeService {
           errorReason: "Wallet client not configured",
           payer: null,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -266,7 +275,7 @@ export class DeferredSchemeService {
           errorReason: "Voucher not found",
           payer: null,
           transaction: null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -276,7 +285,7 @@ export class DeferredSchemeService {
           errorReason: "Voucher already settled",
           payer: storedVoucher.buyer,
           transaction: storedVoucher.settledTxHash || null,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
 
@@ -321,7 +330,7 @@ export class DeferredSchemeService {
           success: true,
           payer: storedVoucher.buyer,
           transaction: hash,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       } else {
         return {
@@ -329,7 +338,7 @@ export class DeferredSchemeService {
           errorReason: "Transaction reverted",
           payer: storedVoucher.buyer,
           transaction: hash,
-          network: this.network,
+          network: this.getNetworkCAIP2(),
         };
       }
     } catch (error) {
@@ -342,7 +351,7 @@ export class DeferredSchemeService {
         errorReason: error instanceof Error ? error.message : "Claim failed",
         payer: null,
         transaction: null,
-        network: this.network,
+        network: this.getNetworkCAIP2(),
       };
     }
   }
@@ -421,9 +430,9 @@ export class DeferredSchemeService {
       return false;
     }
 
-    // Validate amount
+    // Validate amount - use V2 helper for both amount and maxAmountRequired fields
     const valueAggregate = BigInt(voucher.valueAggregate);
-    const maxAmount = BigInt(requirements.maxAmountRequired);
+    const maxAmount = BigInt(getPaymentAmount(requirements));
     if (valueAggregate > maxAmount) {
       return false;
     }

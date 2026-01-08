@@ -3,12 +3,18 @@
  *
  * This file re-exports all types from the @perkos/types-x402 package
  * for backward compatibility with existing imports.
+ *
+ * Supports both V1 and V2 specification formats.
  */
 
 export {
   // Base Types
   type Address,
   type Hex,
+
+  // V2 Types
+  type Resource,
+  type Extensions,
 
   // Standard x402 Types
   type X402VerifyRequest,
@@ -52,4 +58,12 @@ export {
   isDeferredPayload,
   isAddress,
   isHex,
+  isCAIP2,
+  isResourceObject,
+
+  // V1/V2 Compatibility Helpers
+  getPaymentAmount,
+  getResourceUrl,
+  getResourceDescription,
+  getResourceMimeType,
 } from "@perkos/types-x402";
