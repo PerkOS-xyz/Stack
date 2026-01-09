@@ -5,6 +5,14 @@ import {
   generateRequestId,
   getVerifyHeaders,
 } from "@/lib/utils/x402-headers";
+import {
+  checkWalletRateLimit,
+  recordWalletTransaction,
+  extractPayerFromPayload,
+  getRateLimitHeaders,
+  createUnauthorizedResponse,
+  createRateLimitExceededResponse,
+} from "@/lib/middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -17,16 +25,34 @@ export async function POST(request: NextRequest) {
   console.log("🔷".repeat(35));
 
   try {
-    const x402Service = new X402Service();
-    const body = (await request.json()) as X402VerifyRequest;
+    // Clone request to read body for wallet extraction
+    const clonedRequest = request.clone();
+    const body = (await clonedRequest.json()) as X402VerifyRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload?.network || "unknown";
     const scheme = body.paymentPayload?.scheme || "exact";
 
-    // Log request details
+    // Extract payer wallet from payment payload
+    const payerWallet = extractPayerFromPayload(body);
+
+    if (!payerWallet) {
+      console.log("❌ Could not extract payer wallet from payload");
+      console.log("🔷".repeat(35) + "\n");
+
+      return NextResponse.json(
+        {
+          isValid: false,
+          invalidReason: "Could not determine payer wallet from payment payload",
+          payer: null,
+        },
+        { status: 400 }
+      );
+    }
+
     console.log("📥 Verify Request Details:");
     console.log("   Request ID:", requestId);
+    console.log("   Payer Wallet:", payerWallet);
     console.log("   x402Version:", body.x402Version);
     console.log("   Payment Network:", network);
     console.log("   Payment Scheme:", scheme);
@@ -34,14 +60,41 @@ export async function POST(request: NextRequest) {
     console.log("   Pay To:", body.paymentRequirements?.payTo);
     console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
 
-    if (body.paymentPayload?.payload) {
-      const payload = body.paymentPayload.payload as unknown as Record<string, unknown>;
+    // Check wallet subscription and rate limits
+    console.log("\n🔐 Checking wallet subscription...");
+    const rateLimitResult = await checkWalletRateLimit(
+      payerWallet,
+      "/v2/x402/verify",
+      network
+    );
+
+    if (!rateLimitResult.allowed) {
+      console.log("❌ Wallet check failed:", rateLimitResult.error);
+      console.log("🔷".repeat(35) + "\n");
+
+      if (rateLimitResult.error?.includes("not registered")) {
+        return createUnauthorizedResponse(rateLimitResult.error);
+      }
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
+
+    console.log("✅ Wallet authorized");
+    console.log("   Plan:", rateLimitResult.subscription?.planId);
+    console.log("   Remaining transactions:", rateLimitResult.rateLimit.remaining);
+
+    // Re-read body for verification (original request)
+    const originalBody = (await request.json()) as X402VerifyRequest;
+
+    if (originalBody.paymentPayload?.payload) {
+      const payload = originalBody.paymentPayload.payload as unknown as Record<string, unknown>;
       const authorization = payload.authorization as Record<string, unknown> | undefined;
       console.log("   Payload From:", authorization?.from || payload.from || "N/A");
       console.log("   Payload Value:", authorization?.value || payload.value || "N/A");
     }
 
-    const result = await x402Service.verify(body);
+    // Perform x402 verification
+    const x402Service = new X402Service();
+    const result = await x402Service.verify(originalBody);
 
     // Log result
     console.log("\n📤 Verify Result:");
@@ -50,6 +103,19 @@ export async function POST(request: NextRequest) {
     if (!result.isValid) {
       console.log("   ❌ Invalid Reason:", result.invalidReason);
     }
+
+    // Record successful verification transaction
+    if (result.isValid) {
+      console.log("\n📊 Recording transaction...");
+      const recordResult = await recordWalletTransaction(
+        payerWallet,
+        "/v2/x402/verify",
+        network
+      );
+      console.log("   Recorded:", recordResult.success);
+      console.log("   Remaining:", recordResult.remaining);
+    }
+
     console.log("🔷".repeat(35) + "\n");
 
     // Build V2 response headers
@@ -60,6 +126,12 @@ export async function POST(request: NextRequest) {
       isValid: result.isValid,
       payer: result.payer,
     });
+
+    // Add rate limit headers
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult.rateLimit);
+    for (const [key, value] of Object.entries(rateLimitHeaders)) {
+      headers[key] = value;
+    }
 
     return NextResponse.json(result, { headers });
   } catch (error) {

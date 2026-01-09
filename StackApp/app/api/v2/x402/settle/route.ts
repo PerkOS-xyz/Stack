@@ -6,6 +6,14 @@ import {
   getSettleHeaders,
   createV2Receipt,
 } from "@/lib/utils/x402-headers";
+import {
+  checkWalletRateLimit,
+  recordWalletTransaction,
+  extractPayerFromPayload,
+  getRateLimitHeaders,
+  createUnauthorizedResponse,
+  createRateLimitExceededResponse,
+} from "@/lib/middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -18,16 +26,43 @@ export async function POST(request: NextRequest) {
   console.log("💰".repeat(35));
 
   try {
-    const x402Service = new X402Service();
-    const body = (await request.json()) as X402SettleRequest;
+    // Clone request to read body for wallet extraction
+    const clonedRequest = request.clone();
+    const body = (await clonedRequest.json()) as X402SettleRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload?.network || "unknown";
     const scheme = body.paymentPayload?.scheme || "exact";
 
-    // Log request details
+    // Extract payer wallet from payment payload
+    const payerWallet = extractPayerFromPayload(body);
+
+    if (!payerWallet) {
+      console.log("❌ Could not extract payer wallet from payload");
+      console.log("💰".repeat(35) + "\n");
+
+      const headers = getSettleHeaders({
+        requestId,
+        network,
+        scheme,
+        success: false,
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          errorReason: "Could not determine payer wallet from payment payload",
+          payer: null,
+          transaction: null,
+          network,
+        },
+        { status: 400, headers }
+      );
+    }
+
     console.log("📥 Settle Request Details:");
     console.log("   Request ID:", requestId);
+    console.log("   Payer Wallet:", payerWallet);
     console.log("   x402Version:", body.x402Version);
     console.log("   Payment Network:", network);
     console.log("   Payment Scheme:", scheme);
@@ -35,24 +70,50 @@ export async function POST(request: NextRequest) {
     console.log("   Pay To:", body.paymentRequirements?.payTo);
     console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
 
+    // Check wallet subscription and rate limits
+    console.log("\n🔐 Checking wallet subscription...");
+    const rateLimitResult = await checkWalletRateLimit(
+      payerWallet,
+      "/v2/x402/settle",
+      network
+    );
+
+    if (!rateLimitResult.allowed) {
+      console.log("❌ Wallet check failed:", rateLimitResult.error);
+      console.log("💰".repeat(35) + "\n");
+
+      if (rateLimitResult.error?.includes("not registered")) {
+        return createUnauthorizedResponse(rateLimitResult.error);
+      }
+      return createRateLimitExceededResponse(rateLimitResult);
+    }
+
+    console.log("✅ Wallet authorized");
+    console.log("   Plan:", rateLimitResult.subscription?.planId);
+    console.log("   Remaining transactions:", rateLimitResult.rateLimit.remaining);
+
     // Extract payment details for receipt
     let paymentAmount: string | undefined;
     let paymentAsset: string | undefined;
 
-    if (body.paymentPayload?.payload) {
-      const payload = body.paymentPayload.payload as unknown as Record<string, unknown>;
+    // Re-read body for settlement (original request)
+    const originalBody = (await request.json()) as X402SettleRequest;
+
+    if (originalBody.paymentPayload?.payload) {
+      const payload = originalBody.paymentPayload.payload as unknown as Record<string, unknown>;
       const authorization = payload.authorization as Record<string, unknown> | undefined;
       console.log("   Payload From:", authorization?.from || payload.from || "N/A");
       console.log("   Payload Value:", authorization?.value || payload.value || "N/A");
       paymentAmount = String(authorization?.value || payload.value || "");
     }
 
-    if (body.paymentRequirements?.asset) {
-      paymentAsset = body.paymentRequirements.asset;
+    if (originalBody.paymentRequirements?.asset) {
+      paymentAsset = originalBody.paymentRequirements.asset;
     }
 
     console.log("\n⏳ Executing settlement...");
-    const result = await x402Service.settle(body);
+    const x402Service = new X402Service();
+    const result = await x402Service.settle(originalBody);
 
     // Log result
     console.log("\n📤 Settle Result:");
@@ -64,6 +125,19 @@ export async function POST(request: NextRequest) {
     } else {
       console.log("   ❌ Error Reason:", result.errorReason);
     }
+
+    // Record successful settlement transaction
+    if (result.success) {
+      console.log("\n📊 Recording transaction...");
+      const recordResult = await recordWalletTransaction(
+        payerWallet,
+        "/v2/x402/settle",
+        network
+      );
+      console.log("   Recorded:", recordResult.success);
+      console.log("   Remaining:", recordResult.remaining);
+    }
+
     console.log("💰".repeat(35) + "\n");
 
     // Build V2 response headers
@@ -75,6 +149,12 @@ export async function POST(request: NextRequest) {
       payer: result.payer,
       transaction: result.transaction,
     });
+
+    // Add rate limit headers
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult.rateLimit);
+    for (const [key, value] of Object.entries(rateLimitHeaders)) {
+      headers[key] = value;
+    }
 
     // Create V2 receipt
     const receipt = createV2Receipt({

@@ -9,6 +9,7 @@ import { AddressDisplay } from '@/components/AddressDisplay';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { NetworkBalanceGrid } from "@/components/NetworkBalanceGrid";
+import { RegistrationGuard } from "@/components/RegistrationGuard";
 import type { Address } from 'viem';
 import Link from 'next/link';
 
@@ -521,13 +522,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
-      <Toaster position="top-right" richColors />
-      {/* Animated Background Grid */}
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
+    <RegistrationGuard>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+        <Toaster position="top-right" richColors />
+        {/* Animated Background Grid */}
+        <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
 
-      <div className="relative">
-        <Header />
+        <div className="relative">
+          <Header />
 
         {/* Main Content */}
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1834,8 +1836,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <Footer />
+          <Footer />
+        </div>
       </div>
-    </div>
+    </RegistrationGuard>
   );
 }
