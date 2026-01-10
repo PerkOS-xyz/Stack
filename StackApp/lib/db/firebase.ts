@@ -24,7 +24,7 @@ import {
   Firestore
 } from 'firebase/firestore';
 import { cert, initializeApp as initializeAdminApp, getApps as getAdminApps, App as AdminApp } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore, Firestore as AdminFirestore } from 'firebase-admin/firestore';
+import { getFirestore as getAdminFirestore, Firestore as AdminFirestore, Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 import { getStorage as getAdminStorage, Storage as AdminStorage } from 'firebase-admin/storage';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, FirebaseStorage } from 'firebase/storage';
 
@@ -577,8 +577,8 @@ class FirestoreInsertBuilder<T extends DocumentData = DocumentData> implements P
         for (const item of dataArray) {
           const docRef = await firestore.collection(this.collectionName).add({
             ...item,
-            created_at: item.created_at || Timestamp.now(),
-            updated_at: Timestamp.now(),
+            created_at: item.created_at || AdminTimestamp.now(),
+            updated_at: AdminTimestamp.now(),
           });
           if (this.shouldReturn) {
             const doc = await docRef.get();
@@ -654,16 +654,16 @@ class FirestoreUpdateBuilder<T extends DocumentData = DocumentData> implements P
   async execute(): Promise<MutationResult<T[]>> {
     try {
       const results: T[] = [];
-      const dataWithTimestamp = {
-        ...this.updateData,
-        updated_at: Timestamp.now(),
-      };
 
       // If filtering by id, update directly
       const idFilter = this.filters.find(f => f.field === 'id');
 
       if (this.useAdmin) {
         const firestore = getAdminFirestoreDb();
+        const dataWithTimestamp = {
+          ...this.updateData,
+          updated_at: AdminTimestamp.now(),
+        };
 
         if (idFilter) {
           const docRef = firestore.collection(this.collectionName).doc(idFilter.value as string);
@@ -689,6 +689,10 @@ class FirestoreUpdateBuilder<T extends DocumentData = DocumentData> implements P
         }
       } else {
         const firestore = getClientFirestore();
+        const dataWithTimestamp = {
+          ...this.updateData,
+          updated_at: Timestamp.now(),
+        };
 
         if (idFilter) {
           const docRef = doc(firestore, this.collectionName, idFilter.value as string);
@@ -982,7 +986,7 @@ class FirestoreClient {
 
                 if (useAdmin) {
                   const docRef = (firestore as AdminFirestore).collection(collectionName).doc(id);
-                  await docRef.set({ ...item, updated_at: Timestamp.now() }, { merge: true });
+                  await docRef.set({ ...item, updated_at: AdminTimestamp.now() }, { merge: true });
                   const docResult = await docRef.get();
                   return { data: { id: docResult.id, ...docResult.data() } as unknown as T, error: null };
                 } else {
@@ -1038,6 +1042,7 @@ export {
   orderBy,
   limit,
   Timestamp,
+  AdminTimestamp,
 };
 
 // Type exports

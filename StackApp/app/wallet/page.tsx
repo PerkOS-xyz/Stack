@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useActiveAccount } from "thirdweb/react";
+
+export const dynamic = "force-dynamic";
+import { useWallet } from "@getpara/react-sdk";
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast, Toaster } from 'sonner';
@@ -49,11 +51,11 @@ const networks: Record<string, NetworkConfig> = {
 };
 
 export default function WalletPage() {
-  const account = useActiveAccount();
-  const address = account?.address;
-  const isConnected = !!account;
+  const { data: connectedWallet } = useWallet();
+  const address = connectedWallet?.address;
+  const isConnected = !!connectedWallet;
 
-  const [wallet, setWallet] = useState<SponsorWallet | null>(null);
+  const [sponsorWallet, setSponsorWallet] = useState<SponsorWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<'main' | 'receive' | 'send'>('main');
   const [sendAddress, setSendAddress] = useState('');
@@ -87,7 +89,7 @@ export default function WalletPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.wallets && data.wallets.length > 0) {
-          setWallet(data.wallets[0]);
+          setSponsorWallet(data.wallets[0]);
         }
       }
     } catch (error) {
@@ -98,7 +100,7 @@ export default function WalletPage() {
   };
 
   const fetchNetworkBalance = async (network: string) => {
-    if (!wallet) return;
+    if (!sponsorWallet) return;
 
     setNetworkBalances(prev => ({
       ...prev,
@@ -107,7 +109,7 @@ export default function WalletPage() {
 
     try {
       const response = await fetch(
-        `/api/sponsor/wallets/balance-by-network?address=${wallet.sponsor_address}&network=${network}`
+        `/api/sponsor/wallets/balance-by-network?address=${sponsorWallet.sponsor_address}&network=${network}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -130,10 +132,10 @@ export default function WalletPage() {
   };
 
   useEffect(() => {
-    if (wallet && selectedNetwork) {
+    if (sponsorWallet && selectedNetwork) {
       fetchNetworkBalance(selectedNetwork);
     }
-  }, [wallet, selectedNetwork]);
+  }, [sponsorWallet, selectedNetwork]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -150,7 +152,7 @@ export default function WalletPage() {
   };
 
   const handleSend = async () => {
-    if (!wallet || !sendAddress || !sendAmount) {
+    if (!sponsorWallet || !sendAddress || !sendAmount) {
       toast.error('Please enter recipient address and amount');
       return;
     }
@@ -172,7 +174,7 @@ export default function WalletPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          walletId: wallet.id,
+          walletId: sponsorWallet.id,
           toAddress: sendAddress,
           amount: sendAmount,
           network: selectedNetwork,
@@ -294,7 +296,7 @@ export default function WalletPage() {
   }
 
   // No wallet state
-  if (!wallet) {
+  if (!sponsorWallet) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex flex-col">
         <Header />
@@ -424,11 +426,11 @@ export default function WalletPage() {
                 {/* Address Pill */}
                 <div className="flex items-center justify-center mb-8">
                   <button
-                    onClick={() => copyToClipboard(wallet.sponsor_address)}
+                    onClick={() => copyToClipboard(sponsorWallet.sponsor_address)}
                     className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/60 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
                   >
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-sm text-gray-300 font-mono">{truncateAddress(wallet.sponsor_address)}</span>
+                    <span className="text-sm text-gray-300 font-mono">{truncateAddress(sponsorWallet.sponsor_address)}</span>
                     <svg className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
@@ -462,7 +464,7 @@ export default function WalletPage() {
                   </button>
 
                   <a
-                    href={`${currentNetwork?.explorer}/address/${wallet.sponsor_address}`}
+                    href={`${currentNetwork?.explorer}/address/${sponsorWallet.sponsor_address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
@@ -557,7 +559,7 @@ export default function WalletPage() {
                     <div className="relative p-1 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-cyan-500/30 rounded-2xl">
                       <div className="p-4 bg-white rounded-xl">
                         <QRCodeSVG
-                          value={`ethereum:${wallet.sponsor_address}@${currentNetwork?.chainId || 1}`}
+                          value={`ethereum:${sponsorWallet.sponsor_address}@${currentNetwork?.chainId || 1}`}
                           size={180}
                           level="H"
                           includeMargin={false}
@@ -570,12 +572,12 @@ export default function WalletPage() {
                 {/* Address */}
                 <div className="text-center mb-6">
                   <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Your Address</p>
-                  <p className="text-sm font-mono text-cyan-400 break-all px-2">{wallet.sponsor_address}</p>
+                  <p className="text-sm font-mono text-cyan-400 break-all px-2">{sponsorWallet.sponsor_address}</p>
                 </div>
 
                 {/* Copy Button */}
                 <button
-                  onClick={() => copyToClipboard(wallet.sponsor_address)}
+                  onClick={() => copyToClipboard(sponsorWallet.sponsor_address)}
                   className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

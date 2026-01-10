@@ -3,10 +3,12 @@
 import { config } from "@/lib/utils/config";
 import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
 import { useState, useEffect, useCallback } from "react";
+
+export const dynamic = "force-dynamic";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
-import { useActiveAccount } from "thirdweb/react";
+import { useAccount } from "@getpara/react-sdk";
 import Link from "next/link";
 
 // Types for API response
@@ -73,7 +75,7 @@ const getExplorerUrl = (network: string, hash: string): string => {
 };
 
 export default function Home() {
-  const account = useActiveAccount();
+  const { isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [loading, setLoading] = useState(true);
@@ -220,7 +222,7 @@ export default function Home() {
               </p>
 
               {/* Go to Dashboard button - shown when authenticated */}
-              {account && (
+              {isConnected && (
                 <div className="mb-8">
                   <Link
                     href="/dashboard"

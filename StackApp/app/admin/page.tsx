@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useActiveAccount } from "thirdweb/react";
+
+export const dynamic = "force-dynamic";
+import { useWallet } from "@getpara/react-sdk";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AddressDisplay } from "@/components/AddressDisplay";
@@ -86,8 +88,8 @@ interface SponsorWallet {
 type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets";
 
 export default function AdminPage() {
-  const account = useActiveAccount();
-  const address = account?.address;
+  const { data: wallet } = useWallet();
+  const address = wallet?.address;
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);

@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/sponsor/wallets
- * Creates a new sponsor wallet via Thirdweb
+ * Creates a new sponsor wallet via Para
  * Supports multiple wallets per user with naming and public/private visibility
  */
 export async function POST(req: NextRequest) {
@@ -89,25 +89,24 @@ export async function POST(req: NextRequest) {
       : "Default Wallet";
     const finalWalletName = walletName?.trim() || defaultName;
 
-    // Create server-controlled sponsor wallet using ThirdwebService
-    const { getThirdwebService } = await import("@/lib/services/ThirdwebService");
-    const thirdweb = getThirdwebService();
+    // Create server-controlled sponsor wallet using Para
+    const { getParaService } = await import("@/lib/services/ParaService");
+    const paraService = getParaService();
 
-    const sponsorWallet = await thirdweb.createWallet(
+    const sponsorWallet = await paraService.createWallet(
       userWalletAddress,
       network
     );
 
-    // Store wallet in database with both EOA and Smart Wallet addresses
+    // Store wallet in database with Para wallet ID and address
+    // Para manages keys securely - we only store the wallet ID for signing operations
     const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
         network,
-        turnkey_wallet_id: sponsorWallet.walletId,
-        sponsor_address: sponsorWallet.address, // EOA address
-        smart_wallet_address: sponsorWallet.smartWalletAddress, // Smart Wallet address
-        encrypted_private_key: sponsorWallet.encryptedPrivateKey,
+        para_wallet_id: sponsorWallet.walletId, // Para wallet ID for signing
+        sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains)
         balance: "0",
         wallet_name: finalWalletName,
         is_public: isPublic,
@@ -125,8 +124,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ Sponsor wallet created successfully:`);
     console.log(`   Name: ${finalWalletName}`);
-    console.log(`   EOA Address: ${sponsorWallet.address}`);
-    console.log(`   Smart Wallet: ${sponsorWallet.smartWalletAddress}`);
+    console.log(`   Address: ${sponsorWallet.address}`);
+    console.log(`   Para Wallet ID: ${sponsorWallet.walletId}`);
     console.log(`   Network: ${network} (works on all EVM chains)`);
     console.log(`   Public: ${isPublic}`);
 

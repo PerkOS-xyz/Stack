@@ -1,9 +1,9 @@
 'use client';
 
-import { ConnectButton, useActiveAccount, darkTheme } from "thirdweb/react";
-import { client, chains } from "@/lib/config/thirdweb";
-import { inAppWallet, createWallet } from "thirdweb/wallets";
+import { useWallet, useModal } from "@getpara/react-sdk";
 import { useState, useEffect } from 'react';
+
+export const dynamic = "force-dynamic";
 import { toast, Toaster } from 'sonner';
 import { AddressDisplay } from '@/components/AddressDisplay';
 import { Header } from "@/components/Header";
@@ -57,24 +57,11 @@ interface AnalyticsSummary {
   chainId: string;
 }
 
-// Define wallets outside component to avoid hoisting issues
-const supportedWallets = [
-  createWallet("io.metamask"),
-  createWallet("com.coinbase.wallet"),
-  createWallet("me.rainbow"),
-  createWallet("app.phantom"),
-  createWallet("walletConnect"),
-  inAppWallet({
-    auth: {
-      options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
-    },
-  }),
-].filter(wallet => wallet && typeof wallet === 'object');
-
 export default function DashboardPage() {
-  const account = useActiveAccount();
-  const address = account?.address;
-  const isConnected = !!account;
+  const { data: wallet } = useWallet();
+  const { openModal } = useModal();
+  const address = wallet?.address;
+  const isConnected = !!wallet;
 
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -468,35 +455,12 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <ConnectButton
-              client={client}
-              chains={chains}
-              wallets={supportedWallets}
-              theme={darkTheme({
-                colors: {
-                  primaryButtonBg: "linear-gradient(to right, #3b82f6, #06b6d4)",
-                  primaryButtonText: "#ffffff",
-                },
-              })}
-              connectButton={{
-                label: "Connect Wallet",
-                style: {
-                  width: "100%",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  padding: "12px 24px",
-                },
-              }}
-              connectModal={{
-                size: "wide",
-                title: "Sign In",
-                welcomeScreen: {
-                  title: "Stack Middleware",
-                  subtitle: "Multi-chain x402 payment infrastructure",
-                },
-                showThirdwebBranding: false,
-              }}
-            />
+            <button
+              onClick={() => openModal()}
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+            >
+              Connect Wallet
+            </button>
 
             <div className="mt-6 pt-6 border-t border-blue-500/20">
               <p className="text-sm text-gray-400 mb-3">Connect with:</p>

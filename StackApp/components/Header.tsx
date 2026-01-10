@@ -3,26 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ConnectButton, useActiveAccount, useActiveWallet, useDisconnect, darkTheme } from "thirdweb/react";
-import { client, chains } from "@/lib/config/thirdweb";
-import { inAppWallet, createWallet } from "thirdweb/wallets";
+import { useModal, useAccount, useWallet, useLogout } from "@getpara/react-sdk";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
-
-// Define wallets outside component to avoid hoisting issues
-const supportedWallets = [
-  createWallet("io.metamask"),
-  createWallet("com.coinbase.wallet"),
-  createWallet("me.rainbow"),
-  createWallet("app.phantom"),
-  createWallet("walletConnect"),
-  inAppWallet({
-    auth: {
-      options: ["email", "google", "apple", "facebook", "discord", "telegram", "phone"],
-    },
-  }),
-].filter(wallet => wallet && typeof wallet === 'object');
 
 interface NavItem {
   href: string;
@@ -59,9 +43,16 @@ export function Header() {
   const [ensAvatar, setEnsAvatar] = useState<string | null>(null);
   const [hasSponsorWallet, setHasSponsorWallet] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const account = useActiveAccount();
-  const wallet = useActiveWallet();
-  const { disconnect } = useDisconnect();
+
+  // Para SDK hooks
+  const { openModal } = useModal();
+  const { data: wallet } = useWallet();
+  const { isConnected } = useAccount();
+  const { logout } = useLogout();
+
+  // Get address from wallet
+  const address = wallet?.address as `0x${string}` | undefined;
+
   const pathname = usePathname();
   const router = useRouter();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -69,7 +60,7 @@ export function Header() {
   // Fetch ENS name and avatar when account changes
   useEffect(() => {
     async function fetchEnsData() {
-      if (!account?.address) {
+      if (!address) {
         setEnsName(null);
         setEnsAvatar(null);
         return;
@@ -77,7 +68,7 @@ export function Header() {
       try {
         // Reverse lookup ENS name
         const name = await ensClient.getEnsName({
-          address: account.address as `0x${string}`,
+          address: address,
         });
         setEnsName(name);
 
@@ -100,17 +91,17 @@ export function Header() {
       }
     }
     fetchEnsData();
-  }, [account?.address]);
+  }, [address]);
 
   // Fetch user profile avatar when account changes
   useEffect(() => {
     async function fetchUserAvatar() {
-      if (!account?.address) {
+      if (!address) {
         setUserAvatar(null);
         return;
       }
       try {
-        const response = await fetch(`/api/profile?address=${account.address}`);
+        const response = await fetch(`/api/profile?address=${address}`);
         if (response.ok) {
           const data = await response.json();
           setUserAvatar(data.profile?.avatar_url || null);
@@ -120,17 +111,17 @@ export function Header() {
       }
     }
     fetchUserAvatar();
-  }, [account?.address]);
+  }, [address]);
 
   // Check if user has a sponsor wallet
   useEffect(() => {
     async function checkSponsorWallet() {
-      if (!account?.address) {
+      if (!address) {
         setHasSponsorWallet(false);
         return;
       }
       try {
-        const response = await fetch(`/api/sponsor/wallets?address=${account.address}`);
+        const response = await fetch(`/api/sponsor/wallets?address=${address}`);
         if (response.ok) {
           const data = await response.json();
           setHasSponsorWallet(data.wallets && data.wallets.length > 0);
@@ -141,17 +132,17 @@ export function Header() {
       }
     }
     checkSponsorWallet();
-  }, [account?.address]);
+  }, [address]);
 
   // Check if user is admin
   useEffect(() => {
     async function checkAdminStatus() {
-      if (!account?.address) {
+      if (!address) {
         setIsAdmin(false);
         return;
       }
       try {
-        const response = await fetch(`/api/admin/verify?address=${account.address}`);
+        const response = await fetch(`/api/admin/verify?address=${address}`);
         if (response.ok) {
           const data = await response.json();
           setIsAdmin(data.isAdmin === true);
@@ -162,7 +153,7 @@ export function Header() {
       }
     }
     checkAdminStatus();
-  }, [account?.address]);
+  }, [address]);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -176,14 +167,14 @@ export function Header() {
   }, []);
 
   // Format wallet address for display (first 5 + ... + last 5)
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 7)}...${address.slice(-5)}`;
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 7)}...${addr.slice(-5)}`;
   };
 
   // Get display name: ENS name or formatted address
   const getDisplayName = () => {
     if (ensName) return ensName;
-    if (account?.address) return formatAddress(account.address);
+    if (address) return formatAddress(address);
     return "";
   };
 
@@ -252,7 +243,7 @@ export function Header() {
           </nav>
 
           {/* Right Side - User Menu or Connect Button */}
-          {account ? (
+          {isConnected && address ? (
             // Logged in - show custom user dropdown
             <div className="relative" ref={userMenuRef}>
               <button
@@ -267,7 +258,7 @@ export function Header() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    account.address.slice(2, 4).toUpperCase()
+                    address.slice(2, 4).toUpperCase()
                   )}
                 </div>
                 <span className="text-gray-200 text-sm font-medium hidden sm:block max-w-[140px] truncate">
@@ -297,14 +288,14 @@ export function Header() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          account.address.slice(2, 4).toUpperCase()
+                          address.slice(2, 4).toUpperCase()
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         {ensName && (
                           <p className="text-sm text-gray-200 font-medium truncate">{ensName}</p>
                         )}
-                        <p className="text-xs text-gray-400 font-mono truncate">{formatAddress(account.address)}</p>
+                        <p className="text-xs text-gray-400 font-mono truncate">{formatAddress(address)}</p>
                       </div>
                     </div>
                   </div>
@@ -365,9 +356,7 @@ export function Header() {
                   <div className="border-t border-blue-500/20 py-2">
                     <button
                       onClick={() => {
-                        if (wallet) {
-                          disconnect(wallet);
-                        }
+                        logout();
                         setUserMenuOpen(false);
                         router.push("/");
                       }}
@@ -383,45 +372,13 @@ export function Header() {
               )}
             </div>
           ) : (
-            // Not logged in - show Thirdweb Connect button
-            <ConnectButton
-              client={client}
-              chains={chains}
-              wallets={supportedWallets}
-              theme={darkTheme({
-                colors: {
-                  primaryButtonBg: "linear-gradient(to right, #3b82f6, #06b6d4)",
-                  primaryButtonText: "#ffffff",
-                },
-              })}
-              connectButton={{
-                label: "Sign In",
-                style: {
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  padding: "8px 24px",
-                },
-              }}
-              appMetadata={{
-                name: "PerkOS Stack",
-                logoUrl: "https://stack.perkos.xyz/logo.png",
-                url: typeof window !== "undefined" ? window.location.origin : "",
-              }}
-              connectModal={{
-                size: "wide",
-                title: "Sign In to PerkOS Stack",
-                welcomeScreen: {
-                  title: "PerkOS Stack",
-                  subtitle: "Multi-chain x402 payment infrastructure",
-                  img: {
-                    src: "https://stack.perkos.xyz/logo.png",
-                    width: 150,
-                    height: 150,
-                  },
-                },
-                showThirdwebBranding: false,
-              }}
-            />
+            // Not logged in - show Para Connect button
+            <button
+              onClick={() => openModal()}
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+            >
+              Sign In
+            </button>
           )}
         </div>
 
@@ -430,7 +387,7 @@ export function Header() {
           <div className="lg:hidden mt-4 pt-4 border-t border-blue-500/20">
             <nav className="flex flex-col space-y-2">
               {/* User menu items (only when logged in) */}
-              {account && (
+              {isConnected && address && (
                 <>
                   {userMenuItems.map((item) => {
                     const active = isActive(item.href);
