@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     const offset = page * limit;
 
     // Build query
-    let query = supabase
+    let query = firebaseAdmin
       .from("perkos_x402_agents")
       .select("*", { count: "exact" })
       .order("last_active_at", { ascending: false });

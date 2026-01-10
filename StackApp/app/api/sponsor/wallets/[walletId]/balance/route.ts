@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { createPublicClient, http, type Address } from "viem";
 import { chains, getRpcUrl, getNativeTokenSymbol } from "@/lib/utils/chains";
 
@@ -18,7 +18,7 @@ export async function GET(
     const { walletId } = await params;
 
     // Get wallet from database
-    const { data: wallet, error: fetchError } = await supabase
+    const { data: wallet, error: fetchError } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .select("*")
       .eq("id", walletId)
@@ -62,7 +62,7 @@ export async function GET(
     });
 
     // Update database with new balance
-    const { error: updateError } = await supabase
+    const { error: updateError } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .update({
         balance: balance.toString(),

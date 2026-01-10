@@ -1,11 +1,12 @@
 import { createPublicClient, http, type PublicClient, parseAbiItem } from 'viem';
-import { supabaseAdmin } from '../db/supabase';
-import { SUPPORTED_NETWORKS } from '../utils/chains';
+import { firebaseAdmin } from '../db/firebase';
+import { SUPPORTED_NETWORKS, getChainIdFromNetwork, type SupportedNetwork } from '../utils/chains';
+import { config } from '../utils/config';
 import type { Address } from '../types/x402';
 
 /**
  * Event Indexer Service
- * Listens to blockchain events and indexes them to Supabase for analytics
+ * Listens to blockchain events and indexes them to Firebase for analytics
  */
 
 interface IndexerConfig {
@@ -30,12 +31,14 @@ export class EventIndexer {
 
   private initializeClients() {
     // Initialize public clients for each supported network
-    for (const [networkKey, networkConfig] of Object.entries(SUPPORTED_NETWORKS)) {
-      if (networkConfig.rpcUrl) {
+    // SUPPORTED_NETWORKS is an array of network names (strings)
+    for (const network of SUPPORTED_NETWORKS) {
+      const rpcUrl = config.rpcUrls[network as keyof typeof config.rpcUrls];
+      if (rpcUrl) {
         const client = createPublicClient({
-          transport: http(networkConfig.rpcUrl),
+          transport: http(rpcUrl),
         });
-        this.clients.set(networkKey, client);
+        this.clients.set(network, client);
       }
     }
   }
@@ -77,10 +80,11 @@ export class EventIndexer {
    * Start indexing for a specific network
    */
   private startNetworkIndexer(network: string, client: PublicClient) {
-    const networkConfig = SUPPORTED_NETWORKS[network];
-    if (!networkConfig) return;
+    // Get chain ID from the chains utility function
+    const chainId = getChainIdFromNetwork(network as SupportedNetwork);
+    if (!chainId) return;
 
-    console.log(`📡 Starting indexer for ${network} (Chain ID: ${networkConfig.chainId})`);
+    console.log(`📡 Starting indexer for ${network} (Chain ID: ${chainId})`);
 
     // Get the latest indexed block from database or use configured start block
     this.getLastIndexedBlock(network).then((lastBlock) => {
@@ -94,7 +98,7 @@ export class EventIndexer {
           if (latestBlock > currentBlock) {
             await this.indexBlockRange(
               network,
-              networkConfig.chainId,
+              chainId,
               client,
               currentBlock + 1n,
               latestBlock
@@ -240,7 +244,7 @@ export class EventIndexer {
     status: 'pending' | 'verified' | 'settled' | 'failed';
     blockNumber: number;
   }) {
-    const { error } = await supabaseAdmin.from('perkos_transactions').upsert(
+    const { error } = await firebaseAdmin.from('perkos_transactions').upsert(
       {
         hash: data.hash,
         network: data.network,
@@ -272,7 +276,7 @@ export class EventIndexer {
     network: string;
     chainId: number;
   }) {
-    const { error } = await supabaseAdmin.from('perkos_vouchers').upsert(
+    const { error } = await firebaseAdmin.from('perkos_vouchers').upsert(
       {
         voucher_id: data.voucherId,
         buyer: data.buyer,
@@ -301,7 +305,7 @@ export class EventIndexer {
     const today = new Date().toISOString().split('T')[0];
 
     // Get today's transaction stats
-    const { data: transactions } = await supabaseAdmin
+    const { data: transactions } = await firebaseAdmin
       .from('perkos_transactions')
       .select('amount, payer')
       .eq('network', network)
@@ -318,7 +322,7 @@ export class EventIndexer {
     const averageTxValue = (BigInt(totalVolume) / BigInt(transactions.length)).toString();
 
     // Upsert network stats
-    await supabaseAdmin.from('perkos_network_stats').upsert(
+    await firebaseAdmin.from('perkos_network_stats').upsert(
       {
         network,
         chain_id: chainId,
@@ -336,7 +340,7 @@ export class EventIndexer {
    * Get the last indexed block for a network
    */
   private async getLastIndexedBlock(network: string): Promise<bigint> {
-    const { data } = await supabaseAdmin
+    const { data } = await firebaseAdmin
       .from('perkos_transactions')
       .select('block_number')
       .eq('network', network)

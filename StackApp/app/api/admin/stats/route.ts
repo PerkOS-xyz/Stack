@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -47,31 +47,31 @@ export async function GET(req: NextRequest) {
       networkStatsResult,
     ] = await Promise.all([
       // Total users
-      supabase
+      firebaseAdmin
         .from("perkos_user_profiles")
         .select("*", { count: "exact", head: true }),
       // Total sponsor wallets
-      supabase
+      firebaseAdmin
         .from("perkos_sponsor_wallets")
         .select("*", { count: "exact", head: true }),
       // Total agents
-      supabase
+      firebaseAdmin
         .from("perkos_x402_agents")
         .select("*", { count: "exact", head: true }),
       // Total vendors
-      supabase
+      firebaseAdmin
         .from("perkos_vendors")
         .select("*", { count: "exact", head: true }),
       // Total endpoints
-      supabase
+      firebaseAdmin
         .from("perkos_vendor_endpoints")
         .select("*", { count: "exact", head: true }),
       // Total transactions
-      supabase
+      firebaseAdmin
         .from("perkos_x402_transactions")
         .select("*", { count: "exact", head: true }),
       // Network stats (sum of all)
-      supabase
+      firebaseAdmin
         .from("perkos_x402_network_stats")
         .select("*")
         .order("stats_date", { ascending: false })

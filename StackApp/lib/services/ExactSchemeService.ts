@@ -416,7 +416,8 @@ export class ExactSchemeService {
         let vendorDomain: string | undefined;
         let vendorEndpoint: string | undefined;
         try {
-          const resourceUrl = new URL(requirements.resource);
+          const resourceUrlStr = getResourceUrl(requirements);
+          const resourceUrl = new URL(resourceUrlStr);
           vendorDomain = resourceUrl.hostname;
           vendorEndpoint = resourceUrl.pathname;
         } catch {
@@ -432,7 +433,7 @@ export class ExactSchemeService {
           amountWei: authorization.value,
           assetAddress: requirements.asset,
           assetSymbol: "USDC",
-          network: this.getNetworkCAIP2(),
+          network: this.network,
           scheme: "exact",
           status: "success",
           vendorDomain,

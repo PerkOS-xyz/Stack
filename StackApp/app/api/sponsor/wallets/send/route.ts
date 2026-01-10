@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { chains, getNativeTokenSymbol } from "@/lib/utils/chains";
 import { parseEther } from "viem";
 
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get wallet from database
-    const { data: walletData, error: fetchError } = await supabaseAdmin
+    const { data: walletData, error: fetchError } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .select("*")
       .eq("id", walletId)

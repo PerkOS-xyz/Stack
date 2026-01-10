@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     const offset = page * limit;
 
     // Fetch vendors with pagination
-    const { data: vendors, error, count } = await supabase
+    const { data: vendors, error, count } = await firebaseAdmin
       .from("perkos_vendors")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     let endpoints: any[] = [];
 
     if (vendorIds.length > 0) {
-      const { data: endpointsData } = await supabase
+      const { data: endpointsData } = await firebaseAdmin
         .from("perkos_vendor_endpoints")
         .select("*")
         .in("vendor_id", vendorIds);

@@ -11,8 +11,9 @@ export async function GET() {
     description: config.facilitatorDescription,
     url: config.facilitatorUrl,
     supportedSchemes: x402Service.getSupported().kinds,
-    network: "avalanche",
-    chainId: 43114,
-    paymentToken: config.paymentToken,
+    defaultNetwork: config.defaultNetwork,
+    paymentTokens: config.paymentTokens,
+    deferredEnabled: config.deferredEnabled,
+    deferredEscrowAddresses: config.deferredEscrowAddresses,
   });
 }

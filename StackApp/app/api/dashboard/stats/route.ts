@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
@@ -43,13 +43,13 @@ export async function GET(req: NextRequest) {
     const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
 
     // Fetch total transactions count from x402 transactions table
-    const { count: totalTransactions } = await supabase
+    const { count: totalTransactions } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
       .eq("status", "success");
 
     // Fetch total volume (sum of all successful transactions)
-    const { data: volumeData } = await supabase
+    const { data: volumeData } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("amount_usd")
       .eq("status", "success");
@@ -60,13 +60,13 @@ export async function GET(req: NextRequest) {
     }, 0) || 0;
 
     // Fetch active agents count
-    const { count: activeAgents } = await supabase
+    const { count: activeAgents } = await firebaseAdmin
       .from("perkos_agents")
       .select("*", { count: "exact", head: true })
       .gt("total_transactions", 0);
 
     // Fetch network statistics
-    const { data: networkData } = await supabase
+    const { data: networkData } = await firebaseAdmin
       .from("perkos_network_stats")
       .select("network, chain_id, total_transactions, total_volume")
       .gte("date", startDate.toISOString().split("T")[0])
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     };
 
     // Fetch chart data (daily transactions for the time range)
-    const { data: chartDataRaw } = await supabase
+    const { data: chartDataRaw } = await firebaseAdmin
       .from("perkos_network_stats")
       .select("date, total_transactions, total_volume")
       .gte("date", startDate.toISOString().split("T")[0])
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
     }));
 
     // Fetch recent transactions (last 9 for landing page card display)
-    const { data: recentTxs } = await supabase
+    const { data: recentTxs } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at")
       .eq("status", "success")
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
 
     // Calculate growth (compare with previous period)
     const prevStartDate = new Date(startDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const { count: prevTransactions } = await supabase
+    const { count: prevTransactions } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
       .eq("status", "success")

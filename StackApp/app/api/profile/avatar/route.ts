@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+    // Upload to Firebase Storage
+    const { data: uploadData, error: uploadError } = await firebaseAdmin.storage
       .from(AVATAR_BUCKET)
       .upload(filename, buffer, {
         contentType: file.type,
@@ -89,12 +89,12 @@ export async function POST(req: NextRequest) {
     if (uploadError) {
       console.error("Error uploading avatar:", uploadError);
 
-      // Check if bucket doesn't exist
-      if (uploadError.message?.includes("Bucket not found")) {
+      // Check if storage access issue
+      if (uploadError.message?.includes("Bucket not found") || uploadError.message?.includes("storage")) {
         return NextResponse.json(
           {
-            error: `Storage bucket '${AVATAR_BUCKET}' not found. Please create it in Supabase Dashboard > Storage`,
-            details: `Run: INSERT INTO storage.buckets (id, name, public) VALUES ('${AVATAR_BUCKET}', '${AVATAR_BUCKET}', true);`
+            error: `Storage access error. Please ensure Firebase Storage is configured correctly.`,
+            details: `Configure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET in your environment variables and enable Firebase Storage in Firebase Console.`
           },
           { status: 500 }
         );
@@ -107,14 +107,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
+    const { data: urlData } = firebaseAdmin.storage
       .from(AVATAR_BUCKET)
       .getPublicUrl(filename);
 
     const avatarUrl = urlData.publicUrl;
 
     // Update user profile with new avatar URL
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await firebaseAdmin
       .from("perkos_user_profiles")
       .update({ avatar_url: avatarUrl })
       .eq("wallet_address", walletAddress.toLowerCase());
@@ -159,7 +159,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Get current avatar URL
-    const { data: profile } = await supabaseAdmin
+    const { data: profile } = await firebaseAdmin
       .from("perkos_user_profiles")
       .select("avatar_url")
       .eq("wallet_address", address.toLowerCase())
@@ -171,7 +171,7 @@ export async function DELETE(req: NextRequest) {
       const filename = urlParts[urlParts.length - 1];
 
       // Delete from storage
-      const { error: deleteError } = await supabaseAdmin.storage
+      const { error: deleteError } = await firebaseAdmin.storage
         .from(AVATAR_BUCKET)
         .remove([filename]);
 
@@ -181,7 +181,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Clear avatar URL in profile
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await firebaseAdmin
       .from("perkos_user_profiles")
       .update({ avatar_url: null })
       .eq("wallet_address", address.toLowerCase());

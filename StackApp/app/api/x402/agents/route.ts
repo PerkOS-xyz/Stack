@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -52,14 +52,26 @@ export async function GET(request: NextRequest) {
     }
 
     // First, try to get agents from perkos_agents table
-    const { data: registeredAgents, error: agentsError } = await supabase
+    const { data: registeredAgents, error: agentsError } = await firebaseAdmin
       .from("perkos_agents")
       .select("address, name, description, total_transactions, total_volume, average_rating, last_transaction_at, created_at");
 
+    // Define the registered agent type
+    type RegisteredAgent = {
+      address: string;
+      name: string | null;
+      description: string | null;
+      total_transactions: number;
+      total_volume: number;
+      average_rating: number;
+      last_transaction_at: string | null;
+      created_at: string | null;
+    };
+
     // Create a map of registered agents for quick lookup
-    const registeredAgentsMap = new Map<string, typeof registeredAgents extends (infer T)[] ? T : never>();
+    const registeredAgentsMap = new Map<string, RegisteredAgent>();
     if (registeredAgents) {
-      for (const agent of registeredAgents) {
+      for (const agent of registeredAgents as RegisteredAgent[]) {
         registeredAgentsMap.set(agent.address.toLowerCase(), agent);
       }
     }
@@ -68,7 +80,7 @@ export async function GET(request: NextRequest) {
     // Members = payers, Providers = payees
     const addressField = agentType === "member" ? "payer" : "payee";
 
-    let txQuery = supabase
+    let txQuery = firebaseAdmin
       .from("perkos_transactions")
       .select("payer, payee, amount, network, created_at, status")
       .eq("status", "settled");

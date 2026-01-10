@@ -651,7 +651,6 @@ architecture-beta
 
     service supabase(database)[Supabase] in infra
     service thirdweb(cloud)[Thirdweb] in infra
-    service turnkey(cloud)[Turnkey] in infra
 
     service avalanche(disk)[Avalanche] in chain
     service base(disk)[Base] in chain
@@ -668,7 +667,6 @@ architecture-beta
 
     services:R --> L:supabase
     services:R --> L:thirdweb
-    services:R --> L:turnkey
 
     services:B --> T:avalanche
     services:B --> T:base

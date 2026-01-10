@@ -26,6 +26,8 @@
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.468.0",
     "next": "15.2.8",

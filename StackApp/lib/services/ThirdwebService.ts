@@ -144,6 +144,9 @@ export class ThirdwebService {
       });
 
       // Sign transaction using Thirdweb account
+      if (!account.signTransaction) {
+        throw new Error("Account does not support transaction signing");
+      }
       const signedTx = await account.signTransaction(transaction);
 
       return signedTx;

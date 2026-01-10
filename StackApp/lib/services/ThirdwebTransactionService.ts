@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../db/supabase";
+import { firebaseAdmin } from "../db/firebase";
 import { logger } from "../utils/logger";
 import { CHAIN_IDS } from "../utils/chains";
 import type { SupportedNetwork } from "../utils/config";
@@ -80,7 +80,7 @@ export class ThirdwebTransactionService {
       // 1. First, check if this address is a whitelisted agent
       logger.info("Looking up sponsor wallet for address", { walletAddress: normalizedAddress });
 
-      const { data: rule, error: ruleError } = await supabaseAdmin
+      const { data: rule, error: ruleError } = await firebaseAdmin
         .from("perkos_sponsor_rules")
         .select("sponsor_wallet_id")
         .eq("rule_type", "agent_whitelist")
@@ -97,7 +97,7 @@ export class ThirdwebTransactionService {
           sponsorWalletId: rule.sponsor_wallet_id,
         });
 
-        const { data: wallet, error: walletError } = await supabaseAdmin
+        const { data: wallet, error: walletError } = await firebaseAdmin
           .from("perkos_sponsor_wallets")
           .select("*")
           .eq("id", rule.sponsor_wallet_id)
@@ -113,7 +113,7 @@ export class ThirdwebTransactionService {
       }
 
       // 2. Fall back to direct user_wallet_address lookup
-      const { data: directWallet, error: directError } = await supabaseAdmin
+      const { data: directWallet, error: directError } = await firebaseAdmin
         .from("perkos_sponsor_wallets")
         .select("*")
         .eq("user_wallet_address", normalizedAddress)

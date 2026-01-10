@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS, chains } from "@/lib/utils/chains";
 import { createPublicClient, http } from "viem";
 
@@ -49,7 +49,7 @@ export async function GET() {
   // Check database connectivity
   try {
     const dbStart = Date.now();
-    const { error } = await supabase
+    const { error } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("id", { count: "exact", head: true });
     health.checks.database = {

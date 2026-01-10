@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../db/supabase";
+import { firebaseAdmin } from "../db/firebase";
 import { logger } from "../utils/logger";
 import type { Database, Json } from "../db/types";
 
@@ -252,7 +252,7 @@ export class VendorDiscoveryService {
     const discoveryUrl = this.buildDiscoveryUrl(normalizedUrl);
 
     // Check if vendor already exists
-    const { data: existingVendor } = await supabaseAdmin
+    const { data: existingVendor } = await firebaseAdmin
       .from("perkos_vendors")
       .select("id")
       .eq("url", normalizedUrl)
@@ -320,7 +320,7 @@ export class VendorDiscoveryService {
     };
 
     // Insert vendor - use type assertion for Supabase client
-    const { data: vendorData, error: vendorError } = await supabaseAdmin
+    const { data: vendorData, error: vendorError } = await firebaseAdmin
       .from("perkos_vendors")
       .insert(vendorInsert as never)
       .select()
@@ -400,7 +400,7 @@ export class VendorDiscoveryService {
     }
 
     if (endpointsToInsert.length > 0) {
-      const { error: endpointError } = await supabaseAdmin
+      const { error: endpointError } = await firebaseAdmin
         .from("perkos_vendor_endpoints")
         .insert(endpointsToInsert as never);
 
@@ -416,10 +416,10 @@ export class VendorDiscoveryService {
       response_time_ms: discovery.responseTimeMs,
       discovery_data: discoveryData as Json,
     };
-    await supabaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
+    await firebaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
 
     // Activate vendor
-    await supabaseAdmin
+    await firebaseAdmin
       .from("perkos_vendors")
       .update({ status: "active" } as never)
       .eq("id", vendor.id);
@@ -473,7 +473,7 @@ export class VendorDiscoveryService {
     const discoveryUrl = this.buildDiscoveryUrl(normalizedUrl);
 
     // Check if vendor already exists
-    const { data: existingVendor } = await supabaseAdmin
+    const { data: existingVendor } = await firebaseAdmin
       .from("perkos_vendors")
       .select("id")
       .eq("url", normalizedUrl)
@@ -506,11 +506,11 @@ export class VendorDiscoveryService {
       icon_url: iconUrl || null,
       website_url: websiteUrl || null,
       docs_url: docsUrl || null,
-      discovery_metadata: { direct_registration: true, endpoints } as Json,
+      discovery_metadata: { direct_registration: true, endpoints } as unknown as Json,
     };
 
     // Insert vendor
-    const { data: vendorData, error: vendorError } = await supabaseAdmin
+    const { data: vendorData, error: vendorError } = await firebaseAdmin
       .from("perkos_vendors")
       .insert(vendorInsert as never)
       .select()
@@ -538,7 +538,7 @@ export class VendorDiscoveryService {
     }));
 
     if (endpointsToInsert.length > 0) {
-      const { error: endpointError } = await supabaseAdmin
+      const { error: endpointError } = await firebaseAdmin
         .from("perkos_vendor_endpoints")
         .insert(endpointsToInsert as never);
 
@@ -554,7 +554,7 @@ export class VendorDiscoveryService {
       response_time_ms: 0,
       discovery_data: { direct_registration: true } as Json,
     };
-    await supabaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
+    await firebaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
 
     logger.info("Vendor registered directly", {
       vendorId: vendor.id,
@@ -574,7 +574,7 @@ export class VendorDiscoveryService {
    * Re-verify an existing vendor's discovery endpoint
    */
   async verifyVendor(vendorId: string): Promise<{ success: boolean; error?: string }> {
-    const { data: vendorData, error: fetchError } = await supabaseAdmin
+    const { data: vendorData, error: fetchError } = await firebaseAdmin
       .from("perkos_vendors")
       .select("*")
       .eq("id", vendorId)
@@ -596,7 +596,7 @@ export class VendorDiscoveryService {
       error_message: discovery.error || null,
       discovery_data: (discovery.data as Json) || null,
     };
-    await supabaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
+    await firebaseAdmin.from("perkos_vendor_verifications").insert(verificationInsert as never);
 
     // Update vendor status
     const updateData: VendorUpdate = {
@@ -620,7 +620,7 @@ export class VendorDiscoveryService {
       updateData.status = "inactive";
     }
 
-    await supabaseAdmin.from("perkos_vendors").update(updateData as never).eq("id", vendorId);
+    await firebaseAdmin.from("perkos_vendors").update(updateData as never).eq("id", vendorId);
 
     return {
       success: discovery.success,
@@ -637,7 +637,7 @@ export class VendorDiscoveryService {
     limit?: number;
     offset?: number;
   }): Promise<{ vendors: Vendor[]; total: number }> {
-    let query = supabaseAdmin
+    let query = firebaseAdmin
       .from("perkos_vendors")
       .select("*", { count: "exact" })
       .eq("status", "active");
@@ -678,13 +678,13 @@ export class VendorDiscoveryService {
     vendor: Vendor | null;
     endpoints: VendorEndpoint[];
   }> {
-    const { data: vendorData } = await supabaseAdmin
+    const { data: vendorData } = await firebaseAdmin
       .from("perkos_vendors")
       .select("*")
       .eq("id", vendorId)
       .single();
 
-    const { data: endpointsData } = await supabaseAdmin
+    const { data: endpointsData } = await firebaseAdmin
       .from("perkos_vendor_endpoints")
       .select("*")
       .eq("vendor_id", vendorId)
@@ -703,7 +703,7 @@ export class VendorDiscoveryService {
     vendorId: string,
     updates: Partial<Pick<Vendor, "name" | "description" | "category" | "tags" | "icon_url" | "website_url" | "docs_url">>
   ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabaseAdmin
+    const { error } = await firebaseAdmin
       .from("perkos_vendors")
       .update(updates as never)
       .eq("id", vendorId);
@@ -721,7 +721,7 @@ export class VendorDiscoveryService {
     vendorId: string,
     status: "active" | "suspended"
   ): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabaseAdmin
+    const { error } = await firebaseAdmin
       .from("perkos_vendors")
       .update({ status } as never)
       .eq("id", vendorId);
@@ -737,7 +737,7 @@ export class VendorDiscoveryService {
    */
   async deleteVendor(vendorId: string): Promise<{ success: boolean; error?: string }> {
     // Cascade delete handles endpoints and verifications
-    const { error } = await supabaseAdmin.from("perkos_vendors").delete().eq("id", vendorId);
+    const { error } = await firebaseAdmin.from("perkos_vendors").delete().eq("id", vendorId);
 
     if (error) {
       return { success: false, error: error.message };

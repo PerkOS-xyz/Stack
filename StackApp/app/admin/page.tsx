@@ -5,6 +5,7 @@ import { useActiveAccount } from "thirdweb/react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AddressDisplay } from "@/components/AddressDisplay";
+import type { Address } from "@/lib/types/x402";
 
 interface AdminStats {
   users: number;
@@ -340,7 +341,7 @@ export default function AdminPage() {
                   {users.map((user) => (
                     <tr key={user.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
-                        <AddressDisplay address={user.wallet_address} skipEns />
+                        <AddressDisplay address={user.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{user.display_name || "-"}</td>
                       <td className="px-4 py-3">
@@ -393,7 +394,7 @@ export default function AdminPage() {
                   {agents.map((agent) => (
                     <tr key={agent.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
-                        <AddressDisplay address={agent.wallet_address} skipEns />
+                        <AddressDisplay address={agent.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -462,7 +463,7 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Wallet</p>
-                      <AddressDisplay address={vendor.wallet_address} skipEns />
+                      <AddressDisplay address={vendor.wallet_address as Address} skipEns />
                     </div>
                     <div>
                       <p className="text-gray-500">Network</p>
@@ -534,10 +535,10 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={tx.payer_address} skipEns />
+                        <AddressDisplay address={tx.payer_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={tx.recipient_address} skipEns />
+                        <AddressDisplay address={tx.recipient_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">
                         ${(tx.amount_usd || 0).toFixed(2)}
@@ -604,10 +605,10 @@ export default function AdminPage() {
                     <tr key={wallet.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3 text-gray-300">{wallet.wallet_name || "Unnamed"}</td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={wallet.user_wallet_address} skipEns />
+                        <AddressDisplay address={wallet.user_wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={wallet.sponsor_address} skipEns />
+                        <AddressDisplay address={wallet.sponsor_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{wallet.balance}</td>
                       <td className="px-4 py-3">

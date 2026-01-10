@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: wallets, error } = await supabase
+    const { data: wallets, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .select("*")
       .eq("user_wallet_address", address.toLowerCase())
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/sponsor/wallets
- * Creates a new Turnkey sponsor wallet
- * Now supports multiple wallets per user with naming and public/private visibility
+ * Creates a new sponsor wallet via Thirdweb
+ * Supports multiple wallets per user with naming and public/private visibility
  */
 export async function POST(req: NextRequest) {
   try {
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Count existing wallets for this user (for default naming)
-    const { count: walletCount } = await supabase
+    const { count: walletCount } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .select("*", { count: "exact", head: true })
       .eq("user_wallet_address", userWalletAddress.toLowerCase());
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Store wallet in database with both EOA and Smart Wallet addresses
-    const { data: wallet, error } = await supabase
+    const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
@@ -172,7 +172,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Update wallet, ensuring user owns the wallet
-    const { data: wallet, error } = await supabase
+    const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .update(updateData)
       .eq("id", walletId)

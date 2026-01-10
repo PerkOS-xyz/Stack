@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 // GET /api/sponsor/rules?walletId=xxx - Get all rules for a sponsor wallet
 export async function GET(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all rules for the wallet, ordered by priority
-    const { data: rules, error } = await supabase
+    const { data: rules, error } = await firebaseAdmin
       .from("perkos_sponsor_rules")
       .select("*")
       .eq("sponsor_wallet_id", walletId)
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the rule
-    const { data: rule, error } = await supabase
+    const { data: rule, error } = await firebaseAdmin
       .from("perkos_sponsor_rules")
       .insert({
         sponsor_wallet_id: walletId,
@@ -149,7 +149,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await firebaseAdmin
       .from("perkos_sponsor_rules")
       .delete()
       .eq("id", ruleId);
@@ -200,7 +200,7 @@ export async function PATCH(req: NextRequest) {
     if (body.monthlyLimitWei !== undefined) updateData.monthly_limit_wei = body.monthlyLimitWei;
     if (body.perTransactionLimitWei !== undefined) updateData.per_transaction_limit_wei = body.perTransactionLimitWei;
 
-    const { data: rule, error } = await supabase
+    const { data: rule, error } = await firebaseAdmin
       .from("perkos_sponsor_rules")
       .update(updateData)
       .eq("id", ruleId)
