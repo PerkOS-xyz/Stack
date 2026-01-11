@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS, SUPPORTED_NETWORKS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
@@ -31,16 +31,16 @@ export async function GET() {
 
   try {
     // Get transaction stats
-    const { count: totalTx } = await supabase
+    const { count: totalTx } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true });
 
-    const { count: successTx } = await supabase
+    const { count: successTx } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
       .eq("status", "success");
 
-    const { data: volumeData } = await supabase
+    const { data: volumeData } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("amount_usd")
       .eq("status", "success");

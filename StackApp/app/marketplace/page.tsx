@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+// Force dynamic rendering to avoid QueryClient issues during static generation
+export const dynamic = "force-dynamic";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -314,7 +317,7 @@ export default function MarketplacePage() {
                           <div className="flex items-center space-x-1">
                             <span className="text-lg font-semibold text-yellow-400">⭐</span>
                             <span className="text-lg font-semibold text-gray-200">
-                              {vendor.average_rating.toFixed(1)}
+                              {(vendor.average_rating ?? 0).toFixed(1)}
                             </span>
                           </div>
                         </div>

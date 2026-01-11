@@ -16,7 +16,7 @@ import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { networkToCAIP2 } from "../utils/x402-headers";
-import { getThirdwebTransactionService } from "./ThirdwebTransactionService";
+import { getParaTransactionService } from "./ParaTransactionService";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
 
 export class ExactSchemeService {
@@ -192,12 +192,12 @@ export class ExactSchemeService {
   }
 
   /**
-   * Settle exact scheme payment on-chain using Thirdweb server wallet
+   * Settle exact scheme payment on-chain using Para server wallet
    *
    * Flow:
    * 1. Verify the payment authorization
    * 2. Look up the sponsor wallet for the payer (consumer/client)
-   * 3. Execute transferWithAuthorization via Thirdweb API
+   * 3. Execute transferWithAuthorization via Para signer
    *    - The sponsor wallet pays gas fees
    *    - USDC moves from payer to vendor
    */
@@ -264,8 +264,8 @@ export class ExactSchemeService {
       }
 
       // Look up sponsor wallet for the payer (consumer/client)
-      const thirdwebTxService = getThirdwebTransactionService();
-      const sponsorWallet = await thirdwebTxService.findSponsorWallet(authorization.from);
+      const paraTxService = getParaTransactionService();
+      const sponsorWallet = await paraTxService.findSponsorWallet(authorization.from);
 
       if (!sponsorWallet) {
         logger.error("No sponsor wallet found for payer", {
@@ -289,14 +289,14 @@ export class ExactSchemeService {
       // Parse signature
       const sig = this.parseSignature(signature);
 
-      // Execute transferWithAuthorization via Thirdweb server wallet
+      // Execute transferWithAuthorization via Para server wallet
       // Retry once with a delay if we get "authorization is used or canceled" error
       // (can happen due to RPC state sync timing issues)
-      // Note: ThirdwebTransactionService expects legacy network format, not CAIP-2
-      let result = await thirdwebTxService.executeTransferWithAuthorization({
+      let result = await paraTxService.executeTransferWithAuthorization({
         network: this.network,
         tokenAddress: requirements.asset,
-        sponsorWalletAddress: sponsorWallet.sponsor_address,
+        sponsorWalletId: sponsorWallet.para_wallet_id,
+        sponsorUserShare: sponsorWallet.para_user_share, // User share for server-side signing
         from: authorization.from,
         to: authorization.to,
         value: BigInt(authorization.value),
@@ -310,7 +310,7 @@ export class ExactSchemeService {
 
       // On ANY settlement failure, check if the nonce is actually used on-chain
       // This handles multiple scenarios:
-      // 1. Race condition where Thirdweb reports failure but tx actually succeeded
+      // 1. Race condition where Para reports failure but tx actually succeeded
       // 2. Malformed error responses that hide the actual "authorization used" error
       // 3. Client retrying a previously successful payment
       if (!result.success) {
@@ -377,11 +377,12 @@ export class ExactSchemeService {
 
           await new Promise(resolve => setTimeout(resolve, 1000));
 
-          // Note: ThirdwebTransactionService expects legacy network format, not CAIP-2
-          result = await thirdwebTxService.executeTransferWithAuthorization({
+          // Retry via Para server wallet
+          result = await paraTxService.executeTransferWithAuthorization({
             network: this.network,
             tokenAddress: requirements.asset,
-            sponsorWalletAddress: sponsorWallet.sponsor_address,
+            sponsorWalletId: sponsorWallet.para_wallet_id,
+            sponsorUserShare: sponsorWallet.para_user_share, // User share for server-side signing
             from: authorization.from,
             to: authorization.to,
             value: BigInt(authorization.value),
@@ -398,7 +399,7 @@ export class ExactSchemeService {
       }
 
       if (result.success && result.transactionHash) {
-        logger.info("Exact scheme payment settled via Thirdweb", {
+        logger.info("Exact scheme payment settled via Para", {
           txHash: result.transactionHash,
           from: authorization.from,
           to: authorization.to,
@@ -416,7 +417,8 @@ export class ExactSchemeService {
         let vendorDomain: string | undefined;
         let vendorEndpoint: string | undefined;
         try {
-          const resourceUrl = new URL(requirements.resource);
+          const resourceUrlStr = getResourceUrl(requirements);
+          const resourceUrl = new URL(resourceUrlStr);
           vendorDomain = resourceUrl.hostname;
           vendorEndpoint = resourceUrl.pathname;
         } catch {
@@ -432,7 +434,7 @@ export class ExactSchemeService {
           amountWei: authorization.value,
           assetAddress: requirements.asset,
           assetSymbol: "USDC",
-          network: this.getNetworkCAIP2(),
+          network: this.network,
           scheme: "exact",
           status: "success",
           vendorDomain,

@@ -4,8 +4,10 @@ import {
   http,
   type PublicClient,
   type WalletClient,
+  type Chain,
   recoverTypedDataAddress,
   type Hex,
+  type Account,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type {
@@ -29,8 +31,10 @@ const ESCROW_ABI = DEFERRED_ESCROW_ABI;
 
 export class DeferredSchemeService {
   private network: SupportedNetwork;
+  private chain: Chain;
   private publicClient: PublicClient;
   private walletClient?: WalletClient;
+  private account?: Account;
   private escrowAddress: Address;
   private voucherStore: Map<string, StoredVoucher> = new Map();
 
@@ -46,18 +50,22 @@ export class DeferredSchemeService {
 
     const chainId = this.getChainIdForNetwork(network);
     const chain = getChainById(chainId);
+    if (!chain) {
+      throw new Error(`Chain configuration not found for network: ${network}`);
+    }
+    this.chain = chain;
     const rpcUrl = config.rpcUrls[network];
 
     this.publicClient = createPublicClient({
-      chain,
+      chain: this.chain,
       transport: http(rpcUrl),
     });
 
     if (config.privateKey) {
-      const account = privateKeyToAccount(config.privateKey);
+      this.account = privateKeyToAccount(config.privateKey);
       this.walletClient = createWalletClient({
-        account,
-        chain,
+        account: this.account,
+        chain: this.chain,
         transport: http(rpcUrl),
       });
     }
@@ -304,6 +312,8 @@ export class DeferredSchemeService {
 
       // Call claimVoucher
       const hash = await this.walletClient.writeContract({
+        account: this.account!,
+        chain: this.chain,
         address: this.escrowAddress,
         abi: ESCROW_ABI,
         functionName: "claimVoucher",

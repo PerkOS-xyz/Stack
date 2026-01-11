@@ -11,12 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build base query
-    let query = supabase
+    let query = firebaseAdmin
       .from('perkos_sponsor_spending')
       .select(`
         id,
@@ -100,7 +95,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate spending summary
-    let summaryQuery = supabase
+    let summaryQuery = firebaseAdmin
       .from('perkos_sponsor_spending')
       .select('amount_wei');
 

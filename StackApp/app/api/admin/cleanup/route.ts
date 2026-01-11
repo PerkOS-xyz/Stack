@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { firebaseAdmin } from "@/lib/db/firebase";
+import { vendorDiscoveryService } from "@/lib/services/VendorDiscoveryService";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +14,13 @@ function isAdminWallet(address: string): boolean {
 }
 
 /**
- * GET /api/admin/wallets?address=0x...&page=0&limit=20
- * Returns all sponsor wallets (admin only)
+ * POST /api/admin/cleanup?address=0x...
+ * Clean up orphaned data (endpoints without vendors)
  */
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const address = searchParams.get("address");
-    const page = parseInt(searchParams.get("page") || "0");
-    const limit = parseInt(searchParams.get("limit") || "20");
 
     if (!address) {
       return NextResponse.json(
@@ -38,32 +36,25 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const offset = page * limit;
+    console.log(`[AdminCleanup] Starting cleanup requested by ${address}`);
 
-    // Fetch wallets with pagination
-    const { data: wallets, error, count } = await firebaseAdmin
-      .from("perkos_sponsor_wallets")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    // Clean up orphaned endpoints
+    const result = await vendorDiscoveryService.cleanupOrphanedEndpoints();
 
-    if (error) {
-      console.error("Error fetching wallets:", error);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Failed to fetch wallets" },
+        { error: result.error || "Cleanup failed" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      wallets: wallets || [],
-      total: count || 0,
-      page,
-      limit,
-      totalPages: Math.ceil((count || 0) / limit),
+      success: true,
+      message: `Cleaned up ${result.deletedCount} orphaned endpoints`,
+      deletedCount: result.deletedCount,
     });
   } catch (error) {
-    console.error("Error in GET /api/admin/wallets:", error);
+    console.error("Error in POST /api/admin/cleanup:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

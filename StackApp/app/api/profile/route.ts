@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -53,13 +53,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: profile, error } = await supabaseAdmin
+    const { data: profile, error } = await firebaseAdmin
       .from("perkos_user_profiles")
       .select("*")
       .eq("wallet_address", address.toLowerCase())
       .single();
 
-    if (error && error.code !== "PGRST116") {
+    if (error && (error as { code?: string }).code !== "PGRST116") {
       // PGRST116 = no rows returned
       console.error("Error fetching profile:", error);
       return NextResponse.json(
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if profile already exists
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await firebaseAdmin
       .from("perkos_user_profiles")
       .select("id")
       .eq("wallet_address", walletAddress.toLowerCase())
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       // Update existing profile
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await firebaseAdmin
         .from("perkos_user_profiles")
         .update(profileData)
         .eq("wallet_address", walletAddress.toLowerCase())
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
       result = data;
     } else {
       // Create new profile
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await firebaseAdmin
         .from("perkos_user_profiles")
         .insert(profileData)
         .select()
@@ -234,7 +234,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await firebaseAdmin
       .from("perkos_user_profiles")
       .delete()
       .eq("wallet_address", address.toLowerCase());

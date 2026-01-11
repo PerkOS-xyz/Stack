@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
       : MAINNET_NETWORKS;
 
     // Fetch transactions from perkos_transactions table
-    const { data: transactions, error } = await supabase
+    const { data: transactions, error } = await firebaseAdmin
       .from("perkos_transactions")
       .select("network, chain_id, payer, payee, amount, created_at, status")
       .eq("status", "settled");

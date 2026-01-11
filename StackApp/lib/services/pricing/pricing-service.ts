@@ -8,7 +8,7 @@
  * and PerkOS facilitates the price calculation and transaction.
  */
 
-import { supabaseAdmin } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { logger } from "@/lib/utils/logger";
 import { StrategyFactory } from "./strategies";
 import { PriceCache, getDefaultCache } from "./price-cache";
@@ -17,6 +17,7 @@ import type {
   PriceResult,
   PricingServiceConfig,
   PricingStrategy,
+  PricingStrategyType,
   VendorPricingConfig,
   VendorContext,
   EndpointContext,
@@ -223,7 +224,7 @@ export class PricingService {
     startDate: Date,
     endDate: Date
   ): Promise<PricingAnalytics> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await firebaseAdmin
       .from("perkos_price_calculations")
       .select("*")
       .eq("vendor_id", vendorId)
@@ -235,8 +236,8 @@ export class PricingService {
         totalCalculations: 0,
         cacheHitRate: 0,
         avgCalculationTime: 0,
-        revenueByStrategy: {},
-        calculationsByStrategy: {},
+        revenueByStrategy: {} as Record<PricingStrategyType, string>,
+        calculationsByStrategy: {} as Record<PricingStrategyType, number>,
         priceDistribution: [],
       };
     }
@@ -266,9 +267,9 @@ export class PricingService {
       totalCalculations: total,
       cacheHitRate: cacheHits / total,
       avgCalculationTime: avgTime,
-      revenueByStrategy: byStrategy.revenue,
-      calculationsByStrategy: byStrategy.calculations,
-      priceDistribution: this.calculatePriceDistribution(data),
+      revenueByStrategy: byStrategy.revenue as Record<PricingStrategyType, string>,
+      calculationsByStrategy: byStrategy.calculations as Record<PricingStrategyType, number>,
+      priceDistribution: this.calculatePriceDistribution(data as { amount: string }[]),
     };
   }
 
@@ -390,7 +391,7 @@ export class PricingService {
     method?: string
   ): Promise<{ vendor: Vendor | null; endpoint: VendorEndpoint | null }> {
     // Fetch vendor
-    const { data: vendorData } = await supabaseAdmin
+    const { data: vendorData } = await firebaseAdmin
       .from("perkos_vendors")
       .select("*")
       .eq("id", vendorId)
@@ -401,7 +402,7 @@ export class PricingService {
     }
 
     // Fetch endpoint
-    let endpointQuery = supabaseAdmin
+    let endpointQuery = firebaseAdmin
       .from("perkos_vendor_endpoints")
       .select("*")
       .eq("vendor_id", vendorId)
@@ -488,7 +489,7 @@ export class PricingService {
   private async fetchVendorPricingConfig(
     vendorId: string
   ): Promise<VendorPricingConfig | null> {
-    const { data } = await supabaseAdmin
+    const { data } = await firebaseAdmin
       .from("perkos_vendor_pricing_configs")
       .select("*")
       .eq("vendor_id", vendorId)
@@ -522,7 +523,7 @@ export class PricingService {
     userAddress: Address
   ): Promise<UserContext> {
     // Fetch user tier for this vendor
-    const { data: tierData } = await supabaseAdmin
+    const { data: tierData } = await firebaseAdmin
       .from("perkos_vendor_user_tiers")
       .select("*")
       .eq("vendor_id", vendorId)
@@ -545,7 +546,7 @@ export class PricingService {
 
       // Fetch subscription if present
       if (tierData.subscription_id) {
-        const { data: subData } = await supabaseAdmin
+        const { data: subData } = await firebaseAdmin
           .from("perkos_vendor_user_subscriptions")
           .select("*")
           .eq("id", tierData.subscription_id)
@@ -582,7 +583,7 @@ export class PricingService {
     if (!this.config.enableLogging) return;
 
     try {
-      await supabaseAdmin.from("perkos_price_calculations").insert({
+      await firebaseAdmin.from("perkos_price_calculations").insert({
         vendor_id: context.vendor.id,
         endpoint_id: context.endpoint.id,
         strategy,

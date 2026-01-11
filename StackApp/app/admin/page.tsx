@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useActiveAccount } from "thirdweb/react";
+
+export const dynamic = "force-dynamic";
+import { useWallet } from "@getpara/react-sdk";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AddressDisplay } from "@/components/AddressDisplay";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import type { Address } from "@/lib/types/x402";
 
 interface AdminStats {
   users: number;
@@ -85,8 +89,8 @@ interface SponsorWallet {
 type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets";
 
 export default function AdminPage() {
-  const account = useActiveAccount();
-  const address = account?.address;
+  const { data: wallet } = useWallet();
+  const address = wallet?.address;
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +112,14 @@ export default function AdminPage() {
   const [vendorsPage, setVendorsPage] = useState(0);
   const [transactionsPage, setTransactionsPage] = useState(0);
   const [walletsPage, setWalletsPage] = useState(0);
+
+  // Vendor delete state
+  const [deletingVendorId, setDeletingVendorId] = useState<string | null>(null);
+  const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Cleanup state
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const [usersTotalPages, setUsersTotalPages] = useState(0);
   const [agentsTotalPages, setAgentsTotalPages] = useState(0);
@@ -209,6 +221,82 @@ export default function AdminPage() {
 
     fetchData();
   }, [address, isAdmin, activeTab, usersPage, agentsPage, vendorsPage, transactionsPage, walletsPage]);
+
+  // Open delete confirmation dialog
+  const handleDeleteVendor = (vendorId: string, vendorName: string) => {
+    setVendorToDelete({ id: vendorId, name: vendorName });
+  };
+
+  // Execute vendor deletion
+  const confirmDeleteVendor = async () => {
+    if (!vendorToDelete) return;
+
+    setDeletingVendorId(vendorToDelete.id);
+    try {
+      const response = await fetch(`/api/vendors/${vendorToDelete.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove vendor from local state
+        setVendors((prev) => prev.filter((v) => v.id !== vendorToDelete.id));
+        // Update stats
+        if (stats) {
+          setStats({ ...stats, vendors: stats.vendors - 1 });
+        }
+        setVendorToDelete(null);
+      } else {
+        alert(`Failed to delete vendor: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error deleting vendor:", error);
+      alert("Failed to delete vendor. Please try again.");
+    } finally {
+      setDeletingVendorId(null);
+    }
+  };
+
+  // Execute orphaned data cleanup
+  const handleCleanupOrphans = async () => {
+    if (!address) return;
+
+    setIsCleaningUp(true);
+    setCleanupResult(null);
+
+    try {
+      const response = await fetch(`/api/admin/cleanup?address=${address}`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setCleanupResult({
+          success: true,
+          message: `Cleaned up ${data.deletedCount} orphaned endpoints`,
+        });
+        // Refresh stats
+        const statsResponse = await fetch(`/api/admin/stats?address=${address}`);
+        const statsData = await statsResponse.json();
+        if (statsData.stats) {
+          setStats(statsData.stats);
+        }
+      } else {
+        setCleanupResult({
+          success: false,
+          message: data.error || "Cleanup failed",
+        });
+      }
+    } catch (error) {
+      console.error("Error during cleanup:", error);
+      setCleanupResult({
+        success: false,
+        message: "Cleanup failed. Please try again.",
+      });
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -319,6 +407,41 @@ export default function AdminPage() {
                 isString
               />
             </div>
+
+            {/* Admin Actions */}
+            <div className="mt-6 p-4 bg-slate-900/50 border border-blue-500/20 rounded-xl">
+              <h3 className="text-lg font-bold text-gray-200 mb-4">Admin Actions</h3>
+              <div className="flex flex-wrap gap-4 items-center">
+                <button
+                  onClick={handleCleanupOrphans}
+                  disabled={isCleaningUp}
+                  className="px-4 py-2 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 hover:text-orange-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-orange-500/30 flex items-center gap-2"
+                >
+                  {isCleaningUp ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Cleaning...
+                    </>
+                  ) : (
+                    <>
+                      🧹 Cleanup Orphaned Data
+                    </>
+                  )}
+                </button>
+                {cleanupResult && (
+                  <span
+                    className={`text-sm ${
+                      cleanupResult.success ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {cleanupResult.message}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Removes orphaned endpoints that are no longer associated with any vendor.
+              </p>
+            </div>
           </div>
         )}
 
@@ -340,7 +463,7 @@ export default function AdminPage() {
                   {users.map((user) => (
                     <tr key={user.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
-                        <AddressDisplay address={user.wallet_address} skipEns />
+                        <AddressDisplay address={user.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{user.display_name || "-"}</td>
                       <td className="px-4 py-3">
@@ -393,7 +516,7 @@ export default function AdminPage() {
                   {agents.map((agent) => (
                     <tr key={agent.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
-                        <AddressDisplay address={agent.wallet_address} skipEns />
+                        <AddressDisplay address={agent.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -444,7 +567,7 @@ export default function AdminPage() {
                       <h3 className="text-lg font-bold text-gray-200">{vendor.name}</h3>
                       <p className="text-sm text-gray-400">{vendor.url}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
                           vendor.status === "active"
@@ -457,12 +580,19 @@ export default function AdminPage() {
                       <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">
                         {vendor.category}
                       </span>
+                      <button
+                        onClick={() => handleDeleteVendor(vendor.id, vendor.name)}
+                        disabled={deletingVendorId === vendor.id}
+                        className="px-3 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+                      >
+                        {deletingVendorId === vendor.id ? "Deleting..." : "🗑️ Delete"}
+                      </button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Wallet</p>
-                      <AddressDisplay address={vendor.wallet_address} skipEns />
+                      <AddressDisplay address={vendor.wallet_address as Address} skipEns />
                     </div>
                     <div>
                       <p className="text-gray-500">Network</p>
@@ -534,10 +664,10 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={tx.payer_address} skipEns />
+                        <AddressDisplay address={tx.payer_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={tx.recipient_address} skipEns />
+                        <AddressDisplay address={tx.recipient_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">
                         ${(tx.amount_usd || 0).toFixed(2)}
@@ -604,10 +734,10 @@ export default function AdminPage() {
                     <tr key={wallet.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3 text-gray-300">{wallet.wallet_name || "Unnamed"}</td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={wallet.user_wallet_address} skipEns />
+                        <AddressDisplay address={wallet.user_wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3">
-                        <AddressDisplay address={wallet.sponsor_address} skipEns />
+                        <AddressDisplay address={wallet.sponsor_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{wallet.balance}</td>
                       <td className="px-4 py-3">
@@ -637,6 +767,19 @@ export default function AdminPage() {
         )}
       </main>
       <Footer />
+
+      {/* Delete Vendor Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={vendorToDelete !== null}
+        onClose={() => setVendorToDelete(null)}
+        onConfirm={confirmDeleteVendor}
+        title="Delete Vendor"
+        message={`Are you sure you want to delete "${vendorToDelete?.name}"?\n\nThis will also delete all associated endpoints and cannot be undone.`}
+        confirmText="Delete Vendor"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deletingVendorId !== null}
+      />
     </div>
   );
 }

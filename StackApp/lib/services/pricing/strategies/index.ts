@@ -30,10 +30,10 @@ type StrategyConstructor = new (
  */
 export class StrategyFactory {
   private static strategies: Map<PricingStrategyType, StrategyConstructor> =
-    new Map([
-      ["fixed", FixedPricingStrategy],
-      ["tiered", TieredPricingStrategy],
-      ["usage-based", UsageBasedPricingStrategy],
+    new Map<PricingStrategyType, StrategyConstructor>([
+      ["fixed", FixedPricingStrategy as StrategyConstructor],
+      ["tiered", TieredPricingStrategy as StrategyConstructor],
+      ["usage-based", UsageBasedPricingStrategy as StrategyConstructor],
       // TODO: Add more strategies
       // ["time-bucket", TimeBucketPricingStrategy],
       // ["auction", AuctionPricingStrategy],

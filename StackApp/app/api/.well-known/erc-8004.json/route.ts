@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +32,16 @@ export async function GET() {
 
   try {
     // Get transaction stats
-    const { count: totalTx } = await supabase
+    const { count: totalTx } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true });
 
-    const { count: successTx } = await supabase
+    const { count: successTx } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true })
       .eq("status", "success");
 
-    const { data: volumeData } = await supabase
+    const { data: volumeData } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("amount_usd")
       .eq("status", "success");
@@ -50,7 +50,7 @@ export async function GET() {
       volumeData?.reduce((sum, tx) => sum + (tx.amount_usd || 0), 0) || 0;
 
     // Get average rating from reviews if available
-    const { data: reviewData } = await supabase
+    const { data: reviewData } = await firebaseAdmin
       .from("perkos_reviews")
       .select("rating");
 

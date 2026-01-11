@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Address } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
+import { config, type SupportedNetwork } from "@/lib/utils/config";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
-  const x402Service = new X402Service();
-  const deferredScheme = x402Service.getDeferredScheme();
-
-  if (!deferredScheme) {
-    return NextResponse.json(
-      { error: "Deferred scheme not enabled" },
-      { status: 404 }
-    );
-  }
-
   try {
-    const { buyer, seller } = await request.json() as { buyer: Address; seller: Address };
+    const { buyer, seller, network: requestNetwork } = await request.json() as {
+      buyer: Address;
+      seller: Address;
+      network?: SupportedNetwork;
+    };
+
+    const network = requestNetwork || config.defaultNetwork;
+    const x402Service = new X402Service();
+    const deferredScheme = x402Service.getDeferredScheme(network);
+
+    if (!deferredScheme) {
+      return NextResponse.json(
+        { error: `Deferred scheme not enabled for network: ${network}` },
+        { status: 404 }
+      );
+    }
 
     // Get all unsettled vouchers
     const vouchers = deferredScheme.getVouchers({
@@ -50,6 +56,7 @@ export async function POST(request: NextRequest) {
       success: successCount > 0,
       settled: successCount,
       total: results.length,
+      network,
       results,
     });
   } catch (error) {

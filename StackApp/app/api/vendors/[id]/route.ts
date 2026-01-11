@@ -46,12 +46,29 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 /**
  * PATCH /api/vendors/[id]
- * Update vendor details
+ * Update vendor details or status
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json();
+
+    console.log("[Vendor Update] Updating vendor:", id, body);
+
+    // Handle status update separately
+    if (body.status && ["active", "suspended"].includes(body.status)) {
+      const statusResult = await vendorDiscoveryService.setVendorStatus(id, body.status);
+      if (!statusResult.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: statusResult.error,
+          },
+          { status: 400 }
+        );
+      }
+      console.log("[Vendor Update] Status updated to:", body.status);
+    }
 
     // Only allow specific fields to be updated
     const allowedFields = ["name", "description", "category", "tags", "icon_url", "website_url", "docs_url"];
@@ -63,7 +80,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // If only status was updated and no other fields, return success
     if (Object.keys(updates).length === 0) {
+      if (body.status) {
+        return NextResponse.json({
+          success: true,
+          message: "Vendor status updated successfully",
+        });
+      }
       return NextResponse.json(
         {
           success: false,

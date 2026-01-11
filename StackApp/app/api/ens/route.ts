@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const normalizedAddress = address.toLowerCase();
 
     // Check cache first
-    const { data: cached, error: cacheError } = await supabase
+    const { data: cached, error: cacheError } = await firebaseAdmin
       .from("perkos_ens_cache")
       .select("ens_name, expires_at")
       .eq("wallet_address", normalizedAddress)
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Upsert cache entry
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await firebaseAdmin
       .from("perkos_ens_cache")
       .upsert(
         {
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     const normalizedAddresses = addresses.map((a) => a.toLowerCase());
 
     // Check cache for all addresses
-    const { data: cached, error: cacheError } = await supabase
+    const { data: cached, error: cacheError } = await firebaseAdmin
       .from("perkos_ens_cache")
       .select("wallet_address, ens_name, expires_at")
       .in("wallet_address", normalizedAddresses);
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         results[addr] = ensName;
 
         // Cache the result
-        await supabase
+        await firebaseAdmin
           .from("perkos_ens_cache")
           .upsert(
             {

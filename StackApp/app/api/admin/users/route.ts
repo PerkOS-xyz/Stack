@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     const offset = page * limit;
 
     // Fetch users with pagination
-    const { data: users, error, count } = await supabase
+    const { data: users, error, count } = await firebaseAdmin
       .from("perkos_user_profiles")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })

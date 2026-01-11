@@ -4,13 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { firebaseAdmin } from "@/lib/db/firebase";
 import { getNativeTokenSymbol, weiToNativeToken } from "@/lib/utils/chains";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query - Note: gas_fee_wei column may not exist yet in older databases
-    let query = supabase
+    let query = firebaseAdmin
       .from("perkos_x402_transactions")
       .select(
         `
@@ -102,7 +97,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get summary stats
-    let statsQuery = supabase
+    let statsQuery = firebaseAdmin
       .from("perkos_x402_transactions")
       .select("amount_usd, status, transaction_hash, payer_address, recipient_address");
 

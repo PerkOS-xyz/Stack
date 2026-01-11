@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../db/supabase";
+import { firebaseAdmin } from "../db/firebase";
 import { logger } from "../utils/logger";
 import { CHAIN_IDS } from "../utils/chains";
 import type { SupportedNetwork } from "../utils/config";
@@ -100,7 +100,7 @@ export class TransactionLoggingService {
         scheme: data.scheme,
       });
 
-      const { error } = await supabaseAdmin.from("perkos_x402_transactions").insert({
+      const { error } = await firebaseAdmin.from("perkos_x402_transactions").insert({
         transaction_hash: data.transactionHash,
         payer_address: data.payerAddress.toLowerCase(),
         recipient_address: data.recipientAddress.toLowerCase(),
@@ -122,7 +122,7 @@ export class TransactionLoggingService {
 
       if (error) {
         // Check if it's a duplicate (transaction already logged)
-        if (error.code === "23505") {
+        if ((error as { code?: string }).code === "23505") {
           logger.warn("Transaction already logged", { transactionHash: data.transactionHash });
           return { success: true }; // Not really an error
         }
@@ -161,7 +161,7 @@ export class TransactionLoggingService {
         transactionHash: data.transactionHash,
       });
 
-      const { error } = await supabaseAdmin.from("perkos_sponsor_spending").insert({
+      const { error } = await firebaseAdmin.from("perkos_sponsor_spending").insert({
         sponsor_wallet_id: data.sponsorWalletId,
         amount_wei: data.amountWei,
         agent_address: data.agentAddress.toLowerCase(),

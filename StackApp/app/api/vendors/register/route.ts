@@ -24,9 +24,11 @@ interface EndpointDefinition {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log("[Vendor Registration] Received body:", JSON.stringify(body, null, 2));
 
     // Validate required field
     if (!body.url || typeof body.url !== "string") {
+      console.error("[Vendor Registration] Missing URL in request body");
       return NextResponse.json(
         {
           success: false,
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
     // Check if this is a direct registration (with endpoints defined)
     if (body.endpoints && Array.isArray(body.endpoints)) {
       // Direct registration mode - vendor provides full definition
+      console.log("[Vendor Registration] Direct mode - endpoints count:", body.endpoints.length);
       const result = await vendorDiscoveryService.registerVendorDirect({
         url: body.url,
         name: body.name,
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!result.success) {
+        console.error("[Vendor Registration] Direct mode failed:", result.error);
         return NextResponse.json(
           {
             success: false,
@@ -86,6 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Discovery mode - Stack discovers /.well-known/x402
+    console.log("[Vendor Registration] Discovery mode for URL:", body.url);
     const result = await vendorDiscoveryService.registerVendor({
       url: body.url,
       name: body.name,
@@ -98,6 +103,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
+      console.error("[Vendor Registration] Failed:", result.error);
       return NextResponse.json(
         {
           success: false,

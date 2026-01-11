@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/db/supabase";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build query for public profiles only
-    let query = supabase
+    let query = firebaseAdmin
       .from("perkos_user_profiles")
       .select("*", { count: "exact" })
       .eq("is_public", true)
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     };
 
     // Get counts by type (always unfiltered to show true totals)
-    const { data: typeCounts } = await supabase
+    const { data: typeCounts } = await firebaseAdmin
       .from("perkos_user_profiles")
       .select("account_type")
       .eq("is_public", true);
