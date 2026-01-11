@@ -7,6 +7,7 @@ import { useModal, useAccount, useWallet, useLogout } from "@getpara/react-sdk";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
+import { useSubscription } from "@/lib/contexts/SubscriptionContext";
 
 interface NavItem {
   href: string;
@@ -26,6 +27,7 @@ const navItems: NavItem[] = [
 // User dropdown menu items (only shown when logged in)
 const userMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/subscription", label: "Subscription", icon: "💎" },
   { href: "/profile", label: "Profile", icon: "👤" },
 ];
 
@@ -50,6 +52,9 @@ export function Header() {
   const { isConnected } = useAccount();
   const { logout } = useLogout();
 
+  // Subscription context - centralized to prevent duplicate API calls
+  const { tier: subscriptionTier } = useSubscription();
+
   // Get address from wallet
   const address = wallet?.address as `0x${string}` | undefined;
 
@@ -73,14 +78,15 @@ export function Header() {
         setEnsName(name);
 
         // If we have an ENS name, try to get the avatar
+        // Note: NFT avatars may fail due to CORS (e.g., OpenSea API)
         if (name) {
           try {
             const avatar = await ensClient.getEnsAvatar({
               name: normalize(name),
             });
             setEnsAvatar(avatar);
-          } catch (avatarError) {
-            console.error("Failed to fetch ENS avatar:", avatarError);
+          } catch {
+            // Silently fail - NFT avatars often fail due to CORS restrictions
             setEnsAvatar(null);
           }
         }
@@ -185,6 +191,34 @@ export function Header() {
 
   const isActive = (href: string) => pathname === href;
 
+  // Get tier badge styling based on subscription tier
+  const getTierBadgeStyle = (tier: string) => {
+    switch (tier) {
+      case "enterprise":
+        return "bg-gradient-to-r from-purple-500 to-pink-500 text-white";
+      case "scale":
+        return "bg-gradient-to-r from-orange-500 to-red-500 text-white";
+      case "pro":
+        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white";
+      case "starter":
+        return "bg-gradient-to-r from-green-500 to-emerald-500 text-white";
+      default:
+        return "bg-gray-600 text-gray-200";
+    }
+  };
+
+  // Get tier display name
+  const getTierDisplayName = (tier: string) => {
+    const names: Record<string, string> = {
+      free: "Free",
+      starter: "Starter",
+      pro: "Pro",
+      scale: "Scale",
+      enterprise: "Enterprise",
+    };
+    return names[tier] || "Free";
+  };
+
   return (
     <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -244,12 +278,23 @@ export function Header() {
 
           {/* Right Side - User Menu or Connect Button */}
           {isConnected && address ? (
-            // Logged in - show custom user dropdown
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 hover:from-blue-600/30 hover:to-cyan-600/30 border border-blue-500/30 rounded-lg transition-all"
+            // Logged in - show tier badge and user dropdown
+            <div className="flex items-center space-x-2">
+              {/* Subscription Tier Badge */}
+              <Link
+                href="/subscription"
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all hover:opacity-80 hover:scale-105 ${getTierBadgeStyle(subscriptionTier)}`}
+                title={`${getTierDisplayName(subscriptionTier)} Plan - Click to manage subscription`}
               >
+                {getTierDisplayName(subscriptionTier)}
+              </Link>
+
+              {/* User Dropdown */}
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 hover:from-blue-600/30 hover:to-cyan-600/30 border border-blue-500/30 rounded-lg transition-all"
+                >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
                   {getAvatar() ? (
                     <img
@@ -370,6 +415,7 @@ export function Header() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           ) : (
             // Not logged in - show Para Connect button

@@ -7,6 +7,8 @@ import { useWallet, useModal } from "@getpara/react-sdk";
 import { toast, Toaster } from 'sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { useSubscription } from '@/lib/contexts/SubscriptionContext';
+import Link from 'next/link';
 
 // Account type definitions
 const ACCOUNT_TYPES = [
@@ -63,11 +65,69 @@ interface UserProfile {
   updated_at: string;
 }
 
+interface Invoice {
+  id: string;
+  user_wallet: string;
+  subscription_tier: string;
+  billing_cycle: string;
+  original_amount: number;
+  discount_amount: number;
+  final_amount: number;
+  coupon_code: string | null;
+  coupon_id: string | null;
+  network: string;
+  transaction_hash: string | null;
+  payment_status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+}
+
+// Tier configuration for visual styling
+const TIER_STYLES = {
+  free: {
+    gradient: 'from-slate-500 to-slate-600',
+    bgGradient: 'from-slate-500/10 to-slate-600/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    icon: '🆓',
+  },
+  starter: {
+    gradient: 'from-emerald-500 to-teal-500',
+    bgGradient: 'from-emerald-500/10 to-teal-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    icon: '⭐',
+  },
+  pro: {
+    gradient: 'from-blue-500 to-indigo-500',
+    bgGradient: 'from-blue-500/10 to-indigo-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    icon: '💎',
+  },
+  scale: {
+    gradient: 'from-purple-500 to-pink-500',
+    bgGradient: 'from-purple-500/10 to-pink-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+    icon: '🚀',
+  },
+  enterprise: {
+    gradient: 'from-amber-500 to-orange-500',
+    bgGradient: 'from-amber-500/10 to-orange-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    icon: '👑',
+  },
+} as const;
+
 export default function ProfilePage() {
   const { data: wallet } = useWallet();
   const { openModal } = useModal();
   const address = wallet?.address;
   const isConnected = !!wallet;
+
+  // Subscription state
+  const { tier, tierConfig, subscription, isLoading: subscriptionLoading, refetch: refetchSubscription } = useSubscription();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,6 +152,11 @@ export default function ProfilePage() {
   const [companyName, setCompanyName] = useState('');
   const [companyRegistrationNumber, setCompanyRegistrationNumber] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+
+  // Invoice state
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [showInvoices, setShowInvoices] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -248,11 +313,96 @@ export default function ProfilePage() {
     }
   };
 
+  // Load user invoices
+  const loadInvoices = async () => {
+    if (!address) return;
+
+    setLoadingInvoices(true);
+    try {
+      const response = await fetch(`/api/profile/invoices?address=${address}`);
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data.invoices || []);
+      }
+    } catch (error) {
+      console.error('Failed to load invoices:', error);
+      toast.error('Failed to load payment history');
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  // Load invoices when section is expanded
+  useEffect(() => {
+    if (showInvoices && isConnected && address && invoices.length === 0) {
+      loadInvoices();
+    }
+  }, [showInvoices, isConnected, address]);
+
+  // Format date for display
+  const formatInvoiceDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  // Get block explorer URL for transaction
+  const getExplorerUrl = (network: string, txHash: string) => {
+    const explorers: Record<string, string> = {
+      base: 'https://basescan.org',
+      'base-sepolia': 'https://sepolia.basescan.org',
+      avalanche: 'https://snowtrace.io',
+      'avalanche-fuji': 'https://testnet.snowtrace.io',
+      polygon: 'https://polygonscan.com',
+      arbitrum: 'https://arbiscan.io',
+      optimism: 'https://optimistic.etherscan.io',
+    };
+    const baseUrl = explorers[network] || 'https://etherscan.io';
+    return `${baseUrl}/tx/${txHash}`;
+  };
+
+  // Calculate days remaining for subscription
+  const getDaysRemaining = (expiresAt: string | null): number | null => {
+    if (!expiresAt) return null;
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diff = expiry.getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  // Format expiration date
+  const formatExpirationDate = (expiresAt: string | null): string => {
+    if (!expiresAt) return 'N/A';
+    const date = new Date(expiresAt);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  // Get style for current tier
+  const currentTierStyle = TIER_STYLES[tier] || TIER_STYLES.free;
+  const daysRemaining = subscription?.expiresAt ? getDaysRemaining(subscription.expiresAt) : null;
+  const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
+  const isExpired = daysRemaining !== null && daysRemaining <= 0;
+
   // Not connected state
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
-        <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
+      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+        {/* === ATMOSPHERIC BACKGROUND === */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        </div>
         <div className="relative flex items-center justify-center min-h-screen p-4">
           <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
             <div className="mb-6">
@@ -276,9 +426,17 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
       <Toaster position="top-right" richColors />
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20" />
+      {/* === ATMOSPHERIC BACKGROUND === */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+      </div>
 
       <div className="relative">
         <Header />
@@ -292,6 +450,164 @@ export default function ProfilePage() {
             <p className="text-gray-400 mt-2">
               {profileExists ? 'Update your profile information' : 'Set up your profile to get started'}
             </p>
+          </div>
+
+          {/* Subscription Status Card */}
+          <div className={`mb-8 bg-gradient-to-r ${currentTierStyle.bgGradient} border ${currentTierStyle.border} backdrop-blur-sm rounded-2xl overflow-hidden`}>
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                {/* Left: Tier Info */}
+                <div className="flex items-start gap-4">
+                  {/* Tier Icon */}
+                  <div className={`flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTierStyle.gradient} flex items-center justify-center shadow-lg`}>
+                    <span className="text-3xl">{currentTierStyle.icon}</span>
+                  </div>
+
+                  {/* Tier Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className={`text-2xl font-bold bg-gradient-to-r ${currentTierStyle.gradient} bg-clip-text text-transparent`}>
+                        {tierConfig?.displayName || 'Free'} Plan
+                      </h2>
+                      {subscription?.status && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                          subscription.status === 'active' && !isExpired
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : subscription.status === 'trial'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                            : isExpired
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                        }`}>
+                          {isExpired ? 'Expired' : subscription.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-400 mt-1 text-sm">
+                      {tierConfig?.description || 'Perfect for testing and small projects'}
+                    </p>
+
+                    {/* Expiration Info */}
+                    {tier !== 'free' && subscription?.expiresAt && (
+                      <div className="mt-3 flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm text-gray-400">
+                            {isExpired ? 'Expired on' : 'Expires'}: <span className="text-white font-medium">{formatExpirationDate(subscription.expiresAt)}</span>
+                          </span>
+                        </div>
+
+                        {daysRemaining !== null && !isExpired && (
+                          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+                            isExpiringSoon
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : 'bg-slate-700/50 text-gray-300'
+                          }`}>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Action Buttons */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {tier === 'free' ? (
+                    <Link
+                      href="/subscription"
+                      className={`px-6 py-3 bg-gradient-to-r ${TIER_STYLES.starter.gradient} hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2`}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      Upgrade Plan
+                    </Link>
+                  ) : isExpired || isExpiringSoon ? (
+                    <Link
+                      href="/subscription"
+                      className={`px-6 py-3 bg-gradient-to-r ${isExpired ? 'from-red-500 to-orange-500' : 'from-amber-500 to-orange-500'} hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2`}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {isExpired ? 'Renew Now' : 'Renew Early'}
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/subscription"
+                      className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium rounded-xl transition-all border border-slate-600/50 flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      Manage Plan
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Expiring Soon Warning */}
+              {isExpiringSoon && !isExpired && (
+                <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <p className="text-amber-400 font-medium">Your subscription is expiring soon</p>
+                    <p className="text-amber-400/70 text-sm mt-0.5">
+                      Renew now to avoid any service interruption and keep your current benefits.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Expired Warning */}
+              {isExpired && (
+                <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-red-400 font-medium">Your subscription has expired</p>
+                    <p className="text-red-400/70 text-sm mt-0.5">
+                      Your account has been downgraded to the Free plan. Renew to restore your {tierConfig?.displayName} benefits.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Stats Bar */}
+            {tierConfig && tier !== 'free' && (
+              <div className="border-t border-slate-700/30 bg-slate-900/30 px-6 sm:px-8 py-4">
+                <div className="flex items-center gap-6 flex-wrap text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Monthly Transactions:</span>
+                    <span className="text-white font-medium">
+                      {tierConfig.limits.monthlyTxLimit === -1 ? 'Unlimited' : tierConfig.limits.monthlyTxLimit.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="w-px h-4 bg-slate-700 hidden sm:block" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Sponsor Wallets:</span>
+                    <span className="text-white font-medium">
+                      {tierConfig.limits.maxWallets === -1 ? 'Unlimited' : tierConfig.limits.maxWallets}
+                    </span>
+                  </div>
+                  <div className="w-px h-4 bg-slate-700 hidden sm:block" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Rate Limit:</span>
+                    <span className="text-white font-medium">{tierConfig.limits.rateLimit}/min</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -749,6 +1065,139 @@ export default function ProfilePage() {
                       )}
                     </p>
                   </div>
+                </div>
+
+                {/* Payment History / Invoices */}
+                <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl overflow-hidden">
+                  {/* Header - Clickable to expand/collapse */}
+                  <button
+                    onClick={() => setShowInvoices(!showInvoices)}
+                    className="w-full p-6 flex items-center justify-between hover:bg-slate-700/20 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <h2 className="text-lg font-semibold text-cyan-400">Payment History</h2>
+                        <p className="text-sm text-gray-400">View your subscription payments and invoices</p>
+                      </div>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform ${showInvoices ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Invoices Content */}
+                  {showInvoices && (
+                    <div className="border-t border-slate-700/50 p-6">
+                      {loadingInvoices ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-r-transparent"></div>
+                          <span className="ml-3 text-gray-400 text-sm">Loading payment history...</span>
+                        </div>
+                      ) : invoices.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-700/50 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-400 text-sm">No payment history yet</p>
+                          <p className="text-gray-500 text-xs mt-1">Your subscription payments will appear here</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {invoices.map((invoice) => (
+                            <div
+                              key={invoice.id}
+                              className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600/50 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  {/* Tier and Date */}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-white font-medium capitalize">{invoice.subscription_tier}</span>
+                                    <span className="text-slate-500">•</span>
+                                    <span className="text-slate-400 text-sm capitalize">{invoice.billing_cycle}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      invoice.payment_status === 'completed'
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : invoice.payment_status === 'pending'
+                                        ? 'bg-amber-500/20 text-amber-400'
+                                        : 'bg-red-500/20 text-red-400'
+                                    }`}>
+                                      {invoice.payment_status}
+                                    </span>
+                                  </div>
+
+                                  {/* Price Details */}
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                                    {invoice.discount_amount > 0 ? (
+                                      <>
+                                        <span className="text-slate-500 line-through">${invoice.original_amount.toFixed(2)}</span>
+                                        <span className="text-emerald-400">-${invoice.discount_amount.toFixed(2)}</span>
+                                        <span className="text-white font-semibold">${invoice.final_amount.toFixed(2)} USDC</span>
+                                        {invoice.coupon_code && (
+                                          <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs">
+                                            {invoice.coupon_code}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-white font-semibold">${invoice.final_amount.toFixed(2)} USDC</span>
+                                    )}
+                                  </div>
+
+                                  {/* Network and Date */}
+                                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                                    <span className="capitalize">{invoice.network}</span>
+                                    <span>•</span>
+                                    <span>{formatInvoiceDate(invoice.created_at)}</span>
+                                  </div>
+                                </div>
+
+                                {/* Transaction Link */}
+                                {invoice.transaction_hash && (
+                                  <a
+                                    href={getExplorerUrl(invoice.network, invoice.transaction_hash)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-shrink-0 p-2 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/50 rounded-lg transition-colors"
+                                    title="View on block explorer"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Refresh button */}
+                          <button
+                            onClick={loadInvoices}
+                            disabled={loadingInvoices}
+                            className="w-full py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <svg className={`w-4 h-4 ${loadingInvoices ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Save Button */}

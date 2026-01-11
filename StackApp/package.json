@@ -1,5 +1,5 @@
 {
-  "name": "x402-multichain-facilitator-nextjs",
+  "name": "perkos-stack",
   "version": "1.0.0",
   "description": "Standards-compliant x402 Payment Facilitator with Next.js App Router supporting Avalanche, Celo, and Base",
   "scripts": {
@@ -31,8 +31,10 @@
     "@perkos/util-logger": "^1.0.1",
     "@perkos/util-x402-headers": "^1.0.1",
     "@radix-ui/react-slot": "^1.1.1",
-    "@supabase/supabase-js": "^2.86.0",
     "@tanstack/react-query": "5.90.16",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
     "@wagmi/core": "^3.2.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -53,12 +55,9 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.18",
     "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.7.2",
     "viem": "^2.44.1",
-    "wagmi": "^3.3.1",
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.0.1",
-    "@types/react-dom": "^19.0.1",
-    "typescript": "^5.7.2"
+    "wagmi": "^3.3.1"
   },
   "devDependencies": {
     "@types/qrcode.react": "^1.0.5",

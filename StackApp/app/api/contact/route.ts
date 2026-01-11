@@ -184,7 +184,7 @@ ${escapeHtml(message)}
               <ul style="color: #475569; font-size: 15px; padding-left: 20px;">
                 <li style="margin-bottom: 8px;">Explore our <a href="https://x402.perkos.io" style="color: #3b82f6; text-decoration: none;">documentation</a></li>
                 <li style="margin-bottom: 8px;">Check out our <a href="https://x402.perkos.io/api/v2/x402/supported" style="color: #3b82f6; text-decoration: none;">supported networks</a></li>
-                <li>Follow us on <a href="https://twitter.com/perkos_io" style="color: #3b82f6; text-decoration: none;">Twitter</a> for updates</li>
+                <li>Follow us on <a href="https://x.com/perkos_io" style="color: #3b82f6; text-decoration: none;">Twitter</a> for updates</li>
               </ul>
 
               <p style="color: #475569; font-size: 15px; margin-bottom: 0;">

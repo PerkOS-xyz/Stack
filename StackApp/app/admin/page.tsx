@@ -86,7 +86,40 @@ interface SponsorWallet {
   created_at: string;
 }
 
-type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets";
+interface Coupon {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  assigned_wallet: string | null;
+  max_redemptions: number;
+  current_redemptions: number;
+  applicable_tiers: string[] | null;
+  min_amount: number;
+  starts_at: string;
+  expires_at: string;
+  enabled: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CouponFormData {
+  code: string;
+  description: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  assigned_wallet: string;
+  max_redemptions: number;
+  applicable_tiers: string[];
+  min_amount: number;
+  starts_at: string;
+  expires_at: string;
+  enabled: boolean;
+}
+
+type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets" | "coupons";
 
 export default function AdminPage() {
   const { data: wallet } = useWallet();
@@ -105,6 +138,7 @@ export default function AdminPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   // Pagination
   const [usersPage, setUsersPage] = useState(0);
@@ -112,6 +146,7 @@ export default function AdminPage() {
   const [vendorsPage, setVendorsPage] = useState(0);
   const [transactionsPage, setTransactionsPage] = useState(0);
   const [walletsPage, setWalletsPage] = useState(0);
+  const [couponsPage, setCouponsPage] = useState(0);
 
   // Vendor delete state
   const [deletingVendorId, setDeletingVendorId] = useState<string | null>(null);
@@ -126,6 +161,34 @@ export default function AdminPage() {
   const [vendorsTotalPages, setVendorsTotalPages] = useState(0);
   const [transactionsTotalPages, setTransactionsTotalPages] = useState(0);
   const [walletsTotalPages, setWalletsTotalPages] = useState(0);
+  const [couponsTotalPages, setCouponsTotalPages] = useState(0);
+
+  // Coupon management state
+  const [showCouponForm, setShowCouponForm] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [savingCoupon, setSavingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponFormData, setCouponFormData] = useState<CouponFormData>({
+    code: "",
+    description: "",
+    discount_type: "percentage",
+    discount_value: 10,
+    assigned_wallet: "",
+    max_redemptions: 1,
+    applicable_tiers: [],
+    min_amount: 0,
+    starts_at: new Date().toISOString().split("T")[0],
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    enabled: true,
+  });
+
+  // User search for coupon assignment
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+
+  // Coupon code copy state
+  const [copiedCouponId, setCopiedCouponId] = useState<string | null>(null);
 
   // Check admin access
   useEffect(() => {
@@ -213,6 +276,13 @@ export default function AdminPage() {
             setWallets(walletsData.wallets || []);
             setWalletsTotalPages(walletsData.totalPages || 0);
             break;
+
+          case "coupons":
+            const couponsRes = await fetch(`/api/admin/coupons?address=${address}&page=${couponsPage}`);
+            const couponsData = await couponsRes.json();
+            setCoupons(couponsData.coupons || []);
+            setCouponsTotalPages(couponsData.totalPages || 0);
+            break;
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -220,7 +290,7 @@ export default function AdminPage() {
     };
 
     fetchData();
-  }, [address, isAdmin, activeTab, usersPage, agentsPage, vendorsPage, transactionsPage, walletsPage]);
+  }, [address, isAdmin, activeTab, usersPage, agentsPage, vendorsPage, transactionsPage, walletsPage, couponsPage]);
 
   // Open delete confirmation dialog
   const handleDeleteVendor = (vendorId: string, vendorName: string) => {
@@ -254,6 +324,196 @@ export default function AdminPage() {
       alert("Failed to delete vendor. Please try again.");
     } finally {
       setDeletingVendorId(null);
+    }
+  };
+
+  // Coupon form handlers
+  const resetCouponForm = () => {
+    setCouponFormData({
+      code: "",
+      description: "",
+      discount_type: "percentage",
+      discount_value: 10,
+      assigned_wallet: "",
+      max_redemptions: 1,
+      applicable_tiers: [],
+      min_amount: 0,
+      starts_at: new Date().toISOString().split("T")[0],
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      enabled: true,
+    });
+    setEditingCoupon(null);
+    setCouponError(null);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    setShowUserSearch(false);
+  };
+
+  const handleCreateCoupon = () => {
+    resetCouponForm();
+    setShowCouponForm(true);
+  };
+
+  const handleEditCoupon = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setCouponFormData({
+      code: coupon.code,
+      description: coupon.description || "",
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      assigned_wallet: coupon.assigned_wallet || "",
+      max_redemptions: coupon.max_redemptions,
+      applicable_tiers: coupon.applicable_tiers || [],
+      min_amount: coupon.min_amount,
+      starts_at: coupon.starts_at.split("T")[0],
+      expires_at: coupon.expires_at.split("T")[0],
+      enabled: coupon.enabled,
+    });
+    setShowCouponForm(true);
+  };
+
+  const handleSaveCoupon = async () => {
+    if (!address) return;
+    setSavingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const url = editingCoupon
+        ? `/api/admin/coupons/${editingCoupon.id}`
+        : "/api/admin/coupons";
+
+      const method = editingCoupon ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          ...couponFormData,
+          assigned_wallet: couponFormData.assigned_wallet || null,
+          applicable_tiers: couponFormData.applicable_tiers.length > 0 ? couponFormData.applicable_tiers : null,
+          starts_at: new Date(couponFormData.starts_at).toISOString(),
+          expires_at: new Date(couponFormData.expires_at).toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save coupon");
+      }
+
+      // Refresh coupons list
+      const couponsRes = await fetch(`/api/admin/coupons?address=${address}&page=${couponsPage}`);
+      const couponsData = await couponsRes.json();
+      setCoupons(couponsData.coupons || []);
+      setCouponsTotalPages(couponsData.totalPages || 0);
+
+      setShowCouponForm(false);
+      resetCouponForm();
+    } catch (error) {
+      setCouponError(error instanceof Error ? error.message : "Failed to save coupon");
+    } finally {
+      setSavingCoupon(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string) => {
+    if (!address || !confirm("Are you sure you want to delete this coupon?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/coupons/${couponId}?address=${address}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Failed to delete coupon");
+        return;
+      }
+
+      if (data.disabled) {
+        alert(data.message);
+      }
+
+      // Refresh coupons list
+      const couponsRes = await fetch(`/api/admin/coupons?address=${address}&page=${couponsPage}`);
+      const couponsData = await couponsRes.json();
+      setCoupons(couponsData.coupons || []);
+      setCouponsTotalPages(couponsData.totalPages || 0);
+    } catch (error) {
+      alert("Failed to delete coupon");
+    }
+  };
+
+  const handleToggleCouponEnabled = async (coupon: Coupon) => {
+    if (!address) return;
+
+    try {
+      const response = await fetch(`/api/admin/coupons/${coupon.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          enabled: !coupon.enabled,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        alert(data.error || "Failed to update coupon");
+        return;
+      }
+
+      // Refresh coupons list
+      const couponsRes = await fetch(`/api/admin/coupons?address=${address}&page=${couponsPage}`);
+      const couponsData = await couponsRes.json();
+      setCoupons(couponsData.coupons || []);
+    } catch (error) {
+      alert("Failed to update coupon");
+    }
+  };
+
+  // User search for coupon assignment
+  const handleUserSearch = async (query: string) => {
+    setUserSearchQuery(query);
+    if (!query || query.length < 2 || !address) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users?address=${address}&limit=10`);
+      const data = await response.json();
+      // Filter users by query (matching wallet or display_name)
+      const filtered = (data.users || []).filter((user: User) =>
+        user.wallet_address.toLowerCase().includes(query.toLowerCase()) ||
+        (user.display_name && user.display_name.toLowerCase().includes(query.toLowerCase()))
+      );
+      setUserSearchResults(filtered);
+    } catch (error) {
+      console.error("Error searching users:", error);
+    }
+  };
+
+  const selectUserForCoupon = (user: User) => {
+    setCouponFormData({ ...couponFormData, assigned_wallet: user.wallet_address });
+    setUserSearchQuery(user.display_name || user.wallet_address);
+    setShowUserSearch(false);
+  };
+
+  // Copy coupon code to clipboard
+  const handleCopyCouponCode = async (couponId: string, code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCouponId(couponId);
+      // Reset after 2 seconds
+      setTimeout(() => {
+        setCopiedCouponId(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy coupon code:", err);
     }
   };
 
@@ -300,7 +560,17 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+        {/* === ATMOSPHERIC BACKGROUND === */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        </div>
+        <div className="relative flex flex-col flex-1">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -309,13 +579,24 @@ export default function AdminPage() {
           </div>
         </main>
         <Footer />
+        </div>
       </div>
     );
   }
 
   if (!address) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+        {/* === ATMOSPHERIC BACKGROUND === */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        </div>
+        <div className="relative flex flex-col flex-1">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -325,13 +606,24 @@ export default function AdminPage() {
           </div>
         </main>
         <Footer />
+        </div>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+        {/* === ATMOSPHERIC BACKGROUND === */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+          <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        </div>
+        <div className="relative flex flex-col flex-1">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -342,6 +634,7 @@ export default function AdminPage() {
           </div>
         </main>
         <Footer />
+        </div>
       </div>
     );
   }
@@ -353,10 +646,22 @@ export default function AdminPage() {
     { id: "vendors", label: "Vendors", icon: "🏪" },
     { id: "transactions", label: "Transactions", icon: "💸" },
     { id: "wallets", label: "Sponsor Wallets", icon: "💰" },
+    { id: "coupons", label: "Coupons", icon: "🎟️" },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      {/* === ATMOSPHERIC BACKGROUND === */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+      </div>
+
+      <div className="relative flex flex-col flex-1">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Admin Header */}
@@ -765,8 +1070,424 @@ export default function AdminPage() {
             <Pagination page={walletsPage} totalPages={walletsTotalPages} onPageChange={setWalletsPage} />
           </div>
         )}
+
+        {activeTab === "coupons" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-200">All Coupons ({coupons.length})</h2>
+              <button
+                onClick={handleCreateCoupon}
+                className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 transition-all flex items-center gap-2"
+              >
+                + Create Coupon
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              {coupons.map((coupon) => {
+                const isExpired = new Date(coupon.expires_at) < new Date();
+                const isNotStarted = new Date(coupon.starts_at) > new Date();
+                const isAtLimit = coupon.max_redemptions !== -1 && coupon.current_redemptions >= coupon.max_redemptions;
+
+                return (
+                  <div
+                    key={coupon.id}
+                    className={`bg-slate-900/50 border rounded-xl p-4 ${
+                      !coupon.enabled ? "border-gray-600/30 opacity-60" : "border-blue-500/20"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg font-bold text-cyan-400 font-mono">{coupon.code}</span>
+                          <button
+                            onClick={() => handleCopyCouponCode(coupon.id, coupon.code)}
+                            className="p-1 rounded hover:bg-slate-700/50 transition-all group"
+                            title="Copy coupon code"
+                          >
+                            {copiedCouponId === coupon.id ? (
+                              <span className="text-green-400 text-sm">✓</span>
+                            ) : (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-gray-400 group-hover:text-cyan-400 transition-colors"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          {coupon.assigned_wallet && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/20 text-purple-400">
+                              User-Specific
+                            </span>
+                          )}
+                          {!coupon.assigned_wallet && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">
+                              Open
+                            </span>
+                          )}
+                        </div>
+                        {coupon.description && (
+                          <p className="text-sm text-gray-400">{coupon.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!coupon.enabled && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">Disabled</span>
+                        )}
+                        {coupon.enabled && isExpired && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Expired</span>
+                        )}
+                        {coupon.enabled && isNotStarted && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Not Started</span>
+                        )}
+                        {coupon.enabled && !isExpired && !isNotStarted && isAtLimit && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-orange-500/20 text-orange-400">At Limit</span>
+                        )}
+                        {coupon.enabled && !isExpired && !isNotStarted && !isAtLimit && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">Active</span>
+                        )}
+                        <button
+                          onClick={() => handleToggleCouponEnabled(coupon)}
+                          className={`px-3 py-1 text-xs rounded-lg transition-all border ${
+                            coupon.enabled
+                              ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border-yellow-500/30"
+                              : "bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/30"
+                          }`}
+                        >
+                          {coupon.enabled ? "Disable" : "Enable"}
+                        </button>
+                        <button
+                          onClick={() => handleEditCoupon(coupon)}
+                          className="px-3 py-1 text-xs rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 transition-all"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCoupon(coupon.id)}
+                          className="px-3 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-all"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Discount</p>
+                        <p className="text-gray-300 font-semibold">
+                          {coupon.discount_type === "percentage"
+                            ? `${coupon.discount_value}%`
+                            : `$${coupon.discount_value.toFixed(2)}`}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Usage</p>
+                        <p className="text-gray-300">
+                          {coupon.current_redemptions} / {coupon.max_redemptions === -1 ? "∞" : coupon.max_redemptions}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Start Date</p>
+                        <p className="text-gray-300">{new Date(coupon.starts_at).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Expires</p>
+                        <p className="text-gray-300">{new Date(coupon.expires_at).toLocaleDateString()}</p>
+                      </div>
+                      {coupon.applicable_tiers && coupon.applicable_tiers.length > 0 && (
+                        <div>
+                          <p className="text-gray-500">Tiers</p>
+                          <p className="text-gray-300">{coupon.applicable_tiers.join(", ")}</p>
+                        </div>
+                      )}
+                      {coupon.assigned_wallet && (
+                        <div>
+                          <p className="text-gray-500">Assigned To</p>
+                          <AddressDisplay address={coupon.assigned_wallet as Address} skipEns />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {coupons.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No coupons found. Create your first coupon to get started.
+                </div>
+              )}
+            </div>
+            <Pagination page={couponsPage} totalPages={couponsTotalPages} onPageChange={setCouponsPage} />
+          </div>
+        )}
+
+        {/* Coupon Form Modal */}
+        {showCouponForm && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-blue-500/20 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-200">
+                    {editingCoupon ? "Edit Coupon" : "Create Coupon"}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowCouponForm(false);
+                      resetCouponForm();
+                    }}
+                    className="text-gray-400 hover:text-gray-200 text-2xl"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {couponError && (
+                  <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                    {couponError}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {/* Code */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Coupon Code *</label>
+                    <input
+                      type="text"
+                      value={couponFormData.code}
+                      onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value.toUpperCase() })}
+                      placeholder="e.g., WINTER2026"
+                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Description</label>
+                    <textarea
+                      value={couponFormData.description}
+                      onChange={(e) => setCouponFormData({ ...couponFormData, description: e.target.value })}
+                      placeholder="Internal notes about this coupon"
+                      rows={2}
+                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  {/* Discount Type & Value */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">Discount Type *</label>
+                      <select
+                        value={couponFormData.discount_type}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, discount_type: e.target.value as "percentage" | "fixed" })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      >
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount ($)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">
+                        Discount Value * {couponFormData.discount_type === "percentage" ? "(1-100)" : "(USD)"}
+                      </label>
+                      <input
+                        type="number"
+                        value={couponFormData.discount_value}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, discount_value: parseFloat(e.target.value) || 0 })}
+                        min={couponFormData.discount_type === "percentage" ? 1 : 0.01}
+                        max={couponFormData.discount_type === "percentage" ? 100 : undefined}
+                        step={couponFormData.discount_type === "percentage" ? 1 : 0.01}
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* User Assignment */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Assign to User (optional - leave empty for open coupon)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={userSearchQuery || couponFormData.assigned_wallet}
+                        onChange={(e) => {
+                          handleUserSearch(e.target.value);
+                          setShowUserSearch(true);
+                        }}
+                        onFocus={() => setShowUserSearch(true)}
+                        placeholder="Search by name or wallet address..."
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      />
+                      {couponFormData.assigned_wallet && (
+                        <button
+                          onClick={() => {
+                            setCouponFormData({ ...couponFormData, assigned_wallet: "" });
+                            setUserSearchQuery("");
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                        >
+                          &times;
+                        </button>
+                      )}
+                      {showUserSearch && userSearchResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-slate-800 border border-blue-500/20 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {userSearchResults.map((user) => (
+                            <button
+                              key={user.id}
+                              onClick={() => selectUserForCoupon(user)}
+                              className="w-full px-3 py-2 text-left hover:bg-slate-700 flex items-center gap-2"
+                            >
+                              <span className="text-gray-200">{user.display_name || "Unnamed"}</span>
+                              <span className="text-gray-500 text-xs font-mono">
+                                {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Max Redemptions */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Max Redemptions (-1 for unlimited)
+                    </label>
+                    <input
+                      type="number"
+                      value={couponFormData.max_redemptions}
+                      onChange={(e) => setCouponFormData({ ...couponFormData, max_redemptions: parseInt(e.target.value) || 1 })}
+                      min={-1}
+                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  {/* Applicable Tiers */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Applicable Tiers (leave empty for all)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {["starter", "pro", "enterprise"].map((tier) => (
+                        <label key={tier} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={couponFormData.applicable_tiers.includes(tier)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCouponFormData({
+                                  ...couponFormData,
+                                  applicable_tiers: [...couponFormData.applicable_tiers, tier],
+                                });
+                              } else {
+                                setCouponFormData({
+                                  ...couponFormData,
+                                  applicable_tiers: couponFormData.applicable_tiers.filter((t) => t !== tier),
+                                });
+                              }
+                            }}
+                            className="rounded border-blue-500/30"
+                          />
+                          <span className="text-gray-300 capitalize">{tier}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Min Amount (for fixed discounts) */}
+                  {couponFormData.discount_type === "fixed" && (
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">
+                        Minimum Purchase Amount (USD)
+                      </label>
+                      <input
+                        type="number"
+                        value={couponFormData.min_amount}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, min_amount: parseFloat(e.target.value) || 0 })}
+                        min={0}
+                        step={0.01}
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      />
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">Start Date *</label>
+                      <input
+                        type="date"
+                        value={couponFormData.starts_at}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, starts_at: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-1">Expiration Date *</label>
+                      <input
+                        type="date"
+                        value={couponFormData.expires_at}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, expires_at: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Enabled */}
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={couponFormData.enabled}
+                        onChange={(e) => setCouponFormData({ ...couponFormData, enabled: e.target.checked })}
+                        className="rounded border-blue-500/30"
+                      />
+                      <span className="text-gray-300">Enable coupon immediately</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-blue-500/10">
+                  <button
+                    onClick={() => {
+                      setShowCouponForm(false);
+                      resetCouponForm();
+                    }}
+                    className="px-4 py-2 rounded-lg bg-slate-800 text-gray-400 hover:text-gray-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveCoupon}
+                    disabled={savingCoupon || !couponFormData.code}
+                    className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {savingCoupon ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>{editingCoupon ? "Update Coupon" : "Create Coupon"}</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
       <Footer />
+      </div>
 
       {/* Delete Vendor Confirmation Dialog */}
       <ConfirmDialog

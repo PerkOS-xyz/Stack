@@ -6,6 +6,7 @@ import { ParaProvider, Environment } from "@getpara/react-sdk";
 import "@getpara/react-sdk/styles.css";
 import type { ReactNode } from 'react';
 import { celo } from "wagmi/chains";
+import { SubscriptionProvider } from "@/lib/contexts/SubscriptionContext";
 
 export function Providers({ children }: { children: ReactNode }) {
   // Create QueryClient inside component to avoid SSR/hydration issues
@@ -19,8 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }));
 
   const paraApiKey = process.env.NEXT_PUBLIC_PARA_API_KEY;
-  const environment = (process.env.NEXT_PUBLIC_PARA_ENV || "beta") as Environment;
-  const isProduction = environment === "production";
+  const isProduction = process.env.NODE_ENV === "production";
 
   // Always provide QueryClient for hooks that depend on it
   if (!paraApiKey) {
@@ -37,7 +37,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ParaProvider
         paraClientConfig={{
           apiKey: paraApiKey,
-          env: process.env.NODE_ENV === "production" ? "production" : "beta",
+          env: process.env.NODE_ENV === "production" ? Environment.PRODUCTION : Environment.BETA,
         }}
         config={{
           appName: "PerkOS Stack",
@@ -61,7 +61,9 @@ export function Providers({ children }: { children: ReactNode }) {
         }}
 
       >
-        {children}
+        <SubscriptionProvider>
+          {children}
+        </SubscriptionProvider>
       </ParaProvider>
     </QueryClientProvider>
   );
