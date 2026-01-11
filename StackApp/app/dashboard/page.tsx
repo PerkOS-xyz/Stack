@@ -37,6 +37,50 @@ interface SponsorWallet {
   is_public?: boolean;
 }
 
+// Wallet type configuration for display
+const WALLET_TYPE_CONFIG: Record<string, {
+  label: string;
+  shortLabel: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  networks: string;
+}> = {
+  evm: {
+    label: 'EVM Multi-Chain',
+    shortLabel: 'EVM',
+    icon: '⟠',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/20',
+    borderColor: 'border-blue-500/30',
+    networks: 'Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets',
+  },
+  solana: {
+    label: 'Solana',
+    shortLabel: 'SOL',
+    icon: '◎',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-500/30',
+    networks: 'Solana Mainnet & Devnet',
+  },
+  cosmos: {
+    label: 'Cosmos',
+    shortLabel: 'ATOM',
+    icon: '⚛',
+    color: 'text-indigo-400',
+    bgColor: 'bg-indigo-500/20',
+    borderColor: 'border-indigo-500/30',
+    networks: 'Cosmos Hub, Osmosis, and IBC-enabled chains',
+  },
+};
+
+// Helper to get wallet type config
+const getWalletTypeConfig = (network: string) => {
+  return WALLET_TYPE_CONFIG[network] || WALLET_TYPE_CONFIG.evm;
+};
+
 interface SpendingTransaction {
   id: string;
   amount_wei: string;
@@ -99,6 +143,9 @@ export default function DashboardPage() {
   const [editingWalletId, setEditingWalletId] = useState<string | null>(null);
   const [editingWalletName, setEditingWalletName] = useState('');
 
+  // Expanded wallets state for collapsible balance sections
+  const [expandedWallets, setExpandedWallets] = useState<Set<string>>(new Set());
+
   // Check if profile is complete (has display_name and account_type)
   const isProfileComplete = profile?.display_name && profile?.account_type;
 
@@ -134,13 +181,7 @@ export default function DashboardPage() {
         const data = await response.json();
         const loadedWallets = data.wallets || [];
         setWallets(loadedWallets);
-
-        // Auto-load network balances for each wallet
-        loadedWallets.forEach((wallet: SponsorWallet) => {
-          if (wallet.sponsor_address) {
-            loadMultiNetworkBalances(wallet.sponsor_address);
-          }
-        });
+        // Note: Network balances are now lazy-loaded when user clicks to expand
       }
     } catch (error) {
       console.error('Failed to load wallets:', error);
@@ -243,7 +284,7 @@ export default function DashboardPage() {
 
   const loadMultiNetworkBalances = async (sponsorAddress: string) => {
     if (!sponsorAddress) return;
-    
+
     setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: true }));
     try {
       const response = await fetch(`/api/sponsor/wallets/balance-all-networks?address=${sponsorAddress}`);
@@ -256,6 +297,23 @@ export default function DashboardPage() {
     } finally {
       setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: false }));
     }
+  };
+
+  // Toggle wallet balance section expansion with lazy loading
+  const toggleWalletExpanded = (walletId: string, sponsorAddress: string) => {
+    setExpandedWallets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(walletId)) {
+        newSet.delete(walletId);
+      } else {
+        newSet.add(walletId);
+        // Lazy load balances when expanding if not already loaded
+        if (!multiNetworkBalances[sponsorAddress]) {
+          loadMultiNetworkBalances(sponsorAddress);
+        }
+      }
+      return newSet;
+    });
   };
 
   const loadRules = async (walletId: string) => {
@@ -312,8 +370,28 @@ export default function DashboardPage() {
     }
 
     // Basic domain validation
-    const domainPattern = /^([a-zA-Z0-9-*]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
-    if (!domainPattern.test(newDomain.trim())) {
+    let domainToAdd = newDomain.trim();
+
+    // Strip protocol if present (http://, https://)
+    domainToAdd = domainToAdd.replace(/^https?:\/\//, '');
+    // Strip trailing path/query
+    domainToAdd = domainToAdd.split('/')[0];
+
+    // Check if localhost/IP is allowed (controlled by env variable)
+    const allowLocalhost = process.env.NEXT_PUBLIC_ALLOW_LOCALHOST_DOMAINS === 'true';
+    const isLocalhost = /^(localhost(:\d+)?|(\d{1,3}\.){3}\d{1,3}(:\d+)?)$/.test(domainToAdd);
+
+    if (isLocalhost && !allowLocalhost) {
+      toast.error('Localhost and IP addresses are not allowed in production');
+      return;
+    }
+
+    // Validate domain format
+    const domainPattern = allowLocalhost
+      ? /^(localhost(:\d+)?|(\d{1,3}\.){3}\d{1,3}(:\d+)?|([a-zA-Z0-9-*]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(:\d+)?)$/
+      : /^([a-zA-Z0-9-*]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(:\d+)?$/;
+
+    if (!domainPattern.test(domainToAdd)) {
       toast.error('Please enter a valid domain (e.g., api.vendor.com)');
       return;
     }
@@ -326,8 +404,8 @@ export default function DashboardPage() {
         body: JSON.stringify({
           walletId: selectedWallet.id,
           ruleType: 'domain_whitelist',
-          domain: newDomain.trim().toLowerCase(),
-          description: `Allow gas sponsorship for requests from ${newDomain.trim()}`,
+          domain: domainToAdd.toLowerCase(),
+          description: `Allow gas sponsorship for requests from ${domainToAdd}`,
         }),
       });
 
@@ -624,10 +702,8 @@ export default function DashboardPage() {
                 disabled={creatingWallet || !isProfileComplete}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                {wallets.length > 0 ? 'Add Another Wallet' : 'Create EVM Sponsor Wallet'}
+                <span className="mr-2 text-lg">⟠</span>
+                {wallets.length > 0 ? 'Add EVM Wallet' : 'Create EVM Sponsor Wallet'}
               </button>
               {wallets.length > 0 && (
                 <Link
@@ -642,160 +718,271 @@ export default function DashboardPage() {
               )}
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              Works on all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
+              <span className="text-blue-400">⟠ EVM</span> works on all networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
+            </p>
+            <p className="text-xs text-gray-500 mt-1 text-center">
+              <span className="text-purple-400/60">◎ Solana</span> & <span className="text-indigo-400/60">⚛ Cosmos</span> coming soon
             </p>
           </div>
 
           {/* Wallet List */}
           {wallets.length > 0 ? (
-            <div className="space-y-6">
-              {wallets.map((wallet) => (
+            <div className="space-y-4">
+              {wallets.map((wallet) => {
+                const isExpanded = expandedWallets.has(wallet.id);
+                const balanceData = multiNetworkBalances[wallet.sponsor_address];
+                // Handle nested balance structure: { mainnets: [], testnets: [], errors: [] }
+                const balances = [
+                  ...(Array.isArray(balanceData?.balances?.mainnets) ? balanceData.balances.mainnets : []),
+                  ...(Array.isArray(balanceData?.balances?.testnets) ? balanceData.balances.testnets : [])
+                ];
+                const fundedNetworks = balances.filter((b: { balance: string }) => parseFloat(b.balance) > 0).length;
+                const totalNetworks = balances.length;
+
+                return (
                 <div
                   key={wallet.id}
-                  className="bg-slate-900/50 border border-blue-500/20 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/40 transition-all"
+                  className="bg-slate-900/50 border border-blue-500/20 backdrop-blur-sm rounded-xl overflow-hidden hover:border-blue-400/40 transition-all"
                 >
-                  {/* Wallet Header */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        {editingWalletId === wallet.id ? (
-                          // Inline edit mode
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editingWalletName}
-                              onChange={(e) => setEditingWalletName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                  {/* Compact Wallet Header */}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left: Name, Badges, Address */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          {editingWalletId === wallet.id ? (
+                            // Inline edit mode
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editingWalletName}
+                                onChange={(e) => setEditingWalletName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    updateWallet(wallet.id, editingWalletName);
+                                    setEditingWalletId(null);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingWalletId(null);
+                                  }
+                                }}
+                                className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1 text-lg font-bold text-cyan-400 focus:outline-none focus:border-blue-400 w-48"
+                                autoFocus
+                                placeholder="Wallet name..."
+                              />
+                              <button
+                                onClick={() => {
                                   updateWallet(wallet.id, editingWalletName);
                                   setEditingWalletId(null);
-                                } else if (e.key === 'Escape') {
-                                  setEditingWalletId(null);
-                                }
-                              }}
-                              className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1 text-lg font-bold text-cyan-400 focus:outline-none focus:border-blue-400 w-48"
-                              autoFocus
-                              placeholder="Wallet name..."
-                            />
-                            <button
-                              onClick={() => {
-                                updateWallet(wallet.id, editingWalletName);
-                                setEditingWalletId(null);
-                              }}
-                              className="p-1 text-green-400 hover:text-green-300 transition-colors"
-                              title="Save"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setEditingWalletId(null)}
-                              className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                              title="Cancel"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ) : (
-                          // Display mode with edit button
-                          <div className="flex items-center gap-2 group">
-                            <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                              {wallet.wallet_name || 'Sponsor Wallet'}
-                            </h3>
-                            <button
-                              onClick={() => {
-                                setEditingWalletId(wallet.id);
-                                setEditingWalletName(wallet.wallet_name || '');
-                              }}
-                              className="p-1 text-gray-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
-                              title="Edit wallet name"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
-                        {/* Public/Private Badge */}
-                        <button
-                          onClick={() => updateWallet(wallet.id, undefined, !wallet.is_public)}
-                          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
-                            wallet.is_public
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
-                              : 'bg-slate-700/50 text-gray-400 border border-slate-600 hover:bg-slate-700'
-                          }`}
-                          title={wallet.is_public ? 'Click to make private' : 'Click to make public'}
-                        >
-                          {wallet.is_public ? (
-                            <>
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                              </svg>
-                              Public
-                            </>
+                                }}
+                                className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                                title="Save"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => setEditingWalletId(null)}
+                                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                                title="Cancel"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
                           ) : (
+                            // Display mode with edit button
+                            <div className="flex items-center gap-2 group">
+                              <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                                {wallet.wallet_name || 'Sponsor Wallet'}
+                              </h3>
+                              <button
+                                onClick={() => {
+                                  setEditingWalletId(wallet.id);
+                                  setEditingWalletName(wallet.wallet_name || '');
+                                }}
+                                className="p-1 text-gray-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
+                                title="Edit wallet name"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                          {/* Wallet Type Badge */}
+                          <span
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              getWalletTypeConfig(wallet.network).bgColor
+                            } ${getWalletTypeConfig(wallet.network).color} border ${getWalletTypeConfig(wallet.network).borderColor}`}
+                            title={getWalletTypeConfig(wallet.network).networks}
+                          >
+                            <span className="text-sm">{getWalletTypeConfig(wallet.network).icon}</span>
+                            {getWalletTypeConfig(wallet.network).shortLabel}
+                          </span>
+                          {/* Public/Private Badge */}
+                          <button
+                            onClick={() => updateWallet(wallet.id, undefined, !wallet.is_public)}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
+                              wallet.is_public
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
+                                : 'bg-slate-700/50 text-gray-400 border border-slate-600 hover:bg-slate-700'
+                            }`}
+                            title={wallet.is_public ? 'Click to make private' : 'Click to make public'}
+                          >
+                            {wallet.is_public ? (
+                              <>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+                                </svg>
+                                Public
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Private
+                              </>
+                            )}
+                          </button>
+                          {/* Funded Networks Indicator (when collapsed and data loaded) */}
+                          {!isExpanded && balances.length > 0 && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              fundedNetworks > 0
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            }`}>
+                              {fundedNetworks}/{totalNetworks} funded
+                            </span>
+                          )}
+                        </div>
+                        {/* Address Row */}
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs font-mono text-gray-400 truncate max-w-[200px] sm:max-w-[300px]">
+                            {wallet.sponsor_address}
+                          </code>
+                          <button
+                            onClick={() => copyToClipboard(wallet.sponsor_address)}
+                            className="flex-shrink-0 text-gray-500 hover:text-cyan-400 transition-colors p-1"
+                            title="Copy address"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          {wallet.created_at && (
                             <>
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                              </svg>
-                              Private
+                              <span className="text-xs text-gray-600">•</span>
+                              <span className="text-xs text-gray-500">
+                                {(() => {
+                                  // Handle Firestore Timestamp (has seconds/nanoseconds) or ISO string
+                                  const ts = wallet.created_at as { seconds?: number; _seconds?: number } | string;
+                                  if (typeof ts === 'object' && ts !== null && 'seconds' in ts && ts.seconds) {
+                                    return new Date(ts.seconds * 1000).toLocaleDateString();
+                                  }
+                                  if (typeof ts === 'object' && ts !== null && '_seconds' in ts && ts._seconds) {
+                                    return new Date(ts._seconds * 1000).toLocaleDateString();
+                                  }
+                                  const date = new Date(ts as string);
+                                  return isNaN(date.getTime()) ? '' : date.toLocaleDateString();
+                                })()}
+                              </span>
                             </>
                           )}
-                        </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-500">EVM Multi-Chain</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Created {new Date(wallet.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {/* Action Buttons - Top Right */}
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={() => {
-                          setSelectedWallet(wallet);
-                          setShowRulesModal(true);
-                          loadRules(wallet.id);
-                        }}
-                        className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all border border-purple-500/20"
-                      >
-                        Configure Rules
-                      </button>
-                      <button
-                        onClick={() => openAnalyticsModal(wallet)}
-                        className="flex-1 sm:flex-none bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-all"
-                      >
-                        View Analytics
-                      </button>
+
+                      {/* Right: Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedWallet(wallet);
+                            setShowRulesModal(true);
+                            loadRules(wallet.id);
+                          }}
+                          className="hidden sm:flex bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition-all border border-purple-500/20"
+                        >
+                          Rules
+                        </button>
+                        <button
+                          onClick={() => openAnalyticsModal(wallet)}
+                          className="hidden sm:flex bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-gray-300 text-xs font-medium py-1.5 px-3 rounded-lg transition-all"
+                        >
+                          Analytics
+                        </button>
+                        {/* Mobile menu button */}
+                        <div className="sm:hidden flex gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedWallet(wallet);
+                              setShowRulesModal(true);
+                              loadRules(wallet.id);
+                            }}
+                            className="p-2 bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30"
+                            title="Configure Rules"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => openAnalyticsModal(wallet)}
+                            className="p-2 bg-slate-700/50 text-gray-400 rounded-lg hover:bg-slate-700"
+                            title="View Analytics"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Sponsor Address */}
-                  <div className="bg-slate-800/80 border border-blue-500/20 rounded-lg p-4 mb-6">
-                    <p className="text-xs text-gray-400 mb-2">Sponsor Address</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <code className="text-sm font-mono text-gray-300 break-all">
-                        {wallet.sponsor_address}
-                      </code>
-                      <button
-                        onClick={() => copyToClipboard(wallet.sponsor_address)}
-                        className="flex-shrink-0 text-cyan-400 hover:text-cyan-300 transition-colors p-2 hover:bg-slate-700/50 rounded"
-                        title="Copy address"
+                  {/* Expandable Balance Section Toggle */}
+                  <button
+                    onClick={() => toggleWalletExpanded(wallet.id, wallet.sponsor_address)}
+                    className="w-full px-4 py-3 bg-slate-800/50 border-t border-blue-500/10 flex items-center justify-between hover:bg-slate-800/80 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <span className="text-sm text-gray-400 group-hover:text-gray-300">
+                        {isExpanded ? 'Hide Network Balances' : 'Show Network Balances'}
+                      </span>
+                      {loadingMultiNetworkBalances[wallet.sponsor_address] && (
+                        <svg className="animate-spin h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                      </button>
+                      )}
                     </div>
-                  </div>
+                    {balances.length > 0 && (
+                      <span className="text-xs text-gray-500">
+                        {fundedNetworks} of {totalNetworks} networks funded
+                      </span>
+                    )}
+                  </button>
 
-                  {/* Network Balances Grid - Always show for EVM wallets */}
-                  <div>
-                    {multiNetworkBalances[wallet.sponsor_address] ? (
+                  {/* Collapsible Network Balances */}
+                  {isExpanded && (
+                    <div className="border-t border-blue-500/10 p-4">
+                      {balanceData?.balances ? (
                         <NetworkBalanceGrid
-                          balances={multiNetworkBalances[wallet.sponsor_address].balances}
+                          balances={{
+                            mainnets: Array.isArray(balanceData.balances.mainnets) ? balanceData.balances.mainnets : [],
+                            testnets: Array.isArray(balanceData.balances.testnets) ? balanceData.balances.testnets : [],
+                            errors: Array.isArray(balanceData.balances.errors) ? balanceData.balances.errors : [],
+                          }}
                           isLoading={loadingMultiNetworkBalances[wallet.sponsor_address] || false}
                           onRefresh={() => {
                             loadMultiNetworkBalances(wallet.sponsor_address);
@@ -803,35 +990,19 @@ export default function DashboardPage() {
                           }}
                         />
                       ) : (
-                        <div className="text-center py-8">
-                          <p className="text-gray-400 mb-4">View gas balances across all supported networks</p>
-                          <button
-                            onClick={() => loadMultiNetworkBalances(wallet.sponsor_address)}
-                            disabled={loadingMultiNetworkBalances[wallet.sponsor_address]}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all disabled:opacity-50"
-                          >
-                            {loadingMultiNetworkBalances[wallet.sponsor_address] ? (
-                              <>
-                                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Loading Balances...
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Load Network Balances
-                              </>
-                            )}
-                          </button>
+                        <div className="text-center py-6">
+                          <svg className="animate-spin h-8 w-8 text-cyan-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <p className="text-sm text-gray-400">Loading network balances...</p>
                         </div>
                       )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <div className="text-center py-12 text-gray-400">
@@ -852,7 +1023,7 @@ export default function DashboardPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">1.</span>
-              <span>Create an EVM sponsor wallet - <strong className="text-cyan-400">one wallet works on all EVM networks</strong></span>
+              <span>Create an <span className="text-blue-400">⟠ EVM</span> sponsor wallet - <strong className="text-cyan-400">one address works on all EVM networks</strong></span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">2.</span>
@@ -881,13 +1052,18 @@ export default function DashboardPage() {
             <div className="bg-slate-800 border border-blue-500/30 rounded-xl max-w-md w-full">
               {/* Modal Header */}
               <div className="border-b border-blue-500/20 p-6 flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                    Create New Sponsor Wallet
-                  </h2>
-                  <p className="text-sm text-gray-400 mt-1">
-                    EVM Multi-Chain Wallet
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                    <span className="text-2xl">⟠</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                      Create EVM Sponsor Wallet
+                    </h2>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Multi-Chain • One wallet for all EVM networks
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
@@ -948,13 +1124,14 @@ export default function DashboardPage() {
                 {/* Info Box */}
                 <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <span className="text-xl flex-shrink-0">⟠</span>
                     <div className="text-sm text-gray-300">
-                      <p className="font-medium text-blue-400 mb-1">Multi-Chain Wallet</p>
+                      <p className="font-medium text-blue-400 mb-1">EVM Multi-Chain Wallet</p>
                       <p className="text-gray-400">
-                        This wallet works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
+                        One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
+                      </p>
+                      <p className="text-gray-500 text-xs mt-2">
+                        <span className="text-purple-400/60">◎ Solana</span> & <span className="text-indigo-400/60">⚛ Cosmos</span> wallets coming soon
                       </p>
                     </div>
                   </div>
@@ -976,10 +1153,8 @@ export default function DashboardPage() {
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Create Sponsor Wallet
+                      <span className="mr-2 text-lg">⟠</span>
+                      Create EVM Wallet
                     </>
                   )}
                 </button>

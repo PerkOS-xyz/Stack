@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
         balance: "0",
         wallet_name: finalWalletName,
         is_public: isPublic,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();

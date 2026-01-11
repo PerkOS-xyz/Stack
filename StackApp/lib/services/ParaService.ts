@@ -48,8 +48,8 @@ export class ParaService {
   /**
    * Creates a new Para pregenerated wallet
    *
-   * @param userWalletAddress - User's wallet address (for naming/association)
-   * @param network - Network name (not used in wallet creation, kept for backwards compatibility)
+   * @param userWalletAddress - User's wallet address (used as customId for association)
+   * @param network - Network type: 'evm' or 'solana' (determines wallet type)
    * @returns Wallet ID and address
    */
   async createWallet(
@@ -57,10 +57,25 @@ export class ParaService {
     network: string
   ): Promise<CreateWalletResponse> {
     try {
-      console.log(`Creating Para wallet for user: ${userWalletAddress}`);
+      console.log(`Creating Para wallet for user: ${userWalletAddress}, network: ${network}`);
+
+      // Map network to Para wallet type
+      const walletType = network === "solana" ? "SOLANA" : "EVM";
+
+      // Generate a unique identifier for this wallet
+      // Use a combination of user address and timestamp to allow multiple wallets per user
+      const uniqueId = `sponsor_${userWalletAddress.toLowerCase()}_${Date.now()}`;
+
+      console.log(`Creating pregenerated wallet with type: ${walletType}, customId: ${uniqueId}`);
 
       // Create pregenerated wallet using Para SDK
-      const pregenWallet = await this.para.createPregenWallet();
+      // Para requires a pregenId (identifier) and type (wallet type)
+      const pregenWallet = await this.para.createPregenWallet({
+        type: walletType as "EVM" | "SOLANA" | "COSMOS",
+        pregenId: {
+          customId: uniqueId,
+        },
+      });
 
       if (!pregenWallet || !pregenWallet.id || !pregenWallet.address) {
         throw new Error("Failed to create pregenerated wallet - invalid response");
@@ -69,6 +84,7 @@ export class ParaService {
       console.log(`Para wallet created successfully:`, {
         walletId: pregenWallet.id,
         address: pregenWallet.address,
+        type: walletType,
       });
 
       return {

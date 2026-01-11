@@ -432,6 +432,43 @@ class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements Pr
 
   private async executeAdmin(): Promise<QueryResult<T>> {
     const firestore = getAdminFirestoreDb();
+
+    // Check if we're querying by document ID
+    const idFilter = this.filters.find(f => f.field === 'id' && f.op === '==');
+    if (idFilter) {
+      // Direct document lookup by ID
+      const docRef = firestore.collection(this.collectionName).doc(idFilter.value as string);
+      const docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        return { data: [], error: null, count: this.withCount ? 0 : null };
+      }
+
+      const doc = this.filterDocument({ id: docSnap.id, ...docSnap.data() });
+
+      // Apply any additional filters (excluding the id filter)
+      const otherFilters = this.filters.filter(f => f.field !== 'id');
+      if (otherFilters.length > 0) {
+        const passes = otherFilters.every(f => {
+          const fieldValue = (doc as Record<string, unknown>)[f.field];
+          switch (f.op) {
+            case '==': return fieldValue === f.value;
+            case '!=': return fieldValue !== f.value;
+            case '>': return (fieldValue as number) > (f.value as number);
+            case '>=': return (fieldValue as number) >= (f.value as number);
+            case '<': return (fieldValue as number) < (f.value as number);
+            case '<=': return (fieldValue as number) <= (f.value as number);
+            default: return true;
+          }
+        });
+        if (!passes) {
+          return { data: [], error: null, count: this.withCount ? 0 : null };
+        }
+      }
+
+      return { data: this.headOnly ? null : [doc], error: null, count: this.withCount ? 1 : null };
+    }
+
     let queryRef: FirebaseFirestore.Query = firestore.collection(this.collectionName);
 
     for (const filter of this.filters) {
