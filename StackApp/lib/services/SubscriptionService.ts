@@ -66,15 +66,34 @@ export interface UsageLimitResult {
 // For production, use Redis or similar
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
+// In-memory subscription cache to avoid redundant DB calls
+// TTL of 10 seconds to balance freshness with performance
+const SUBSCRIPTION_CACHE_TTL_MS = 10000;
+const subscriptionCache = new Map<string, { subscription: UserSubscription | null; cachedAt: number }>();
+
 export class SubscriptionService {
   /**
-   * Get user's current active subscription
+   * Clear subscription cache for a specific user (call after updates)
+   */
+  clearCache(userWalletAddress: string): void {
+    const address = userWalletAddress.toLowerCase();
+    subscriptionCache.delete(address);
+  }
+  /**
+   * Get user's current active subscription (with caching)
    */
   async getUserSubscription(userWalletAddress: string): Promise<UserSubscription | null> {
     try {
       const address = userWalletAddress.toLowerCase();
+      const now = Date.now();
 
-      // First try without ordering to avoid index requirements
+      // Check cache first
+      const cached = subscriptionCache.get(address);
+      if (cached && (now - cached.cachedAt) < SUBSCRIPTION_CACHE_TTL_MS) {
+        return cached.subscription;
+      }
+
+      // Fetch from database
       const { data, error } = await firebaseAdmin
         .from("perkos_subscriptions")
         .select("*")
@@ -86,7 +105,8 @@ export class SubscriptionService {
       if (error) {
         // Check if it's a "no rows" error (expected for new users)
         if ((error as Error & { code?: string }).code === 'PGRST116') {
-          console.log(`[Subscription] No active subscription for ${address}`);
+          // Cache the null result
+          subscriptionCache.set(address, { subscription: null, cachedAt: now });
           return null;
         }
         console.error(`[Subscription] Error fetching subscription for ${address}:`, error);
@@ -94,17 +114,23 @@ export class SubscriptionService {
       }
 
       if (!data) {
-        console.log(`[Subscription] No subscription data returned for ${address}`);
+        subscriptionCache.set(address, { subscription: null, cachedAt: now });
         return null;
       }
 
+      const subscription = data as UserSubscription;
+
+      // Cache the result
+      subscriptionCache.set(address, { subscription, cachedAt: now });
+
+      // Only log on actual DB fetch (not cached)
       console.log(`[Subscription] Found active subscription for ${address}:`, {
-        id: data.id,
-        tier: data.tier,
-        status: data.status,
+        id: subscription.id,
+        tier: subscription.tier,
+        status: subscription.status,
       });
 
-      return data as UserSubscription;
+      return subscription;
     } catch (error) {
       console.error("Error fetching user subscription:", error);
       return null;
@@ -567,6 +593,8 @@ export class SubscriptionService {
         tier: data?.tier,
         status: data?.status,
       });
+      // Clear cache after update
+      this.clearCache(address);
       return data as UserSubscription;
     } else {
       // Create new subscription
@@ -589,6 +617,8 @@ export class SubscriptionService {
         tier: data?.tier,
         status: data?.status,
       });
+      // Clear cache after create
+      this.clearCache(address);
       return data as UserSubscription;
     }
   }
@@ -608,6 +638,9 @@ export class SubscriptionService {
       })
       .eq("user_wallet_address", address)
       .eq("status", "active");
+
+    // Clear cache after cancellation
+    this.clearCache(address);
   }
 }
 
