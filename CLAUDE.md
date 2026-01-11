@@ -138,9 +138,52 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 - **Database**: Supabase (PostgreSQL) with 5 core tables (perkos_* prefix)
 - **Smart Contracts**: Foundry, Solidity 0.8.20+, OpenZeppelin Upgradeable
 - **Blockchain**: Viem 2.40+, Thirdweb 5.114+, multi-chain RPC providers
-- **Wallet Integration**: Thirdweb SDK, Turnkey wallet service
+- **Wallet Integration**: Para SDK (@getpara/react-sdk), Thirdweb SDK, Turnkey wallet service
 - **Event Indexing**: Custom blockchain event listener service (EventIndexer)
 - **ERC-8004**: Three on-chain registries (Identity, Reputation, Validation)
+
+### Para Wallet Integration
+
+PerkOS Stack uses **Para SDK** for user wallet management with full customization:
+
+**Features:**
+- Multi-chain wallet support (Ethereum, Base, Celo, Optimism, Arbitrum)
+- External wallet connections (MetaMask, Phantom)
+- Social login (Google, Twitter, Discord)
+- On-ramp support for fiat-to-crypto
+- Custom dark theme with full color palette
+
+**Theme Configuration** (`app/providers.tsx`):
+```typescript
+paraModalConfig={{
+  theme: {
+    backgroundColor: "#1e293b",
+    foregroundColor: "#f3ebeb",
+    accentColor: "#4e6edf",
+    mode: "dark",
+    borderRadius: "md",
+    customPalette: {
+      text: {
+        primary: "#f3ebeb",
+        secondary: "#c4c4c4",
+        subtle: "#9ca3af",
+        inverted: "#090b0e",
+        error: "#ef4444",
+      },
+      modal: {
+        surface: { main: "#090b0e", footer: "#111318" },
+        border: "#2a2e37",
+      },
+    },
+  },
+}}
+```
+
+**User Menu Options:**
+| Option | Icon | Description |
+|--------|------|-------------|
+| User Wallet | 👛 | Opens Para modal for on-ramp, send/receive, wallet tools |
+| Sponsor Wallets | 💰 | Manage sponsor wallets (visible when sponsor wallet exists) |
 
 ### Middleware Server Architecture
 

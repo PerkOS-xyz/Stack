@@ -857,6 +857,31 @@ See [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md) for complete sche
 | **Blockchain** | Viem 2.40+, Thirdweb 5.114+ |
 | **Contracts** | Hardhat, OpenZeppelin UUPS |
 | **Styling** | Tailwind CSS, Radix UI |
+| **Wallet** | Para SDK (`@getpara/react-sdk`) |
+
+### Para Wallet Integration
+
+PerkOS Stack integrates **Para SDK** for seamless wallet management and user onboarding:
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-Chain Support** | Ethereum, Base, Celo, Optimism, Arbitrum |
+| **External Wallets** | MetaMask, Phantom |
+| **Social Login** | Google, Twitter, Discord OAuth |
+| **On-Ramp** | Fiat-to-crypto purchase integration |
+| **Recovery** | Secret recovery phrase enabled |
+
+**User Menu Options:**
+
+| Option | Description |
+|--------|-------------|
+| **User Wallet** | Opens Para modal for on-ramp, wallet management, and Para tools |
+| **Sponsor Wallets** | Links to sponsor wallet management page (visible when sponsor wallet exists) |
+
+**Theme Configuration:**
+- Dark mode with custom palette for text visibility
+- Colors: `text.primary` (#f3ebeb), `text.secondary` (#c4c4c4), `text.subtle` (#9ca3af)
+- Modal surface: main (#090b0e), footer (#111318), border (#2a2e37)
 
 ---
 
