@@ -56,6 +56,14 @@ const nextConfig = {
       '@solana/wallet-adapter-wallets': false,
       '@solana/web3.js': false,
       '@getpara/solana-wallet-connectors': false,
+      // Wagmi connector optional dependencies (not needed)
+      '@base-org/account': false,
+      '@gemini-wallet/core': false,
+      '@metamask/sdk': false,
+      'porto': false,
+      'porto/internal': false,
+      '@safe-global/safe-apps-sdk': false,
+      '@safe-global/safe-apps-provider': false,
     };
 
     // Fix for Para SDK + Next.js client-side compatibility
@@ -65,8 +73,27 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
+        // Wagmi connector optional dependencies
+        '@base-org/account': false,
+        '@gemini-wallet/core': false,
+        '@metamask/sdk': false,
+        'porto': false,
+        'porto/internal': false,
+        '@safe-global/safe-apps-sdk': false,
+        '@safe-global/safe-apps-provider': false,
       };
     }
+
+    // Ignore missing optional modules (wagmi connectors)
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /node_modules\/@wagmi\/connectors/ },
+      { message: /Can't resolve '@base-org\/account'/ },
+      { message: /Can't resolve '@gemini-wallet\/core'/ },
+      { message: /Can't resolve '@metamask\/sdk'/ },
+      { message: /Can't resolve 'porto'/ },
+      { message: /Can't resolve '@safe-global'/ },
+    ];
 
     // Suppress build errors in production
     if (!dev) {
