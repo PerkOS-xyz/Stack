@@ -365,7 +365,18 @@ export function Header() {
                         </Link>
                       );
                     })}
-                    {/* Wallet link - only shown when sponsor wallet exists */}
+                    {/* User Wallet - opens Para modal for on-ramp and wallet tools */}
+                    <button
+                      onClick={() => {
+                        openModal();
+                        setUserMenuOpen(false);
+                      }}
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm transition-all text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 w-full"
+                    >
+                      <span>👛</span>
+                      <span>User Wallet</span>
+                    </button>
+                    {/* Sponsor Wallets link - only shown when sponsor wallet exists */}
                     {hasSponsorWallet && (
                       <Link
                         href="/wallet"
@@ -377,7 +388,7 @@ export function Header() {
                         }`}
                       >
                         <span>💰</span>
-                        <span>Wallet</span>
+                        <span>Sponsor Wallets</span>
                       </Link>
                     )}
                     {/* Admin link - only shown for admin wallets */}
@@ -453,7 +464,18 @@ export function Header() {
                       </Link>
                     );
                   })}
-                  {/* Wallet link - only shown when sponsor wallet exists */}
+                  {/* User Wallet - opens Para modal for on-ramp and wallet tools */}
+                  <button
+                    onClick={() => {
+                      openModal();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 text-gray-300 hover:text-cyan-400 w-full text-left"
+                  >
+                    <span>👛</span>
+                    <span>User Wallet</span>
+                  </button>
+                  {/* Sponsor Wallets link - only shown when sponsor wallet exists */}
                   {hasSponsorWallet && (
                     <Link
                       href="/wallet"
@@ -465,7 +487,7 @@ export function Header() {
                       }`}
                     >
                       <span>💰</span>
-                      <span>Wallet</span>
+                      <span>Sponsor Wallets</span>
                     </Link>
                   )}
                   {/* Admin link - only shown for admin wallets */}
