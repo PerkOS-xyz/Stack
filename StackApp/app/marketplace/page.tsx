@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Force dynamic rendering to avoid QueryClient issues during static generation
 export const dynamic = "force-dynamic";
@@ -61,6 +61,10 @@ export default function MarketplacePage() {
     totalVolume: "$0",
   });
 
+  // Refs to prevent duplicate API calls (React Strict Mode double-invokes effects)
+  const fetchingVendorsRef = useRef(false);
+  const lastFetchedCategoryRef = useRef<string | null>(null);
+
   const networkIcons: Record<string, string> = {
     avalanche: "🔺",
     "avalanche-fuji": "🔺",
@@ -82,9 +86,21 @@ export default function MarketplacePage() {
     other: "📦",
   };
 
-  const fetchVendors = async () => {
+  const fetchVendors = async (forceRefresh = false) => {
+    // Skip if already fetching
+    if (fetchingVendorsRef.current) {
+      return;
+    }
+
+    // Skip if already fetched for this category (unless forced)
+    if (!forceRefresh && lastFetchedCategoryRef.current === categoryFilter) {
+      return;
+    }
+
+    fetchingVendorsRef.current = true;
     setIsLoading(true);
     setError(null);
+
     try {
       const params = new URLSearchParams();
       if (categoryFilter !== "all") {
@@ -104,12 +120,16 @@ export default function MarketplacePage() {
           activeProviders: data.pagination.total,
           totalVolume: `$${(totalVolume / 1000000).toFixed(2)}M`,
         });
+
+        // Mark this category as fetched
+        lastFetchedCategoryRef.current = categoryFilter;
       } else {
         setError("Failed to load vendors");
       }
     } catch {
       setError("Failed to connect to server");
     } finally {
+      fetchingVendorsRef.current = false;
       setIsLoading(false);
     }
   };
@@ -132,6 +152,10 @@ export default function MarketplacePage() {
   };
 
   useEffect(() => {
+    // When category changes, reset the ref and fetch
+    if (lastFetchedCategoryRef.current !== categoryFilter) {
+      lastFetchedCategoryRef.current = null; // Reset to allow new fetch
+    }
     fetchVendors();
   }, [categoryFilter]);
 
@@ -245,7 +269,7 @@ export default function MarketplacePage() {
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
                 <p className="text-red-400">{error}</p>
                 <button
-                  onClick={fetchVendors}
+                  onClick={() => fetchVendors(true)}
                   className="mt-4 px-4 py-2 bg-slate-800 text-gray-300 rounded-lg hover:bg-slate-700"
                 >
                   Try Again

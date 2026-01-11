@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useModal, useAccount, useWallet, useLogout } from "@getpara/react-sdk";
@@ -99,66 +99,76 @@ export function Header() {
     fetchEnsData();
   }, [address]);
 
-  // Fetch user profile avatar when account changes
+  // Refs to track in-flight requests and prevent duplicates
+  const fetchingUserDataRef = useRef(false);
+  const lastFetchedAddressRef = useRef<string | null>(null);
+
+  // Consolidated user data fetch - runs all API calls in parallel once per address
   useEffect(() => {
-    async function fetchUserAvatar() {
+    async function fetchUserData() {
+      // Reset state when disconnected
       if (!address) {
         setUserAvatar(null);
+        setHasSponsorWallet(false);
+        setIsAdmin(false);
+        lastFetchedAddressRef.current = null;
         return;
       }
+
+      const normalizedAddress = address.toLowerCase();
+
+      // Skip if we've already fetched for this address
+      if (lastFetchedAddressRef.current === normalizedAddress) {
+        return;
+      }
+
+      // Skip if already fetching
+      if (fetchingUserDataRef.current) {
+        return;
+      }
+
+      fetchingUserDataRef.current = true;
+
       try {
-        const response = await fetch(`/api/profile?address=${address}`);
-        if (response.ok) {
-          const data = await response.json();
+        // Run all API calls in parallel
+        const [profileRes, walletsRes, adminRes] = await Promise.all([
+          fetch(`/api/profile?address=${address}`).catch(() => null),
+          fetch(`/api/sponsor/wallets?address=${address}`).catch(() => null),
+          fetch(`/api/admin/verify?address=${address}`).catch(() => null),
+        ]);
+
+        // Process profile response
+        if (profileRes?.ok) {
+          const data = await profileRes.json();
           setUserAvatar(data.profile?.avatar_url || null);
         }
-      } catch (error) {
-        console.error("Failed to fetch user avatar:", error);
-      }
-    }
-    fetchUserAvatar();
-  }, [address]);
 
-  // Check if user has a sponsor wallet
-  useEffect(() => {
-    async function checkSponsorWallet() {
-      if (!address) {
-        setHasSponsorWallet(false);
-        return;
-      }
-      try {
-        const response = await fetch(`/api/sponsor/wallets?address=${address}`);
-        if (response.ok) {
-          const data = await response.json();
+        // Process wallets response
+        if (walletsRes?.ok) {
+          const data = await walletsRes.json();
           setHasSponsorWallet(data.wallets && data.wallets.length > 0);
+        } else {
+          setHasSponsorWallet(false);
         }
-      } catch (error) {
-        console.error("Failed to check sponsor wallet:", error);
-        setHasSponsorWallet(false);
-      }
-    }
-    checkSponsorWallet();
-  }, [address]);
 
-  // Check if user is admin
-  useEffect(() => {
-    async function checkAdminStatus() {
-      if (!address) {
-        setIsAdmin(false);
-        return;
-      }
-      try {
-        const response = await fetch(`/api/admin/verify?address=${address}`);
-        if (response.ok) {
-          const data = await response.json();
+        // Process admin response
+        if (adminRes?.ok) {
+          const data = await adminRes.json();
           setIsAdmin(data.isAdmin === true);
+        } else {
+          setIsAdmin(false);
         }
+
+        // Mark as successfully fetched
+        lastFetchedAddressRef.current = normalizedAddress;
       } catch (error) {
-        console.error("Failed to check admin status:", error);
-        setIsAdmin(false);
+        console.error("Failed to fetch user data:", error);
+      } finally {
+        fetchingUserDataRef.current = false;
       }
     }
-    checkAdminStatus();
+
+    fetchUserData();
   }, [address]);
 
   // Close user menu when clicking outside
