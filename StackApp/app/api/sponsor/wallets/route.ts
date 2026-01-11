@@ -98,14 +98,15 @@ export async function POST(req: NextRequest) {
       network
     );
 
-    // Store wallet in database with Para wallet ID and address
-    // Para manages keys securely - we only store the wallet ID for signing operations
+    // Store wallet in database with Para wallet ID, address, and userShare
+    // Para manages keys securely - we store the userShare for server-side signing
     const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
         network,
         para_wallet_id: sponsorWallet.walletId, // Para wallet ID for signing
+        para_user_share: sponsorWallet.userShare, // User share for server-side signing
         sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains)
         balance: "0",
         wallet_name: finalWalletName,

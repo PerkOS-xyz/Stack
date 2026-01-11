@@ -1,11 +1,15 @@
 import Para, { Environment } from "@getpara/server-sdk";
 import { ParaEthersSigner } from "@getpara/ethers-v6-integration";
+import { createParaAccount, createParaViemClient } from "@getpara/viem-v2-integration";
 import { ethers } from "ethers";
-import { getRpcUrl } from "../utils/chains";
+import { http, type Chain, type WalletClient, type Account, type Transport } from "viem";
+import { getRpcUrl, type SupportedNetwork } from "../utils/config";
+import { chains as viemChains } from "../utils/chains";
 
 interface CreateWalletResponse {
   walletId: string;
   address: string;
+  userShare: string; // User share for server-side signing operations
 }
 
 /**
@@ -23,9 +27,10 @@ interface CreateWalletResponse {
  * - Wallets identified by Para wallet IDs stored in database
  * - API access controlled by PARA_SERVER_API_KEY
  * - All transactions signed through Para's secure infrastructure
+ * - User shares stored encrypted for server-side signing
  *
  * Database Storage:
- * - Stores para_wallet_id and address for association with user wallet
+ * - Stores para_wallet_id, address, and encrypted user_share
  * - Enables transaction sponsorship and gasless user experiences
  */
 export class ParaService {
@@ -50,7 +55,7 @@ export class ParaService {
    *
    * @param userWalletAddress - User's wallet address (used as customId for association)
    * @param network - Network type: 'evm' or 'solana' (determines wallet type)
-   * @returns Wallet ID and address
+   * @returns Wallet ID, address, and userShare for signing operations
    */
   async createWallet(
     userWalletAddress: string,
@@ -81,15 +86,25 @@ export class ParaService {
         throw new Error("Failed to create pregenerated wallet - invalid response");
       }
 
+      // Get the user share for server-side signing
+      // This is required for signing transactions with this wallet
+      const userShare = await this.para.getUserShare();
+
+      if (!userShare) {
+        throw new Error("Failed to get user share for wallet");
+      }
+
       console.log(`Para wallet created successfully:`, {
         walletId: pregenWallet.id,
         address: pregenWallet.address,
         type: walletType,
+        hasUserShare: !!userShare,
       });
 
       return {
         walletId: pregenWallet.id,
         address: pregenWallet.address,
+        userShare: userShare,
       };
     } catch (error) {
       console.error("Error creating Para wallet:", error);
@@ -104,12 +119,32 @@ export class ParaService {
    *
    * @param walletId - Para wallet ID
    * @param rpcUrl - RPC URL for the target network
+   * @param userShare - User share for signing (retrieved from database)
    * @returns ParaEthersSigner instance
    */
-  async getSigner(walletId: string, rpcUrl: string): Promise<ParaEthersSigner> {
+  async getSigner(walletId: string, rpcUrl: string, userShare?: string): Promise<ParaEthersSigner> {
     try {
-      // Set the active wallet in Para
-      await this.para.setActiveWallet(walletId);
+      // Load the user share if provided, otherwise try to get the current one
+      let share: string | undefined = userShare;
+      if (!share) {
+        console.log(`No userShare provided for wallet ${walletId}, attempting to fetch current share...`);
+        try {
+          const fetchedShare = await this.para.getUserShare();
+          share = fetchedShare ?? undefined;
+          if (share) {
+            console.log(`Successfully retrieved userShare for wallet ${walletId}`);
+          }
+        } catch (shareError) {
+          console.log(`Could not retrieve userShare: ${shareError instanceof Error ? shareError.message : 'unknown error'}`);
+        }
+      }
+
+      if (share) {
+        await this.para.setUserShare(share);
+        console.log(`UserShare set for signing with wallet ${walletId}`);
+      } else {
+        console.log(`Proceeding without userShare for wallet ${walletId}`);
+      }
 
       // Create ethers provider
       const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -131,11 +166,82 @@ export class ParaService {
    *
    * @param walletId - Para wallet ID
    * @param network - Network name (e.g., "avalanche", "base")
+   * @param userShare - User share for signing (retrieved from database)
    * @returns ParaEthersSigner instance
    */
-  async getSignerForNetwork(walletId: string, network: string): Promise<ParaEthersSigner> {
+  async getSignerForNetwork(walletId: string, network: SupportedNetwork, userShare?: string): Promise<ParaEthersSigner> {
     const rpcUrl = getRpcUrl(network);
-    return this.getSigner(walletId, rpcUrl);
+    return this.getSigner(walletId, rpcUrl, userShare);
+  }
+
+  /**
+   * Gets a Viem wallet client for a Para wallet
+   *
+   * This is a simpler approach that doesn't require manually managing userShare.
+   * Uses Para's Viem integration for direct wallet operations.
+   *
+   * @param network - Network name (e.g., "avalanche", "base")
+   * @param rpcUrl - RPC URL for the target network
+   * @param userShare - Optional user share for pregenerated wallets
+   * @returns Viem WalletClient with Para account
+   */
+  async getViemClient(network: string, rpcUrl: string, userShare?: string): Promise<WalletClient<Transport, Chain, Account>> {
+    try {
+      console.log(`Creating Para Viem client for network: ${network}`);
+
+      // For pregenerated wallets, we need to set the user share first
+      let share = userShare;
+      if (!share) {
+        console.log("No userShare provided, attempting to fetch from Para...");
+        try {
+          const fetchedShare = await this.para.getUserShare();
+          share = fetchedShare ?? undefined;
+          if (share) {
+            console.log("Successfully retrieved userShare from Para");
+          }
+        } catch (shareError) {
+          console.log(`Could not retrieve userShare: ${shareError instanceof Error ? shareError.message : 'unknown error'}`);
+        }
+      }
+
+      if (share) {
+        console.log("Setting userShare before creating account...");
+        await this.para.setUserShare(share);
+      }
+
+      // Create a Para Account using the server SDK
+      console.log("Calling createParaAccount...");
+      const account = await createParaAccount(this.para);
+      console.log(`Para account created with address: ${account.address}`);
+
+      // Get the chain configuration from our chains.ts
+      const chain = viemChains[network];
+      if (!chain) {
+        throw new Error(`Unsupported network: ${network}`);
+      }
+
+      // Create the Para Viem WalletClient
+      console.log("Creating Para Viem WalletClient...");
+      const walletClient = createParaViemClient(this.para, {
+        account: account,
+        chain: chain,
+        transport: http(rpcUrl),
+      });
+
+      console.log(`Para Viem client created for network ${network}`);
+      return walletClient as WalletClient<Transport, Chain, Account>;
+    } catch (error) {
+      console.error("Error creating Para Viem client:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      throw new Error(
+        `Failed to create Para Viem client: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
   }
 
   /**
@@ -143,13 +249,27 @@ export class ParaService {
    *
    * @param walletId - Para wallet ID
    * @param message - Message to sign
+   * @param userShare - User share for signing
    * @returns Signature string
    */
-  async signMessage(walletId: string, message: string): Promise<string> {
+  async signMessage(walletId: string, message: string, userShare?: string): Promise<string> {
     try {
-      await this.para.setActiveWallet(walletId);
-      const signature = await this.para.signMessage(message);
-      return signature;
+      if (userShare) {
+        await this.para.setUserShare(userShare);
+      }
+      const messageBase64 = Buffer.from(message).toString('base64');
+      const result = await this.para.signMessage({
+        walletId,
+        messageBase64,
+      });
+      // Handle the response which may be an object with signature property
+      if (typeof result === 'string') {
+        return result;
+      }
+      if (result && typeof result === 'object' && 'signature' in result) {
+        return (result as { signature: string }).signature;
+      }
+      throw new Error('Unexpected signMessage response format');
     } catch (error) {
       console.error("Error signing message with Para:", error);
       throw new Error(
@@ -166,9 +286,13 @@ export class ParaService {
    */
   async getWalletAddress(walletId: string): Promise<string> {
     try {
-      await this.para.setActiveWallet(walletId);
-      const address = await this.para.getAddress();
-      return address;
+      // For pregenerated wallets, we can get the wallet info directly
+      const wallets = await this.para.getPregenWallets({});
+      const wallet = wallets.find(w => w.id === walletId);
+      if (wallet && wallet.address) {
+        return wallet.address;
+      }
+      throw new Error(`Wallet ${walletId} not found`);
     } catch (error) {
       console.error("Error getting wallet address:", error);
       throw new Error(

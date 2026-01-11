@@ -296,6 +296,7 @@ export class ExactSchemeService {
         network: this.network,
         tokenAddress: requirements.asset,
         sponsorWalletId: sponsorWallet.para_wallet_id,
+        sponsorUserShare: sponsorWallet.para_user_share, // User share for server-side signing
         from: authorization.from,
         to: authorization.to,
         value: BigInt(authorization.value),
@@ -381,6 +382,7 @@ export class ExactSchemeService {
             network: this.network,
             tokenAddress: requirements.asset,
             sponsorWalletId: sponsorWallet.para_wallet_id,
+            sponsorUserShare: sponsorWallet.para_user_share, // User share for server-side signing
             from: authorization.from,
             to: authorization.to,
             value: BigInt(authorization.value),

@@ -19,6 +19,7 @@
     "@getpara/ethers-v6-integration": "2.4.0",
     "@getpara/react-sdk": "2.4.0",
     "@getpara/server-sdk": "2.4.0",
+    "@getpara/viem-v2-integration": "^2.4.0",
     "@perkos/contracts-erc8004": "^1.0.1",
     "@perkos/contracts-escrow": "^1.0.1",
     "@perkos/scheme-deferred": "^1.1.1",

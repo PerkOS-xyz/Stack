@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
-import { chains, getNativeTokenSymbol, getRpcUrl } from "@/lib/utils/chains";
+import { chains, getNativeTokenSymbol } from "@/lib/utils/chains";
 import { parseEther } from "viem";
 import { getParaService } from "@/lib/services/ParaService";
 
@@ -10,6 +10,7 @@ interface SponsorWallet {
   network: string;
   sponsor_address: string;
   para_wallet_id: string;
+  para_user_share?: string; // User share for server-side signing
   balance: string;
   created_at: string;
 }
@@ -27,8 +28,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { walletId, toAddress, amount, network } = body;
 
+    console.log("Send request received:", { walletId, toAddress, amount, network });
+
     // Validate required fields
     if (!walletId || !toAddress || !amount || !network) {
+      console.log("Missing required fields:", { walletId: !!walletId, toAddress: !!toAddress, amount: !!amount, network: !!network });
       return NextResponse.json(
         { error: "Missing required fields: walletId, toAddress, amount, network" },
         { status: 400 }
@@ -54,6 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Get chain configuration from centralized chains.ts
     const chain = chains[network];
+    console.log("Chain lookup:", { network, chainFound: !!chain, availableChains: Object.keys(chains) });
     if (!chain) {
       return NextResponse.json(
         { error: `Unsupported network: ${network}` },
@@ -69,6 +74,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (fetchError || !walletData) {
+      console.log("Wallet lookup failed:", { walletId, fetchError });
       return NextResponse.json(
         { error: "Wallet not found" },
         { status: 404 }
@@ -76,11 +82,30 @@ export async function POST(req: NextRequest) {
     }
 
     const wallet = walletData as unknown as SponsorWallet;
+    console.log("Wallet found:", {
+      id: wallet.id,
+      sponsor_address: wallet.sponsor_address,
+      has_para_wallet_id: !!wallet.para_wallet_id,
+      has_para_user_share: !!wallet.para_user_share
+    });
 
     // Validate Para wallet ID exists
     if (!wallet.para_wallet_id) {
+      console.log("Missing para_wallet_id for wallet:", wallet.id);
       return NextResponse.json(
         { error: "Wallet missing Para wallet ID - may need migration" },
+        { status: 400 }
+      );
+    }
+
+    // Check if para_user_share is missing - legacy wallets cannot sign transactions
+    if (!wallet.para_user_share) {
+      console.log("Legacy wallet detected (no para_user_share):", wallet.id);
+      return NextResponse.json(
+        {
+          error: "This is a legacy wallet that cannot sign transactions. Please create a new wallet to enable sending.",
+          isLegacyWallet: true
+        },
         { status: 400 }
       );
     }
@@ -99,14 +124,14 @@ export async function POST(req: NextRequest) {
 
     // Get Para signer for the sponsor wallet
     const paraService = getParaService();
-    const rpcUrl = getRpcUrl(network);
-    if (!rpcUrl) {
-      return NextResponse.json(
-        { error: `No RPC URL configured for network: ${network}` },
-        { status: 400 }
-      );
-    }
-    const signer = await paraService.getSigner(wallet.para_wallet_id, rpcUrl);
+    // Get RPC URL directly from chain definition
+    const rpcUrl = chain.rpcUrls.default.http[0];
+    console.log("Using RPC URL:", rpcUrl);
+
+    // Get ethers signer with userShare
+    const signer = await paraService.getSigner(wallet.para_wallet_id, rpcUrl, wallet.para_user_share);
+
+    console.log("Para signer ready, sending transaction...");
 
     // Send native token transfer
     const tx = await signer.sendTransaction({

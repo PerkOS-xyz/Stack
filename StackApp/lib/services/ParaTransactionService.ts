@@ -1,10 +1,10 @@
 import { firebaseAdmin } from "../db/firebase";
 import { logger } from "../utils/logger";
-import { CHAIN_IDS, getRpcUrl, getChainById } from "../utils/chains";
+import { CHAIN_IDS, getChainById } from "../utils/chains";
 import { getParaService } from "./ParaService";
 import { ethers, Contract } from "ethers";
 import { createPublicClient, http } from "viem";
-import type { SupportedNetwork } from "../utils/config";
+import { getRpcUrl, type SupportedNetwork } from "../utils/config";
 import type { Address, Hex } from "../types/x402";
 
 interface SponsorWallet {
@@ -12,6 +12,7 @@ interface SponsorWallet {
   user_wallet_address: string;
   network: string;
   para_wallet_id: string;
+  para_user_share?: string; // User share for server-side signing
   sponsor_address: string;
   smart_wallet_address?: string;
   balance: string;
@@ -162,6 +163,7 @@ export class ParaTransactionService {
     network: SupportedNetwork;
     tokenAddress: Address;
     sponsorWalletId: string;
+    sponsorUserShare?: string; // User share for server-side signing
     from: Address;
     to: Address;
     value: bigint;
@@ -192,9 +194,19 @@ export class ParaTransactionService {
     });
 
     try {
-      // Get Para signer for the sponsor wallet
+      // Get Para signer for the sponsor wallet (with userShare for server-side signing)
       const paraService = getParaService();
-      const signer = await paraService.getSigner(params.sponsorWalletId, rpcUrl);
+
+      if (!params.sponsorUserShare) {
+        logger.error("Missing sponsor user share for transaction signing");
+        return {
+          success: false,
+          error: "Sponsor wallet missing user share - please recreate the wallet",
+        };
+      }
+
+      // Type assertion is safe here because we've already checked !params.sponsorUserShare above
+      const signer = await paraService.getSigner(params.sponsorWalletId, rpcUrl, params.sponsorUserShare as string);
 
       // Get signer address for logging
       const signerAddress = await signer.getAddress();
