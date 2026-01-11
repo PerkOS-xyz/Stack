@@ -54,6 +54,8 @@ export function Providers({ children }: { children: ReactNode }) {
           },
         }}
         paraModalConfig={{
+          logo: "https://stack.perkos.xyz/logo.png",
+          theme: {"backgroundColor":"#222935","foregroundColor":"#f3ebeb","accentColor":"#4e6edf"},
           oAuthMethods: ["GOOGLE", "TWITTER","DISCORD"],
           authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
           recoverySecretStepEnabled: true,
