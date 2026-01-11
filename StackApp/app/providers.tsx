@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ParaProvider, Environment } from "@getpara/react-sdk";
 import "@getpara/react-sdk/styles.css";
 import type { ReactNode } from 'react';
-import { celo } from "wagmi/chains";
+import { arbitrum, base, celo, mainnet, optimism } from "wagmi/chains";
 import { SubscriptionProvider } from "@/lib/contexts/SubscriptionContext";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -46,7 +46,7 @@ export function Providers({ children }: { children: ReactNode }) {
           wallets: ["METAMASK","PHANTOM"],
           evmConnector: {
             config: {
-              chains: [celo],
+              chains: [mainnet, base, celo, optimism, arbitrum],
             },
           },
           walletConnect: {
@@ -55,7 +55,29 @@ export function Providers({ children }: { children: ReactNode }) {
         }}
         paraModalConfig={{
           logo: "https://stack.perkos.xyz/logo.png",
-          theme: {"backgroundColor":"#090b0e","foregroundColor":"#f3ebeb","accentColor":"#4e6edf"},
+          theme: {
+            backgroundColor: "#1e293b",
+            foregroundColor: "#f3ebeb",
+            accentColor: "#4e6edf",
+            mode: "dark",
+            borderRadius: "md",
+            customPalette: {
+              text: {
+                primary: "#f3ebeb",
+                secondary: "#c4c4c4",
+                subtle: "#9ca3af",
+                inverted: "#090b0e",
+                error: "#ef4444",
+              },
+              modal: {
+                surface: {
+                  main: "#090b0e",
+                  footer: "#111318",
+                },
+                border: "#2a2e37",
+              },
+            },
+          },
           oAuthMethods: ["GOOGLE", "TWITTER","DISCORD"],
           authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
           recoverySecretStepEnabled: true,
