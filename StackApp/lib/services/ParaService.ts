@@ -10,6 +10,7 @@ interface CreateWalletResponse {
   walletId: string;
   address: string;
   userShare: string; // User share for server-side signing operations
+  walletType: "EVM" | "SOLANA" | "COSMOS"; // Type of wallet created
 }
 
 /**
@@ -54,7 +55,7 @@ export class ParaService {
    * Creates a new Para pregenerated wallet
    *
    * @param userWalletAddress - User's wallet address (used as customId for association)
-   * @param network - Network type: 'evm' or 'solana' (determines wallet type)
+   * @param network - Network type: 'evm', 'solana', or 'cosmos' (determines wallet type)
    * @returns Wallet ID, address, and userShare for signing operations
    */
   async createWallet(
@@ -65,7 +66,17 @@ export class ParaService {
       console.log(`Creating Para wallet for user: ${userWalletAddress}, network: ${network}`);
 
       // Map network to Para wallet type
-      const walletType = network === "solana" ? "SOLANA" : "EVM";
+      let walletType: "EVM" | "SOLANA" | "COSMOS";
+      switch (network) {
+        case "solana":
+          walletType = "SOLANA";
+          break;
+        case "cosmos":
+          walletType = "COSMOS";
+          break;
+        default:
+          walletType = "EVM";
+      }
 
       // Generate a unique identifier for this wallet
       // Use a combination of user address and timestamp to allow multiple wallets per user
@@ -74,16 +85,20 @@ export class ParaService {
       console.log(`Creating pregenerated wallet with type: ${walletType}, customId: ${uniqueId}`);
 
       // Create pregenerated wallet using Para SDK
-      // Para requires a pregenId (identifier) and type (wallet type)
-      const pregenWallet = await this.para.createPregenWallet({
-        type: walletType as "EVM" | "SOLANA" | "COSMOS",
+      // Use createPregenWalletPerType which supports EVM, SOLANA, and COSMOS
+      // See: https://github.com/getpara/examples-hub/blob/2.0.0/server/with-node/src/routes/createWallet.ts
+      const wallets = await this.para.createPregenWalletPerType({
+        types: [walletType],
         pregenId: {
           customId: uniqueId,
         },
       });
 
+      // Find the wallet of the requested type
+      const pregenWallet = wallets.find(w => w.type === walletType);
+
       if (!pregenWallet || !pregenWallet.id || !pregenWallet.address) {
-        throw new Error("Failed to create pregenerated wallet - invalid response");
+        throw new Error(`Failed to create pregenerated ${walletType} wallet - invalid response`);
       }
 
       // Get the user share for server-side signing
@@ -105,6 +120,7 @@ export class ParaService {
         walletId: pregenWallet.id,
         address: pregenWallet.address,
         userShare: userShare,
+        walletType: walletType,
       };
     } catch (error) {
       console.error("Error creating Para wallet:", error);

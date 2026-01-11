@@ -137,7 +137,12 @@ export default function DashboardPage() {
   const [showCreateWalletModal, setShowCreateWalletModal] = useState(false);
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletIsPublic, setNewWalletIsPublic] = useState(false);
+  const [newWalletType, setNewWalletType] = useState<'evm' | 'solana' | 'cosmos'>('evm');
   const [creatingWallet, setCreatingWallet] = useState(false);
+
+  // Wallet deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deletingWallet, setDeletingWallet] = useState(false);
 
   // Wallet name editing state
   const [editingWalletId, setEditingWalletId] = useState<string | null>(null);
@@ -263,6 +268,36 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Failed to update wallet:', error);
       toast.error('Failed to update wallet. Please try again.');
+    }
+  };
+
+  const deleteWallet = async (walletId: string) => {
+    if (!address) return;
+
+    setDeletingWallet(true);
+    try {
+      const response = await fetch('/api/sponsor/wallets', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletId,
+          userWalletAddress: address,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Wallet deleted successfully!');
+        setShowDeleteConfirm(null);
+        await loadWallets();
+      } else {
+        const error = await response.json();
+        toast.error(`Failed to delete wallet: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete wallet:', error);
+      toast.error('Failed to delete wallet. Please try again.');
+    } finally {
+      setDeletingWallet(false);
     }
   };
 
@@ -703,7 +738,7 @@ export default function DashboardPage() {
                 className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
               >
                 <span className="mr-2 text-lg">⟠</span>
-                {wallets.length > 0 ? 'Add EVM Wallet' : 'Create EVM Sponsor Wallet'}
+                {wallets.length > 0 ? 'Add Wallet' : 'Create Sponsor Wallet'}
               </button>
               {wallets.length > 0 && (
                 <Link
@@ -860,8 +895,8 @@ export default function DashboardPage() {
                         </div>
                         {/* Address Row */}
                         <div className="flex items-center gap-2">
-                          <code className="text-xs font-mono text-gray-400 truncate max-w-[200px] sm:max-w-[300px]">
-                            {wallet.sponsor_address}
+                          <code className="text-xs font-mono text-cyan-400 font-semibold">
+                            {wallet.sponsor_address.slice(0, 6)}...{wallet.sponsor_address.slice(-5)}
                           </code>
                           <button
                             onClick={() => copyToClipboard(wallet.sponsor_address)}
@@ -912,6 +947,15 @@ export default function DashboardPage() {
                         >
                           Analytics
                         </button>
+                        <button
+                          onClick={() => setShowDeleteConfirm(wallet.id)}
+                          className="hidden sm:flex bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium py-1.5 px-3 rounded-lg transition-all"
+                          title="Delete wallet"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                         {/* Mobile menu button */}
                         <div className="sm:hidden flex gap-1">
                           <button
@@ -935,6 +979,15 @@ export default function DashboardPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteConfirm(wallet.id)}
+                            className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
+                            title="Delete wallet"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
@@ -1051,17 +1104,27 @@ export default function DashboardPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-slate-800 border border-blue-500/30 rounded-xl max-w-md w-full">
               {/* Modal Header */}
-              <div className="border-b border-blue-500/20 p-6 flex justify-between items-center">
+              <div className={`border-b ${newWalletType === 'evm' ? 'border-blue-500/20' : newWalletType === 'solana' ? 'border-purple-500/20' : 'border-indigo-500/20'} p-6 flex justify-between items-center`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                    <span className="text-2xl">⟠</span>
+                  <div className={`w-12 h-12 rounded-full ${
+                    newWalletType === 'evm' ? 'bg-blue-500/20 border-blue-500/30' :
+                    newWalletType === 'solana' ? 'bg-purple-500/20 border-purple-500/30' :
+                    'bg-indigo-500/20 border-indigo-500/30'
+                  } border flex items-center justify-center`}>
+                    <span className="text-2xl">{newWalletType === 'evm' ? '⟠' : newWalletType === 'solana' ? '◎' : '⚛'}</span>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                      Create EVM Sponsor Wallet
+                    <h2 className={`text-xl font-bold bg-gradient-to-r ${
+                      newWalletType === 'evm' ? 'from-cyan-400 to-blue-400' :
+                      newWalletType === 'solana' ? 'from-purple-400 to-pink-400' :
+                      'from-indigo-400 to-violet-400'
+                    } bg-clip-text text-transparent`}>
+                      Create {newWalletType === 'evm' ? 'EVM' : newWalletType === 'solana' ? 'Solana' : 'Cosmos'} Sponsor Wallet
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
-                      Multi-Chain • One wallet for all EVM networks
+                      {newWalletType === 'evm' ? 'Multi-Chain • One wallet for all EVM networks' :
+                       newWalletType === 'solana' ? 'Solana Mainnet & Devnet' :
+                       'Cosmos Hub & IBC Networks'}
                     </p>
                   </div>
                 </div>
@@ -1070,6 +1133,7 @@ export default function DashboardPage() {
                     setShowCreateWalletModal(false);
                     setNewWalletName('');
                     setNewWalletIsPublic(false);
+                    setNewWalletType('evm');
                   }}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
@@ -1081,6 +1145,65 @@ export default function DashboardPage() {
 
               {/* Modal Content */}
               <div className="p-6 space-y-6">
+                {/* Wallet Type Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    Wallet Type
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* EVM - Available */}
+                    <button
+                      onClick={() => setNewWalletType('evm')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        newWalletType === 'evm'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-slate-600 bg-slate-900/50 hover:border-blue-500/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-2xl">⟠</span>
+                        <div className="text-center">
+                          <p className={`font-medium text-sm ${newWalletType === 'evm' ? 'text-blue-400' : 'text-gray-300'}`}>EVM</p>
+                          <p className="text-xs text-gray-500">Multi-Chain</p>
+                        </div>
+                      </div>
+                    </button>
+                    {/* Solana - Coming Soon (Para SDK limitation) */}
+                    <div className="relative">
+                      <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-2xl grayscale">◎</span>
+                          <div className="text-center">
+                            <p className="font-medium text-sm text-gray-500">Solana</p>
+                            <p className="text-xs text-gray-600">SOL Network</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-[10px] font-medium text-white shadow-lg">
+                        Soon
+                      </div>
+                    </div>
+                    {/* Cosmos - Coming Soon (Para SDK limitation) */}
+                    <div className="relative">
+                      <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-2xl grayscale">⚛</span>
+                          <div className="text-center">
+                            <p className="font-medium text-sm text-gray-500">Cosmos</p>
+                            <p className="text-xs text-gray-600">IBC Network</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full text-[10px] font-medium text-white shadow-lg">
+                        Soon
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Solana & Cosmos wallet pregeneration requires Para API support
+                  </p>
+                </div>
+
                 {/* Wallet Name Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -1121,17 +1244,14 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {/* Info Box */}
-                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                {/* Info Box - EVM Multi-Chain */}
+                <div className="p-4 bg-blue-500/10 border-blue-500/20 border rounded-lg">
                   <div className="flex items-start gap-3">
                     <span className="text-xl flex-shrink-0">⟠</span>
                     <div className="text-sm text-gray-300">
-                      <p className="font-medium text-blue-400 mb-1">EVM Multi-Chain Wallet</p>
+                      <p className="font-medium mb-1 text-blue-400">EVM Multi-Chain Wallet</p>
                       <p className="text-gray-400">
                         One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
-                      </p>
-                      <p className="text-gray-500 text-xs mt-2">
-                        <span className="text-purple-400/60">◎ Solana</span> & <span className="text-indigo-400/60">⚛ Cosmos</span> wallets coming soon
                       </p>
                     </div>
                   </div>
@@ -1163,6 +1283,56 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 border border-red-500/30 rounded-xl max-w-sm w-full">
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Delete Wallet</h3>
+                    <p className="text-sm text-gray-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                <p className="text-gray-300 mb-6">
+                  Are you sure you want to delete this wallet? You will lose access to it permanently.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(null)}
+                    disabled={deletingWallet}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => showDeleteConfirm && deleteWallet(showDeleteConfirm)}
+                    disabled={deletingWallet}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {deletingWallet ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Wallet'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Configure Rules Modal */}
         {showRulesModal && selectedWallet && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -1174,7 +1344,7 @@ export default function DashboardPage() {
                     Configure Sponsorship Rules
                   </h2>
                   <p className="text-sm text-gray-400 mt-1">
-                    Wallet: {selectedWallet.sponsor_address.slice(0, 6)}...{selectedWallet.sponsor_address.slice(-4)}
+                    Wallet: <code className="text-cyan-400 font-semibold font-mono">{selectedWallet.sponsor_address.slice(0, 6)}...{selectedWallet.sponsor_address.slice(-5)}</code>
                   </p>
                 </div>
                 <button

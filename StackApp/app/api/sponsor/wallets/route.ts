@@ -105,9 +105,10 @@ export async function POST(req: NextRequest) {
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
         network,
+        wallet_type: sponsorWallet.walletType, // EVM or SOLANA
         para_wallet_id: sponsorWallet.walletId, // Para wallet ID for signing
         para_user_share: sponsorWallet.userShare, // User share for server-side signing
-        sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains)
+        sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains) or Solana address
         balance: "0",
         wallet_name: finalWalletName,
         is_public: isPublic,
@@ -137,6 +138,79 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error in POST /api/sponsor/wallets:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/sponsor/wallets
+ * Deletes a wallet from the database
+ * Note: The wallet remains in Para's system but is no longer accessible from our app
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { walletId, userWalletAddress } = body;
+
+    if (!walletId || !userWalletAddress) {
+      return NextResponse.json(
+        { error: "walletId and userWalletAddress required" },
+        { status: 400 }
+      );
+    }
+
+    // First, verify the wallet exists and belongs to the user
+    const { data: existingWallet, error: fetchError } = await firebaseAdmin
+      .from("perkos_sponsor_wallets")
+      .select("*")
+      .eq("id", walletId)
+      .eq("user_wallet_address", userWalletAddress.toLowerCase())
+      .single();
+
+    if (fetchError || !existingWallet) {
+      console.error("Wallet not found or access denied:", { walletId, fetchError });
+      return NextResponse.json(
+        { error: "Wallet not found or access denied" },
+        { status: 404 }
+      );
+    }
+
+    // Delete the wallet from database
+    // Note: Para doesn't provide a delete wallet API - the wallet remains in Para's system
+    // but we lose access to it since we're removing our reference
+    const { error: deleteError } = await firebaseAdmin
+      .from("perkos_sponsor_wallets")
+      .delete()
+      .eq("id", walletId)
+      .eq("user_wallet_address", userWalletAddress.toLowerCase());
+
+    if (deleteError) {
+      console.error("Error deleting wallet:", deleteError);
+      return NextResponse.json(
+        { error: "Failed to delete wallet" },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ Wallet deleted successfully:`);
+    console.log(`   Wallet ID: ${walletId}`);
+    console.log(`   Address: ${existingWallet.sponsor_address}`);
+    console.log(`   User: ${userWalletAddress}`);
+
+    return NextResponse.json({
+      success: true,
+      message: "Wallet deleted successfully",
+      deletedWallet: {
+        id: walletId,
+        address: existingWallet.sponsor_address,
+        name: existingWallet.wallet_name,
+      },
+    });
+  } catch (error) {
+    console.error("Error in DELETE /api/sponsor/wallets:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
