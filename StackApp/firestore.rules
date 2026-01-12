@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Vendor domains - read/write by owner or admin
+    match /perkos_user_vendor_domains/{domainId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        (resource == null || resource.data.user_wallet_address == request.auth.token.wallet_address);
+    }
+
+    // Endpoint usage - server-only write, authenticated read
+    match /perkos_endpoint_usage/{usageId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Server-side only via Admin SDK
+    }
+
+    // Monthly stats - server-only write, authenticated read
+    match /perkos_monthly_vendor_stats/{statsId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Server-side only via Admin SDK
+    }
+
+    // Rate limit overages - server-only write, authenticated read
+    match /perkos_rate_limit_overages/{overageId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Server-side only via Admin SDK
+    }
+  }
+}

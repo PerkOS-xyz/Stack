@@ -1,0 +1,91 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "perkos_user_vendor_domains",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_wallet_address", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_user_vendor_domains",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "verification_status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_user_vendor_domains",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sponsor_wallet_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_user_vendor_domains",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "verification_status", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_endpoint_usage",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "window_type", "order": "ASCENDING" },
+        { "fieldPath": "window_start", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_endpoint_usage",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "endpoint_path", "order": "ASCENDING" },
+        { "fieldPath": "window_type", "order": "ASCENDING" },
+        { "fieldPath": "window_start", "order": "ASCENDING" },
+        { "fieldPath": "caller_address", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_monthly_vendor_stats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_wallet_address", "order": "ASCENDING" },
+        { "fieldPath": "year_month", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_monthly_vendor_stats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "year_month", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_rate_limit_overages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_wallet_address", "order": "ASCENDING" },
+        { "fieldPath": "occurred_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "perkos_rate_limit_overages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain_url", "order": "ASCENDING" },
+        { "fieldPath": "limit_type", "order": "ASCENDING" },
+        { "fieldPath": "window_start", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
