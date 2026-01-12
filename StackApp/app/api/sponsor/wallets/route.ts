@@ -68,11 +68,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate network (default to 'evm' for multi-chain wallets)
-    // Future: Add 'solana' support
     const validNetworks = ["evm", "solana"];
     if (!validNetworks.includes(network)) {
       return NextResponse.json(
-        { error: `Invalid network. Must be "evm" or "solana" (future)` },
+        { error: `Invalid network. Must be "evm" or "solana"` },
         { status: 400 }
       );
     }
