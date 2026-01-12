@@ -30,6 +30,7 @@ interface UserProfile {
 interface SponsorWallet {
   id: string;
   network: string;
+  wallet_type?: "EVM" | "SOLANA" | "COSMOS";
   sponsor_address: string;
   balance: string;
   created_at: string;
@@ -317,12 +318,12 @@ export default function DashboardPage() {
     }
   };
 
-  const loadMultiNetworkBalances = async (sponsorAddress: string) => {
+  const loadMultiNetworkBalances = async (sponsorAddress: string, walletType: string = "EVM") => {
     if (!sponsorAddress) return;
 
     setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: true }));
     try {
-      const response = await fetch(`/api/sponsor/wallets/balance-all-networks?address=${sponsorAddress}`);
+      const response = await fetch(`/api/sponsor/wallets/balance-all-networks?address=${sponsorAddress}&walletType=${walletType}`);
       if (response.ok) {
         const data = await response.json();
         setMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: data }));
@@ -335,7 +336,7 @@ export default function DashboardPage() {
   };
 
   // Toggle wallet balance section expansion with lazy loading
-  const toggleWalletExpanded = (walletId: string, sponsorAddress: string) => {
+  const toggleWalletExpanded = (walletId: string, sponsorAddress: string, walletType: string = "EVM") => {
     setExpandedWallets(prev => {
       const newSet = new Set(prev);
       if (newSet.has(walletId)) {
@@ -344,7 +345,7 @@ export default function DashboardPage() {
         newSet.add(walletId);
         // Lazy load balances when expanding if not already loaded
         if (!multiNetworkBalances[sponsorAddress]) {
-          loadMultiNetworkBalances(sponsorAddress);
+          loadMultiNetworkBalances(sponsorAddress, walletType);
         }
       }
       return newSet;
@@ -770,7 +771,7 @@ export default function DashboardPage() {
               <span className="text-blue-400">⟠ EVM</span> works on all networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
             </p>
             <p className="text-xs text-gray-500 mt-1 text-center">
-              <span className="text-purple-400/60">◎ Solana</span> & <span className="text-indigo-400/60">⚛ Cosmos</span> coming soon
+              <span className="text-purple-400">◎ Solana</span> available • <span className="text-indigo-400/60">⚛ Cosmos</span> coming soon
             </p>
           </div>
 
@@ -1011,7 +1012,7 @@ export default function DashboardPage() {
 
                   {/* Expandable Balance Section Toggle */}
                   <button
-                    onClick={() => toggleWalletExpanded(wallet.id, wallet.sponsor_address)}
+                    onClick={() => toggleWalletExpanded(wallet.id, wallet.sponsor_address, wallet.wallet_type || "EVM")}
                     className="w-full px-4 py-3 bg-slate-800/50 border-t border-blue-500/10 flex items-center justify-between hover:bg-slate-800/80 transition-colors group"
                   >
                     <div className="flex items-center gap-2">
@@ -1052,7 +1053,7 @@ export default function DashboardPage() {
                           }}
                           isLoading={loadingMultiNetworkBalances[wallet.sponsor_address] || false}
                           onRefresh={() => {
-                            loadMultiNetworkBalances(wallet.sponsor_address);
+                            loadMultiNetworkBalances(wallet.sponsor_address, wallet.wallet_type || "EVM");
                             refreshBalance(wallet.id);
                           }}
                         />
@@ -1182,21 +1183,23 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </button>
-                    {/* Solana - Coming Soon (Para SDK limitation) */}
-                    <div className="relative">
-                      <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50">
-                        <div className="flex flex-col items-center gap-2">
-                          <span className="text-2xl grayscale">◎</span>
-                          <div className="text-center">
-                            <p className="font-medium text-sm text-gray-500">Solana</p>
-                            <p className="text-xs text-gray-600">SOL Network</p>
-                          </div>
+                    {/* Solana - Available */}
+                    <button
+                      onClick={() => setNewWalletType('solana')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        newWalletType === 'solana'
+                          ? 'border-purple-500 bg-purple-500/10'
+                          : 'border-slate-600 bg-slate-900/50 hover:border-purple-500/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-2xl">◎</span>
+                        <div className="text-center">
+                          <p className={`font-medium text-sm ${newWalletType === 'solana' ? 'text-purple-400' : 'text-gray-300'}`}>Solana</p>
+                          <p className="text-xs text-gray-500">SOL Network</p>
                         </div>
                       </div>
-                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-[10px] font-medium text-white shadow-lg">
-                        Soon
-                      </div>
-                    </div>
+                    </button>
                     {/* Cosmos - Coming Soon (Para SDK limitation) */}
                     <div className="relative">
                       <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50">
@@ -1214,7 +1217,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Solana & Cosmos wallet pregeneration requires Para API support
+                    Cosmos wallet pregeneration coming soon
                   </p>
                 </div>
 
@@ -1258,24 +1261,43 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {/* Info Box - EVM Multi-Chain */}
-                <div className="p-4 bg-blue-500/10 border-blue-500/20 border rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl flex-shrink-0">⟠</span>
-                    <div className="text-sm text-gray-300">
-                      <p className="font-medium mb-1 text-blue-400">EVM Multi-Chain Wallet</p>
-                      <p className="text-gray-400">
-                        One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
-                      </p>
+                {/* Info Box - Dynamic based on wallet type */}
+                {newWalletType === 'evm' && (
+                  <div className="p-4 bg-blue-500/10 border-blue-500/20 border rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl flex-shrink-0">⟠</span>
+                      <div className="text-sm text-gray-300">
+                        <p className="font-medium mb-1 text-blue-400">EVM Multi-Chain Wallet</p>
+                        <p className="text-gray-400">
+                          One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+                {newWalletType === 'solana' && (
+                  <div className="p-4 bg-purple-500/10 border-purple-500/20 border rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl flex-shrink-0">◎</span>
+                      <div className="text-sm text-gray-300">
+                        <p className="font-medium mb-1 text-purple-400">Solana Wallet</p>
+                        <p className="text-gray-400">
+                          Native Solana wallet for SPL tokens and Solana programs. Works on Mainnet-beta and Devnet.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Create Button */}
                 <button
-                  onClick={() => createWallet('evm', newWalletName, newWalletIsPublic)}
+                  onClick={() => createWallet(newWalletType, newWalletName, newWalletIsPublic)}
                   disabled={creatingWallet}
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center"
+                  className={`w-full bg-gradient-to-r ${
+                    newWalletType === 'solana'
+                      ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                      : 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                  } disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center`}
                 >
                   {creatingWallet ? (
                     <>
@@ -1287,8 +1309,8 @@ export default function DashboardPage() {
                     </>
                   ) : (
                     <>
-                      <span className="mr-2 text-lg">⟠</span>
-                      Create EVM Wallet
+                      <span className="mr-2 text-lg">{newWalletType === 'solana' ? '◎' : '⟠'}</span>
+                      Create {newWalletType === 'solana' ? 'Solana' : 'EVM'} Wallet
                     </>
                   )}
                 </button>

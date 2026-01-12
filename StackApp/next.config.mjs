@@ -50,12 +50,12 @@ const nextConfig = {
       '@getpara/cosmos-wallet-connectors': false,
       '@getpara/cosmjs-v0-integration': false,
       '@getpara/graz-connector': false,
-      // Solana dependencies (not needed for EVM chains)
+      // Solana client-side wallet adapters (not needed - using server-side SDK)
       '@solana/wallet-adapter-base': false,
       '@solana/wallet-adapter-react': false,
       '@solana/wallet-adapter-wallets': false,
-      '@solana/web3.js': false,
       '@getpara/solana-wallet-connectors': false,
+      // Note: @solana/web3.js and @getpara/solana-web3.js-v1-integration are enabled for server-side Solana wallet creation
       // Wagmi connector optional dependencies (not needed)
       '@base-org/account': false,
       '@gemini-wallet/core': false,
