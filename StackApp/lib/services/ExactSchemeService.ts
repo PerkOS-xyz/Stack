@@ -16,6 +16,7 @@ import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { networkToCAIP2 } from "../utils/x402-headers";
+import { getEIP712Version, getTokenName } from "../utils/x402-payment";
 import { getParaTransactionService } from "./ParaTransactionService";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
 
@@ -512,8 +513,8 @@ export class ExactSchemeService {
     try {
       const chainId = this.getChainIdForNetwork(this.network);
       const domain = {
-        name: "USD Coin", // Standard USDC name
-        version: "2",
+        name: getTokenName(chainId), // Network-specific: Celo uses "USDC", others use "USD Coin"
+        version: getEIP712Version(chainId), // Network-specific: Celo uses "1", others use "2"
         chainId,
         verifyingContract: tokenAddress,
       };

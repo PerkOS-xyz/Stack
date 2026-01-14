@@ -20,11 +20,13 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
 } as const;
 
 // USDC token names by chain ID (for EIP-712 domain)
+// Most Circle native USDC uses "USD Coin", but Celo native USDC returns "USDC"
+// IMPORTANT: This must match the actual name() value returned by the contract
 const USDC_TOKEN_NAMES: Record<number, string> = {
   // Mainnets
   8453: "USD Coin",      // Base
   43114: "USD Coin",     // Avalanche
-  42220: "Celo Dollar",  // Celo
+  42220: "USDC",         // Celo (native USDC returns "USDC" from name())
   137: "USD Coin",       // Polygon
   42161: "USD Coin",     // Arbitrum
   10: "USD Coin",        // Optimism
@@ -32,10 +34,42 @@ const USDC_TOKEN_NAMES: Record<number, string> = {
   // Testnets
   84532: "USD Coin",     // Base Sepolia
   43113: "USD Coin",     // Avalanche Fuji
+  44787: "USDC",         // Celo Alfajores (testnet)
 };
 
-// EIP-3009 version (most USDC implementations use "2")
-const EIP3009_VERSION = "2";
+// EIP-712 domain versions by chain ID
+// All Circle native USDC implementations use version "2"
+// Verified by querying contract.version() on-chain
+const EIP712_DOMAIN_VERSIONS: Record<number, string> = {
+  // Mainnets
+  1: "2",      // Ethereum
+  8453: "2",   // Base
+  43114: "2",  // Avalanche
+  42220: "2",  // Celo (verified: contract.version() returns "2")
+  137: "2",    // Polygon
+  42161: "2",  // Arbitrum
+  10: "2",     // Optimism
+  // Testnets
+  84532: "2",  // Base Sepolia
+  43113: "2",  // Avalanche Fuji
+  44787: "2",  // Celo Alfajores (assuming same as mainnet)
+};
+
+/**
+ * Get EIP-712 domain version for a chain
+ * All Circle native USDC uses version "2" (verified on-chain)
+ */
+export function getEIP712Version(chainId: number): string {
+  return EIP712_DOMAIN_VERSIONS[chainId] || "2";
+}
+
+/**
+ * Get USDC token name for EIP-712 domain by chain ID
+ * Celo native USDC returns "USDC" from name(), others return "USD Coin"
+ */
+export function getTokenName(chainId: number): string {
+  return USDC_TOKEN_NAMES[chainId] || "USD Coin";
+}
 
 /**
  * Payment requirements from x402 protocol
@@ -109,7 +143,7 @@ export function createEIP712Domain(
 
   return {
     name,
-    version: EIP3009_VERSION,
+    version: getEIP712Version(chainId),
     chainId,
     verifyingContract: address,
   };
