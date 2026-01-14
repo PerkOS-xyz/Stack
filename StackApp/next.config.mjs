@@ -38,10 +38,10 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       // Cosmos dependencies (not needed for EVM chains)
+      // Note: @cosmjs/encoding is required by Para SDK for address display
       '@cosmjs/stargate': false,
       '@cosmjs/proto-signing': false,
       '@cosmjs/amino': false,
-      '@cosmjs/encoding': false,
       '@cosmjs/math': false,
       '@cosmjs/tendermint-rpc': false,
       '@cosmjs/crypto': false,
