@@ -1091,11 +1091,11 @@ export default function DashboardPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">1.</span>
-              <span>Create an <span className="text-blue-400">⟠ EVM</span> sponsor wallet - <strong className="text-cyan-400">one address works on all EVM networks</strong></span>
+              <span>Create an <span className="text-blue-400">⟠ EVM</span> or <span className="text-purple-400">◎ Solana</span> sponsor wallet - <strong className="text-cyan-400">EVM address works on all EVM networks</strong></span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">2.</span>
-              <span>Fund the wallet by sending native tokens (AVAX, ETH, etc.) on any supported network</span>
+              <span>Fund the wallet by sending native tokens (AVAX, ETH, SOL, etc.) on any supported network</span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">3.</span>
@@ -1108,7 +1108,10 @@ export default function DashboardPage() {
           </ol>
           <div className="mt-4 pt-4 border-t border-blue-500/20">
             <p className="text-xs text-gray-400">
-              <strong className="text-cyan-400">Supported Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+              <strong className="text-cyan-400">EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              <strong className="text-purple-400">Solana:</strong> Mainnet, Devnet
             </p>
           </div>
         </div>
