@@ -207,7 +207,8 @@ export class ExactSchemeService {
 
   async settle(
     payload: ExactPayload,
-    requirements: PaymentRequirements
+    requirements: PaymentRequirements,
+    vendorDomain?: string
   ): Promise<SettleResponse> {
     const { authorization } = payload;
 
@@ -226,7 +227,7 @@ export class ExactSchemeService {
     }
 
     // Create promise for this settlement
-    const settlementPromise = this.executeSettlement(payload, requirements, settlementKey);
+    const settlementPromise = this.executeSettlement(payload, requirements, settlementKey, vendorDomain);
     ExactSchemeService.pendingSettlements.set(settlementKey, settlementPromise);
 
     try {
@@ -239,7 +240,8 @@ export class ExactSchemeService {
   private async executeSettlement(
     payload: ExactPayload,
     requirements: PaymentRequirements,
-    settlementKey: string
+    settlementKey: string,
+    vendorDomain?: string
   ): Promise<SettleResponse> {
     try {
       const { authorization, signature } = payload;
@@ -265,8 +267,9 @@ export class ExactSchemeService {
       }
 
       // Look up sponsor wallet for the payer (consumer/client)
+      // Pass vendorDomain to enable domain_whitelist rule matching
       const paraTxService = getParaTransactionService();
-      const sponsorWallet = await paraTxService.findSponsorWallet(authorization.from);
+      const sponsorWallet = await paraTxService.findSponsorWallet(authorization.from, vendorDomain);
 
       if (!sponsorWallet) {
         logger.error("No sponsor wallet found for payer", {

@@ -82,41 +82,47 @@ export class ParaTransactionService {
    * Find sponsor wallet for a wallet address
    *
    * Lookup order:
-   * 1. Check if address is a whitelisted agent in perkos_sponsor_rules
-   * 2. Fall back to direct user_wallet_address lookup in perkos_sponsor_wallets
+   * 1. Check if address is a whitelisted agent in perkos_sponsor_rules (agent_whitelist)
+   * 2. Check if domain is whitelisted in perkos_sponsor_rules (domain_whitelist)
+   * 3. Fall back to direct user_wallet_address lookup in perkos_sponsor_wallets
+   *
+   * @param walletAddress - The wallet address making the payment
+   * @param domain - Optional domain/hostname of the service (e.g., "localhost:3001", "aura.perkos.xyz")
    */
-  async findSponsorWallet(walletAddress: string): Promise<SponsorWallet | null> {
+  async findSponsorWallet(walletAddress: string, domain?: string): Promise<SponsorWallet | null> {
     const normalizedAddress = walletAddress.toLowerCase();
+    const normalizedDomain = domain?.toLowerCase();
 
     try {
       // 1. First, check if this address is a whitelisted agent
-      logger.info("Looking up sponsor wallet for address", { walletAddress: normalizedAddress });
+      logger.info("Looking up sponsor wallet", { walletAddress: normalizedAddress, domain: normalizedDomain });
 
-      const { data: rule, error: ruleError } = await firebaseAdmin
+      const { data: agentRules, error: agentRuleError } = await firebaseAdmin
         .from("perkos_sponsor_rules")
         .select("sponsor_wallet_id")
         .eq("rule_type", "agent_whitelist")
         .eq("agent_address", normalizedAddress)
         .eq("enabled", true)
         .order("priority", { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (rule && !ruleError) {
-        // Found a whitelist rule - get the sponsor wallet
+      const agentRule = agentRules?.[0];
+
+      if (agentRule && !agentRuleError) {
+        // Found an agent whitelist rule - get the sponsor wallet
         logger.info("Found agent whitelist rule", {
           walletAddress: normalizedAddress,
-          sponsorWalletId: rule.sponsor_wallet_id,
+          sponsorWalletId: agentRule.sponsor_wallet_id,
         });
 
         const { data: wallet, error: walletError } = await firebaseAdmin
           .from("perkos_sponsor_wallets")
           .select("*")
-          .eq("id", rule.sponsor_wallet_id)
+          .eq("id", agentRule.sponsor_wallet_id)
           .single();
 
         if (wallet && !walletError) {
-          logger.info("Found sponsor wallet via whitelist", {
+          logger.info("Found sponsor wallet via agent whitelist", {
             agentAddress: normalizedAddress,
             sponsorAddress: wallet.sponsor_address,
           });
@@ -124,12 +130,79 @@ export class ParaTransactionService {
         }
       }
 
-      // 2. Fall back to direct user_wallet_address lookup
-      const { data: directWallet, error: directError } = await firebaseAdmin
+      // 2. Check if domain is whitelisted (domain_whitelist rules)
+      if (normalizedDomain) {
+        // Try exact domain match first, then partial match (for subdomains)
+        const { data: domainRules, error: domainRuleError } = await firebaseAdmin
+          .from("perkos_sponsor_rules")
+          .select("sponsor_wallet_id, domain")
+          .eq("rule_type", "domain_whitelist")
+          .eq("enabled", true)
+          .order("priority", { ascending: false });
+
+        // Debug: Log what rules were found
+        logger.info("Domain whitelist query result", {
+          searchDomain: normalizedDomain,
+          rulesFound: domainRules?.length ?? 0,
+          rules: domainRules?.map(r => ({ domain: r.domain, walletId: r.sponsor_wallet_id })) ?? [],
+          error: domainRuleError?.message,
+        });
+
+        if (domainRules && !domainRuleError) {
+          // Find matching domain rule (exact match or subdomain match)
+          const matchingRule = domainRules.find(rule => {
+            if (!rule.domain) return false;
+            const ruleDomain = rule.domain.toLowerCase().trim();
+            const searchDomain = normalizedDomain.trim();
+            const isMatch = searchDomain === ruleDomain ||
+                   searchDomain.endsWith('.' + ruleDomain) ||
+                   ruleDomain.includes(searchDomain);
+            logger.info("Domain matching check", {
+              ruleDomain,
+              searchDomain,
+              exactMatch: searchDomain === ruleDomain,
+              subdomainMatch: searchDomain.endsWith('.' + ruleDomain),
+              partialMatch: ruleDomain.includes(searchDomain),
+              isMatch,
+            });
+            return isMatch;
+          });
+
+          if (matchingRule) {
+            logger.info("Found domain whitelist rule", {
+              domain: normalizedDomain,
+              matchedDomain: matchingRule.domain,
+              sponsorWalletId: matchingRule.sponsor_wallet_id,
+            });
+
+            const { data: wallet, error: walletError } = await firebaseAdmin
+              .from("perkos_sponsor_wallets")
+              .select("*")
+              .eq("id", matchingRule.sponsor_wallet_id)
+              .single();
+
+            if (wallet && !walletError) {
+              logger.info("Found sponsor wallet via domain whitelist", {
+                domain: normalizedDomain,
+                sponsorAddress: wallet.sponsor_address,
+              });
+              return wallet as SponsorWallet;
+            }
+          }
+        }
+      }
+
+      // 3. Fall back to direct user_wallet_address lookup
+      // Use order + limit instead of .single() to handle users with multiple sponsor wallets
+      // Returns the most recently created wallet by default
+      const { data: directWallets, error: directError } = await firebaseAdmin
         .from("perkos_sponsor_wallets")
         .select("*")
         .eq("user_wallet_address", normalizedAddress)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const directWallet = directWallets?.[0];
 
       if (directWallet && !directError) {
         logger.info("Found sponsor wallet via direct lookup", {
@@ -139,9 +212,11 @@ export class ParaTransactionService {
         return directWallet as SponsorWallet;
       }
 
-      logger.warn("No sponsor wallet found for address", {
+      logger.warn("No sponsor wallet found", {
         walletAddress: normalizedAddress,
-        checkedWhitelist: true,
+        domain: normalizedDomain,
+        checkedAgentWhitelist: true,
+        checkedDomainWhitelist: !!normalizedDomain,
         checkedDirectLookup: true,
       });
       return null;
@@ -149,6 +224,7 @@ export class ParaTransactionService {
       logger.error("Error finding sponsor wallet", {
         error: error instanceof Error ? error.message : String(error),
         walletAddress: normalizedAddress,
+        domain: normalizedDomain,
       });
       return null;
     }

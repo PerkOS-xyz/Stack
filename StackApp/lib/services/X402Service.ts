@@ -202,8 +202,10 @@ export class X402Service {
 
   /**
    * Settle payment
+   * @param request The x402 settle request
+   * @param vendorDomain Optional domain of the vendor making the request (for domain_whitelist rules)
    */
-  async settle(request: X402SettleRequest): Promise<SettleResponse> {
+  async settle(request: X402SettleRequest, vendorDomain?: string): Promise<SettleResponse> {
     const { paymentPayload, paymentRequirements } = request;
 
     // Validate versions - support both V1 and V2
@@ -276,7 +278,8 @@ export class X402Service {
       const exactScheme = this.getExactScheme(network);
       return exactScheme.settle(
         paymentPayload.payload as any,
-        paymentRequirements
+        paymentRequirements,
+        vendorDomain
       );
     } else if (paymentPayload.scheme === "deferred") {
       const deferredScheme = this.getDeferredSchemeForNetwork(network);
