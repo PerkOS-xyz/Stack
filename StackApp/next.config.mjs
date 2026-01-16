@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  // Optimize imports for heavy libraries (tree-shaking)
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    },
+  },
   // Suppress source map requests for Para SDK files
   async rewrites() {
     return [
@@ -29,6 +35,12 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+  },
+  // Remove console.logs in production for smaller bundles
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
   // Externalize Dynamic Labs packages to prevent bundling client-side code on server
   // These packages have dependencies on @dynamic-labs that include React client components

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from 'react';
 import { SubscriptionProvider } from "@/lib/contexts/SubscriptionContext";
-import { WalletProvider, ACTIVE_PROVIDER } from "@/lib/wallet/client";
+import { WalletProvider } from "@/lib/wallet/client";
 
 export function Providers({ children }: { children: ReactNode }) {
   // Create QueryClient inside component to avoid SSR/hydration issues
@@ -16,8 +16,6 @@ export function Providers({ children }: { children: ReactNode }) {
       },
     },
   }));
-
-  console.log("[Providers] Active wallet provider:", ACTIVE_PROVIDER);
 
   return (
     <QueryClientProvider client={queryClient}>
