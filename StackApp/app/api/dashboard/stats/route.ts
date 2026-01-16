@@ -65,35 +65,40 @@ export async function GET(req: NextRequest) {
       .select("*", { count: "exact", head: true })
       .gt("total_transactions", 0);
 
-    // Fetch network statistics
+    // Fetch network statistics directly from x402 transactions
+    // Group by network to get counts and volumes
+    // Note: Don't filter by date for network stats - show all-time totals that match totalTransactions
     const { data: networkData } = await firebaseAdmin
-      .from("perkos_network_stats")
-      .select("network, chain_id, total_transactions, total_volume")
-      .gte("date", startDate.toISOString().split("T")[0])
-      .order("date", { ascending: false });
+      .from("perkos_x402_transactions")
+      .select("network, chain_id, amount_wei, amount_usd")
+      .eq("status", "success");
 
-    // Aggregate by network
-    const networkAgg = networkData?.reduce((acc, stat) => {
-      if (!acc[stat.network]) {
-        acc[stat.network] = {
+    // Aggregate by network from transaction data
+    const networkAgg = networkData?.reduce((acc, tx) => {
+      const network = tx.network;
+      if (!network) return acc;
+
+      if (!acc[network]) {
+        acc[network] = {
           txCount: 0,
           volume: 0n,
-          chainId: stat.chain_id,
+          volumeUsd: 0,
+          chainId: tx.chain_id,
         };
       }
-      acc[stat.network].txCount += stat.total_transactions;
-      acc[stat.network].volume += BigInt(stat.total_volume || "0");
+      acc[network].txCount += 1;
+      acc[network].volume += BigInt(tx.amount_wei || "0");
+      acc[network].volumeUsd += tx.amount_usd || 0;
       return acc;
-    }, {} as Record<string, { txCount: number; volume: bigint; chainId: number }>);
+    }, {} as Record<string, { txCount: number; volume: bigint; volumeUsd: number; chainId: number }>);
 
-    // Format network stats
-    const formatVolume = (vol: bigint) => {
-      const num = Number(vol) / 1e6; // Assuming USDC (6 decimals)
-      return num >= 1000000
-        ? `$${(num / 1000000).toFixed(1)}M`
-        : num >= 1000
-        ? `$${(num / 1000).toFixed(0)}K`
-        : `$${num.toFixed(0)}`;
+    // Format USD volume for display
+    const formatVolumeUsd = (usd: number) => {
+      return usd >= 1000000
+        ? `$${(usd / 1000000).toFixed(1)}M`
+        : usd >= 1000
+        ? `$${(usd / 1000).toFixed(1)}K`
+        : `$${usd.toFixed(2)}`;
     };
 
     // Build network stats from config, pulling data from aggregation
@@ -104,7 +109,7 @@ export async function GET(req: NextRequest) {
         icon: net.icon,
         chainId: net.chainId,
         txCount: networkAgg?.[net.network]?.txCount || 0,
-        volume: formatVolume(networkAgg?.[net.network]?.volume || 0n),
+        volume: formatVolumeUsd(networkAgg?.[net.network]?.volumeUsd || 0),
       })),
       testnet: NETWORK_CONFIG.testnet.map((net) => ({
         name: net.name,
@@ -112,48 +117,76 @@ export async function GET(req: NextRequest) {
         icon: net.icon,
         chainId: net.chainId,
         txCount: networkAgg?.[net.network]?.txCount || 0,
-        volume: formatVolume(networkAgg?.[net.network]?.volume || 0n),
+        volume: formatVolumeUsd(networkAgg?.[net.network]?.volumeUsd || 0),
       })),
     };
 
-    // Fetch chart data (daily transactions for the time range)
+    // Fetch chart data from x402 transactions
+    // For transactions without created_at, we filter them out client-side in the reduce
     const { data: chartDataRaw } = await firebaseAdmin
-      .from("perkos_network_stats")
-      .select("date, total_transactions, total_volume")
-      .gte("date", startDate.toISOString().split("T")[0])
-      .order("date", { ascending: true });
+      .from("perkos_x402_transactions")
+      .select("created_at, amount_usd")
+      .eq("status", "success")
+      .order("created_at", { ascending: true });
 
-    // Aggregate by date
-    const dailyAgg = chartDataRaw?.reduce((acc, stat) => {
-      if (!acc[stat.date]) {
-        acc[stat.date] = { transactions: 0, volume: 0n };
+    // Aggregate by date for transactions that have timestamps
+    const dailyAgg = chartDataRaw?.reduce((acc, tx) => {
+      if (!tx.created_at) return acc;
+      const date = tx.created_at.split("T")[0]; // Extract date part
+      if (!acc[date]) {
+        acc[date] = { transactions: 0, volumeUsd: 0 };
       }
-      acc[stat.date].transactions += stat.total_transactions;
-      acc[stat.date].volume += BigInt(stat.total_volume || "0");
+      acc[date].transactions += 1;
+      acc[date].volumeUsd += tx.amount_usd || 0;
       return acc;
-    }, {} as Record<string, { transactions: number; volume: bigint }>);
+    }, {} as Record<string, { transactions: number; volumeUsd: number }>);
 
-    const chartData = Object.entries(dailyAgg || {}).map(([date, data], i) => ({
+    // Generate chart data - if no real data, create placeholder entries
+    let chartData = Object.entries(dailyAgg || {}).map(([date, data], i) => ({
       day: i + 1,
       value: data.transactions,
       date,
     }));
 
+    // If no chart data but we have transactions, show a single bar
+    if (chartData.length === 0 && (totalTransactions || 0) > 0) {
+      chartData = [{
+        day: 1,
+        value: totalTransactions || 0,
+        date: new Date().toISOString().split("T")[0],
+      }];
+    }
+
     // Fetch recent transactions (last 9 for landing page card display)
+    // Try to order by created_at, but also fetch without ordering if that fails
     const { data: recentTxs } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at")
       .eq("status", "success")
-      .order("created_at", { ascending: false })
       .limit(9);
 
-    const recentTransactions = recentTxs?.map((tx) => {
-      const timeDiff = Date.now() - new Date(tx.created_at).getTime();
-      const minutesAgo = Math.floor(timeDiff / (1000 * 60));
-      const timeStr =
-        minutesAgo < 60
-          ? `${minutesAgo}m ago`
-          : `${Math.floor(minutesAgo / 60)}h ago`;
+    // Sort transactions - those with created_at first (newest), then others
+    const sortedTxs = (recentTxs || []).sort((a, b) => {
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      if (a.created_at) return -1;
+      if (b.created_at) return 1;
+      return 0;
+    });
+
+    const recentTransactions = sortedTxs.map((tx) => {
+      let timeStr = "Recently";
+      if (tx.created_at) {
+        const timeDiff = Date.now() - new Date(tx.created_at).getTime();
+        const minutesAgo = Math.floor(timeDiff / (1000 * 60));
+        timeStr =
+          minutesAgo < 60
+            ? `${minutesAgo}m ago`
+            : minutesAgo < 1440
+            ? `${Math.floor(minutesAgo / 60)}h ago`
+            : `${Math.floor(minutesAgo / 1440)}d ago`;
+      }
 
       // Format amount from USD value
       const amountUsd = tx.amount_usd || 0;
@@ -168,9 +201,9 @@ export async function GET(req: NextRequest) {
         amount: formattedAmount,
         scheme: tx.scheme,
         time: timeStr,
-        timestamp: new Date(tx.created_at).getTime(),
+        timestamp: tx.created_at ? new Date(tx.created_at).getTime() : Date.now(),
       };
-    }) || [];
+    });
 
     // Calculate growth (compare with previous period)
     const prevStartDate = new Date(startDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
@@ -191,6 +224,16 @@ export async function GET(req: NextRequest) {
       : totalVolumeUsd >= 1000
       ? `$${(totalVolumeUsd / 1000).toFixed(1)}K`
       : `$${totalVolumeUsd.toFixed(2)}`;
+
+    // Debug logging
+    console.log("[Dashboard Stats]", {
+      totalTransactions,
+      totalVolumeUsd,
+      networkDataCount: networkData?.length || 0,
+      networkAggKeys: Object.keys(networkAgg || {}),
+      chartDataCount: chartData.length,
+      recentTxsCount: recentTransactions.length,
+    });
 
     const stats = {
       totalTransactions: totalTransactions || 0,
