@@ -11,26 +11,187 @@
   display: none;
 }
 
+/*
+ * PerkOS Stack Theme System
+ * =========================
+ * All theme colors are defined here using CSS variables.
+ * To change the app theme, modify the values in :root (dark theme).
+ *
+ * Color Palette:
+ * - Primary: Blue (#3B82F6) - Actions, links, focus states
+ * - Accent: Cyan (#22D3EE) - Highlights, success states
+ * - Background: Slate shades - Page and card backgrounds
+ * - Text: Gray/White shades - Content hierarchy
+ * - Borders: Slate shades - Separators, inputs
+ */
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* ==========================================
+   * CORE SEMANTIC COLORS (shadcn/ui compatible)
+   * ========================================== */
+
+  /* Page backgrounds */
+  --background: 222 47% 6%;           /* slate-950: #0f172a → hsl(222, 47%, 11%) adjusted darker */
+  --foreground: 210 40% 98%;          /* slate-50: #f8fafc */
+
+  /* Card/Panel backgrounds */
+  --card: 217 33% 12%;                /* slate-900: #0f172a adjusted */
+  --card-foreground: 210 40% 98%;     /* slate-50 */
+
+  /* Popover/Modal backgrounds */
+  --popover: 217 33% 10%;             /* Darker than card */
+  --popover-foreground: 210 40% 98%;
+
+  /* Primary action color (Blue) */
+  --primary: 217 91% 60%;             /* blue-500: #3B82F6 */
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary/Muted elements */
+  --secondary: 217 33% 17%;           /* slate-800 */
+  --secondary-foreground: 210 40% 98%;
+
+  /* Muted text and backgrounds */
+  --muted: 217 33% 17%;               /* slate-800 */
+  --muted-foreground: 215 20% 65%;    /* gray-400: #9CA3AF */
+
+  /* Accent color (Cyan) */
+  --accent: 188 94% 43%;              /* cyan-500: #06B6D4 */
+  --accent-foreground: 222 47% 11%;   /* Dark text on accent */
+
+  /* Destructive/Error states */
+  --destructive: 0 84% 60%;           /* red-500 */
+  --destructive-foreground: 210 40% 98%;
+
+  /* Borders */
+  --border: 217 33% 25%;              /* slate-700: #334155 */
+  --input: 217 33% 25%;               /* Same as border */
+  --ring: 217 91% 60%;                /* Same as primary for focus rings */
+
+  /* Border radius */
+  --radius: 0.75rem;
+
+  /* ==========================================
+   * EXTENDED COLOR PALETTE
+   * ========================================== */
+
+  /* Slate scale (backgrounds, borders) */
+  --slate-950: 222 47% 6%;
+  --slate-900: 217 33% 10%;
+  --slate-800: 217 33% 17%;
+  --slate-700: 217 33% 25%;
+  --slate-600: 215 19% 35%;
+  --slate-500: 215 16% 47%;
+
+  /* Gray scale (text) */
+  --gray-100: 220 14% 96%;
+  --gray-200: 220 13% 91%;
+  --gray-300: 216 12% 84%;
+  --gray-400: 218 11% 65%;
+  --gray-500: 220 9% 46%;
+  --gray-600: 215 14% 34%;
+
+  /* Blue scale (primary actions) */
+  --blue-400: 213 94% 68%;
+  --blue-500: 217 91% 60%;
+  --blue-600: 221 83% 53%;
+  --blue-700: 224 76% 48%;
+
+  /* Cyan scale (accent/highlight) */
+  --cyan-300: 187 92% 69%;
+  --cyan-400: 188 86% 53%;
+  --cyan-500: 188 94% 43%;
+  --cyan-600: 192 91% 36%;
+
+  /* Green scale (success) */
+  --green-400: 142 69% 58%;
+  --green-500: 142 71% 45%;
+  --green-600: 142 76% 36%;
+
+  /* Yellow scale (warning) */
+  --yellow-400: 45 93% 58%;
+  --yellow-500: 45 93% 47%;
+
+  /* Red scale (error/destructive) */
+  --red-400: 0 91% 71%;
+  --red-500: 0 84% 60%;
+  --red-600: 0 72% 51%;
+
+  /* Purple scale (special states) */
+  --purple-500: 271 91% 65%;
+  --purple-600: 271 81% 56%;
+
+  /* ==========================================
+   * GRADIENT DEFINITIONS
+   * ========================================== */
+  --gradient-primary: linear-gradient(to right, hsl(var(--blue-500)), hsl(var(--cyan-500)));
+  --gradient-primary-hover: linear-gradient(to right, hsl(var(--blue-400)), hsl(var(--cyan-400)));
+  --gradient-accent: linear-gradient(to right, hsl(var(--cyan-500)), hsl(var(--green-500)));
+  --gradient-purple: linear-gradient(to right, hsl(var(--purple-600)), hsl(344, 89%, 59%));
+
+  /* ==========================================
+   * CHART COLORS (shadcn/ui charts)
+   * ========================================== */
+  --chart-1: 217 91% 60%;             /* blue-500 */
+  --chart-2: 188 94% 43%;             /* cyan-500 */
+  --chart-3: 142 71% 45%;             /* green-500 */
+  --chart-4: 45 93% 47%;              /* yellow-500 */
+  --chart-5: 271 91% 65%;             /* purple-500 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+/* Light theme (if needed in future) */
+@media (prefers-color-scheme: light) {
+  :root.light-mode {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 188 94% 43%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
   }
 }
 
+/* Base body styles */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* ==========================================
+ * UTILITY CLASSES FOR GRADIENTS
+ * ========================================== */
+.bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-primary-hover:hover {
+  background: var(--gradient-primary-hover);
+}
+
+.bg-gradient-accent {
+  background: var(--gradient-accent);
+}
+
+.bg-gradient-purple {
+  background: var(--gradient-purple);
+}
+
+/* Text gradient utility */
+.text-gradient-primary {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

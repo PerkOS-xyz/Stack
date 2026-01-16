@@ -13,6 +13,7 @@ import "@getpara/react-sdk/styles.css";
 import { arbitrum, base, celo, mainnet, optimism, polygon, avalanche } from "wagmi/chains";
 import { WalletContextProvider, type WalletContextValue } from "../../context/WalletContext";
 import { getWalletConfig } from "../../config";
+import { paraModalTheme } from "@/lib/theme";
 
 /**
  * Inner provider that uses Para hooks and provides to WalletContext
@@ -77,30 +78,8 @@ export function ParaClientProvider({ children }: ParaClientProviderProps) {
     return <WalletContextProvider value={disconnectedValue}>{children}</WalletContextProvider>;
   }
 
-  // Theme configuration matching current app design
-  const theme = {
-    backgroundColor: "#1e293b",
-    foregroundColor: "#f3ebeb",
-    accentColor: "#4e6edf",
-    mode: "dark" as const,
-    borderRadius: "md" as const,
-    customPalette: {
-      text: {
-        primary: "#f3ebeb",
-        secondary: "#c4c4c4",
-        subtle: "#9ca3af",
-        inverted: "#090b0e",
-        error: "#ef4444",
-      },
-      modal: {
-        surface: {
-          main: "#090b0e",
-          footer: "#111318",
-        },
-        border: "#2a2e37",
-      },
-    },
-  };
+  // Theme configuration from centralized theme (lib/theme/index.ts)
+  // To change Para modal theme, update paraModalTheme in lib/theme/index.ts
 
   return (
     <ParaProvider
@@ -124,7 +103,7 @@ export function ParaClientProvider({ children }: ParaClientProviderProps) {
       }}
       paraModalConfig={{
         logo: "https://stack.perkos.xyz/logo.png",
-        theme,
+        theme: paraModalTheme,
         oAuthMethods: config.client.oAuthMethods as ("GOOGLE" | "TWITTER" | "DISCORD")[],
         authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
         recoverySecretStepEnabled: true,
