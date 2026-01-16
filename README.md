@@ -2,7 +2,7 @@
 
 <img src="Media/Stack.png" alt="PerkOS Stack Logo" height="256" />
 
-# PerkOS Stack Solution
+# PerkOS Stack
 
 ### The Complete Agent Infrastructure Platform
 
