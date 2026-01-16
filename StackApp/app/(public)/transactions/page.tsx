@@ -194,12 +194,12 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -216,28 +216,28 @@ export default function TransactionsPage() {
               <div>
                 <Link
                   href="/"
-                  className="inline-flex items-center space-x-2 text-gray-400 hover:text-cyan-400 transition-colors mb-4 group"
+                  className="inline-flex items-center space-x-2 text-gray-400 hover:text-pink-400 transition-colors mb-4 group"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                   </svg>
                   <span className="text-sm font-medium">Back to Home</span>
                 </Link>
-                <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
                   Transactions
                 </h2>
                 <p className="text-gray-400">All x402 payment transactions across community networks</p>
               </div>
 
               {/* Time Range Filter */}
-              <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+              <div className="inline-flex bg-slate-800/50 border border-pink-500/30 rounded-lg p-1 backdrop-blur-sm">
                 {(["24h", "7d", "30d"] as const).map((range) => (
                   <button
                     key={range}
                     onClick={() => setTimeRange(range)}
                     className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
                       timeRange === range
-                        ? "bg-slate-700 text-cyan-400"
+                        ? "bg-slate-700 text-pink-400"
                         : "text-gray-400 hover:text-gray-200"
                     }`}
                   >
@@ -289,7 +289,7 @@ export default function TransactionsPage() {
                 {chartData.map((bar, i) => (
                   <div
                     key={i}
-                    className="flex-1 bg-gradient-to-t from-blue-500/40 to-cyan-400/40 rounded-t-sm hover:from-blue-500/60 hover:to-cyan-400/60 transition-all duration-200"
+                    className="flex-1 bg-gradient-to-t from-pink-500/40 to-orange-400/40 rounded-t-sm hover:from-pink-500/60 hover:to-orange-400/60 transition-all duration-200"
                     style={{ height: `${bar.height}%` }}
                   />
                 ))}
@@ -303,14 +303,14 @@ export default function TransactionsPage() {
             {/* Filters and Search Row */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               {/* Scheme Filter */}
-              <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+              <div className="inline-flex bg-slate-800/50 border border-pink-500/30 rounded-lg p-1 backdrop-blur-sm">
                 {(["all", "exact", "deferred"] as const).map((scheme) => (
                   <button
                     key={scheme}
                     onClick={() => setSchemeFilter(scheme)}
                     className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 capitalize ${
                       schemeFilter === scheme
-                        ? "bg-slate-700 text-cyan-400"
+                        ? "bg-slate-700 text-pink-400"
                         : "text-gray-400 hover:text-gray-200"
                     }`}
                   >
@@ -327,7 +327,7 @@ export default function TransactionsPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by hash, address..."
-                    className="w-full px-4 py-2 pl-10 bg-slate-800/50 border border-blue-500/30 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400/50 transition-colors"
+                    className="w-full px-4 py-2 pl-10 bg-slate-800/50 border border-pink-500/30 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400/50 transition-colors"
                   />
                   <svg
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
@@ -346,7 +346,7 @@ export default function TransactionsPage() {
                 <select
                   value={recordsPerPage}
                   onChange={(e) => setRecordsPerPage(Number(e.target.value))}
-                  className="px-3 py-2 bg-slate-800/50 border border-blue-500/30 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-400/50 transition-colors cursor-pointer"
+                  className="px-3 py-2 bg-slate-800/50 border border-pink-500/30 rounded-lg text-gray-200 focus:outline-none focus:border-pink-400/50 transition-colors cursor-pointer"
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -374,7 +374,7 @@ export default function TransactionsPage() {
               <div className="p-4">
                 {loading ? (
                   <div className="text-center py-12 text-gray-400">
-                    <div className="animate-spin w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <div className="animate-spin w-8 h-8 border-2 border-pink-400 border-t-transparent rounded-full mx-auto mb-4"></div>
                     Loading transactions...
                   </div>
                 ) : transactions.length === 0 ? (
@@ -392,7 +392,7 @@ export default function TransactionsPage() {
                         href={getExplorerUrl(tx.network, tx.fullHash)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block p-4 bg-slate-900/50 border border-slate-700/50 rounded-xl hover:border-cyan-400/30 hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
+                        className="block p-4 bg-slate-900/50 border border-slate-700/50 rounded-xl hover:border-pink-400/30 hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
                       >
                         {/* Card Header */}
                         <div className="flex items-center justify-between mb-3">
@@ -410,7 +410,7 @@ export default function TransactionsPage() {
                             }`}>
                               {tx.status}
                             </span>
-                            <svg className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-gray-500 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                           </div>
@@ -419,7 +419,7 @@ export default function TransactionsPage() {
                         {/* Transaction Hash */}
                         <div className="mb-3">
                           <div className="text-xs text-gray-500 mb-1">Transaction Hash</div>
-                          <code className="text-sm text-cyan-400 font-mono break-all">{tx.hash}</code>
+                          <code className="text-sm text-pink-400 font-mono break-all">{tx.hash}</code>
                         </div>
 
                         {/* Amount and Gas Fee */}
@@ -482,7 +482,7 @@ export default function TransactionsPage() {
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           currentPage === 1
                             ? "bg-slate-800/30 text-gray-600 cursor-not-allowed"
-                            : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-cyan-400"
+                            : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-pink-400"
                         }`}
                       >
                         Previous
@@ -499,8 +499,8 @@ export default function TransactionsPage() {
                               onClick={() => setCurrentPage(Number(page))}
                               className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                                 currentPage === page
-                                  ? "bg-cyan-500/20 text-cyan-400 border border-cyan-400/30"
-                                  : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-cyan-400"
+                                  ? "bg-pink-500/20 text-pink-400 border border-pink-400/30"
+                                  : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-pink-400"
                               }`}
                             >
                               {page}
@@ -516,7 +516,7 @@ export default function TransactionsPage() {
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           currentPage === totalPages
                             ? "bg-slate-800/30 text-gray-600 cursor-not-allowed"
-                            : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-cyan-400"
+                            : "bg-slate-800/50 text-gray-300 hover:bg-slate-700 hover:text-pink-400"
                         }`}
                       >
                         Next

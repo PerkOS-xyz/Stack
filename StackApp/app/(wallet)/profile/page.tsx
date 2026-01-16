@@ -98,10 +98,10 @@ const TIER_STYLES = {
     icon: '⭐',
   },
   pro: {
-    gradient: 'from-blue-500 to-indigo-500',
-    bgGradient: 'from-blue-500/10 to-indigo-500/10',
-    border: 'border-blue-500/30',
-    text: 'text-blue-400',
+    gradient: 'from-pink-500 to-pink-600',
+    bgGradient: 'from-pink-500/10 to-pink-500/10',
+    border: 'border-pink-500/30',
+    text: 'text-pink-400',
     icon: '💎',
   },
   scale: {
@@ -391,12 +391,12 @@ export default function ProfilePage() {
   // Not connected state
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -404,7 +404,7 @@ export default function ProfilePage() {
         <div className="relative flex items-center justify-center min-h-screen p-4">
           <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
                 Profile
               </h1>
               <p className="text-gray-300">
@@ -413,7 +413,7 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => openModal()}
-              className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+              className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all"
             >
               Connect Wallet
             </button>
@@ -424,13 +424,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
       <Toaster position="top-right" richColors />
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -442,7 +442,7 @@ export default function ProfilePage() {
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
               Profile Settings
             </h1>
             <p className="text-gray-400 mt-2">
@@ -610,7 +610,7 @@ export default function ProfilePage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-cyan-400 border-r-transparent"></div>
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pink-400 border-r-transparent"></div>
               <span className="ml-3 text-gray-400">Loading profile...</span>
             </div>
           ) : (
@@ -619,7 +619,7 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 {/* Avatar Upload */}
                 <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-cyan-400 mb-4">Avatar/Logo</h2>
+                  <h2 className="text-lg font-semibold text-pink-400 mb-4">Avatar/Logo</h2>
 
                   <div className="flex flex-col items-center">
                     {/* Avatar Preview */}
@@ -639,7 +639,7 @@ export default function ProfilePage() {
                       )}
                       {uploading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-r-transparent"></div>
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-pink-400 border-r-transparent"></div>
                         </div>
                       )}
                     </div>
@@ -656,7 +656,7 @@ export default function ProfilePage() {
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50"
+                        className="px-4 py-2 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50"
                       >
                         {avatarUrl ? 'Change' : 'Upload'}
                       </button>
@@ -675,7 +675,7 @@ export default function ProfilePage() {
 
                 {/* Account Type Selection */}
                 <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-cyan-400 mb-4">Account Type</h2>
+                  <h2 className="text-lg font-semibold text-pink-400 mb-4">Account Type</h2>
 
                   <div className="space-y-3">
                     {ACCOUNT_TYPES.map((type) => (
@@ -683,7 +683,7 @@ export default function ProfilePage() {
                         key={type.value}
                         className={`block p-4 rounded-lg border cursor-pointer transition-all ${
                           accountType === type.value
-                            ? 'border-cyan-500 bg-cyan-500/10'
+                            ? 'border-pink-500 bg-pink-500/10'
                             : 'border-slate-600 hover:border-slate-500 bg-slate-900/30'
                         }`}
                       >
@@ -714,7 +714,7 @@ export default function ProfilePage() {
               <div className="lg:col-span-2 space-y-6">
                 {/* Basic Information */}
                 <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-cyan-400 mb-4">Basic Information</h2>
+                  <h2 className="text-lg font-semibold text-pink-400 mb-4">Basic Information</h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Display Name */}
@@ -725,7 +725,7 @@ export default function ProfilePage() {
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder={accountType === 'vendor' ? 'Company Name' : 'Your Name'}
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                       />
                     </div>
 
@@ -737,7 +737,7 @@ export default function ProfilePage() {
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
                         placeholder="https://example.com"
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                       />
                     </div>
 
@@ -753,7 +753,7 @@ export default function ProfilePage() {
                             : 'Tell us about yourself...'
                         }
                         rows={4}
-                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors resize-none"
+                        className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors resize-none"
                       />
                     </div>
                   </div>
@@ -761,7 +761,7 @@ export default function ProfilePage() {
 
                 {/* Social Links */}
                 <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-cyan-400 mb-4">Social Links</h2>
+                  <h2 className="text-lg font-semibold text-pink-400 mb-4">Social Links</h2>
 
                   <div className="space-y-3">
                     {/* Row 1: Twitter, GitHub, Discord */}
@@ -783,7 +783,7 @@ export default function ProfilePage() {
                             value={twitterHandle}
                             onChange={(e) => setTwitterHandle(e.target.value)}
                             placeholder="username"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -803,7 +803,7 @@ export default function ProfilePage() {
                           value={githubHandle}
                           onChange={(e) => setGithubHandle(e.target.value)}
                           placeholder="username"
-                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                         />
                       </div>
 
@@ -822,7 +822,7 @@ export default function ProfilePage() {
                           value={discordHandle}
                           onChange={(e) => setDiscordHandle(e.target.value)}
                           placeholder="username"
-                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                         />
                       </div>
                     </div>
@@ -846,7 +846,7 @@ export default function ProfilePage() {
                             value={farcasterHandle}
                             onChange={(e) => setFarcasterHandle(e.target.value)}
                             placeholder="username"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -868,7 +868,7 @@ export default function ProfilePage() {
                             value={telegramHandle}
                             onChange={(e) => setTelegramHandle(e.target.value)}
                             placeholder="username"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -890,7 +890,7 @@ export default function ProfilePage() {
                             value={instagramHandle}
                             onChange={(e) => setInstagramHandle(e.target.value)}
                             placeholder="username"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -915,7 +915,7 @@ export default function ProfilePage() {
                             value={tiktokHandle}
                             onChange={(e) => setTiktokHandle(e.target.value)}
                             placeholder="username"
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-lg pl-7 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -935,7 +935,7 @@ export default function ProfilePage() {
                           value={twitchHandle}
                           onChange={(e) => setTwitchHandle(e.target.value)}
                           placeholder="username"
-                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                         />
                       </div>
 
@@ -954,7 +954,7 @@ export default function ProfilePage() {
                           value={kickHandle}
                           onChange={(e) => setKickHandle(e.target.value)}
                           placeholder="username"
-                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                          className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                         />
                       </div>
                     </div>
@@ -1001,7 +1001,7 @@ export default function ProfilePage() {
 
                 {/* Privacy Settings */}
                 <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-cyan-400 mb-4">Profile Visibility</h2>
+                  <h2 className="text-lg font-semibold text-pink-400 mb-4">Profile Visibility</h2>
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1 pr-4">
@@ -1028,7 +1028,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setIsPublic(!isPublic)}
-                      className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                      className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${
                         isPublic ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-slate-600'
                       }`}
                       role="switch"
@@ -1052,7 +1052,7 @@ export default function ProfilePage() {
                       {isPublic ? (
                         <>
                           <span className="text-green-400 font-medium">Public profiles</span> are displayed on the{' '}
-                          <a href="/contributors" className="text-cyan-400 hover:underline">Contributors</a> page,
+                          <a href="/contributors" className="text-pink-400 hover:underline">Contributors</a> page,
                           allowing other community members to discover and connect with you.
                         </>
                       ) : (
@@ -1073,13 +1073,13 @@ export default function ProfilePage() {
                     className="w-full p-6 flex items-center justify-between hover:bg-slate-700/20 transition-colors"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/20 to-orange-500/20 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
                       <div className="text-left">
-                        <h2 className="text-lg font-semibold text-cyan-400">Payment History</h2>
+                        <h2 className="text-lg font-semibold text-pink-400">Payment History</h2>
                         <p className="text-sm text-gray-400">View your subscription payments and invoices</p>
                       </div>
                     </div>
@@ -1099,7 +1099,7 @@ export default function ProfilePage() {
                     <div className="border-t border-slate-700/50 p-6">
                       {loadingInvoices ? (
                         <div className="flex items-center justify-center py-8">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-r-transparent"></div>
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-pink-400 border-r-transparent"></div>
                           <span className="ml-3 text-gray-400 text-sm">Loading payment history...</span>
                         </div>
                       ) : invoices.length === 0 ? (
@@ -1169,7 +1169,7 @@ export default function ProfilePage() {
                                     href={getExplorerUrl(invoice.network, invoice.transaction_hash)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex-shrink-0 p-2 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/50 rounded-lg transition-colors"
+                                    className="flex-shrink-0 p-2 text-slate-400 hover:text-pink-400 hover:bg-slate-800/50 rounded-lg transition-colors"
                                     title="View on block explorer"
                                   >
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1203,7 +1203,7 @@ export default function ProfilePage() {
                   <button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center space-x-2"
+                    className="px-8 py-3 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center space-x-2"
                   >
                     {saving ? (
                       <>

@@ -38,6 +38,7 @@ function ParaWalletBridge({ children }: { children: ReactNode }) {
       address,
       chainId: undefined, // Para doesn't expose chainId directly
       openModal,
+      openUserProfile: openModal, // Para uses same modal for auth and user profile
       disconnect,
       error: null,
     }),
@@ -72,6 +73,7 @@ export function ParaClientProvider({ children }: ParaClientProviderProps) {
       isLoading: false,
       address: undefined,
       openModal: () => console.warn("Para not configured"),
+      openUserProfile: () => console.warn("Para not configured"),
       disconnect: async () => {},
       error: new Error("Para API key not configured"),
     };

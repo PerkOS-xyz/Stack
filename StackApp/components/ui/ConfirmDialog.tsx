@@ -63,9 +63,9 @@ export function ConfirmDialog({
     },
     default: {
       icon: "ℹ️",
-      iconBg: "bg-blue-500/20",
-      confirmBtn: "bg-blue-500 hover:bg-blue-600 text-white",
-      border: "border-blue-500/30",
+      iconBg: "bg-pink-500/20",
+      confirmBtn: "bg-pink-500 hover:bg-pink-600 text-white",
+      border: "border-pink-500/30",
     },
   };
 

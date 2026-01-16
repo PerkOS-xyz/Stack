@@ -37,6 +37,7 @@ export interface WalletContextValue {
   // Actions
   openModal: () => void;
   closeModal?: () => void;
+  openUserProfile?: () => void; // Opens user wallet dashboard (for connected users)
   disconnect: () => Promise<void>;
   switchChain?: (chainId: number) => Promise<void>;
 

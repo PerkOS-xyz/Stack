@@ -47,7 +47,7 @@ export function Header() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Wallet abstraction hooks - works with Para, Dynamic, or any configured provider
-  const { openModal, isConnected, address, disconnect } = useWalletContext();
+  const { openModal, openUserProfile, isConnected, address, disconnect } = useWalletContext();
 
   // Subscription context - centralized to prevent duplicate API calls
   const { tier: subscriptionTier } = useSubscription();
@@ -241,7 +241,7 @@ export function Header() {
       case "scale":
         return "bg-gradient-to-r from-orange-500 to-red-500 text-white";
       case "pro":
-        return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white";
+        return "bg-gradient-to-r from-pink-500 to-orange-500 text-white";
       case "starter":
         return "bg-gradient-to-r from-green-500 to-emerald-500 text-white";
       default:
@@ -262,7 +262,7 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-blue-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
+    <header className="border-b border-pink-500/20 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Left Side - Hamburger Menu (mobile only) + Logo */}
@@ -270,7 +270,7 @@ export function Header() {
             {/* Hamburger Menu Button - visible on small screens */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 rounded-lg transition-all"
+              className="lg:hidden p-2 text-gray-300 hover:text-pink-400 hover:bg-pink-500/10 rounded-lg transition-all"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -286,12 +286,12 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <img src="/logo.png" alt="Stack" className="w-10 h-10 rounded-lg" />
+              <img src="/logo.png" alt="Stack" className="w-16 h-16 rounded-lg" />
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
                   Stack
                 </h1>
-                <p className="text-xs text-gray-400">Multi-Chain Payment Infrastructure</p>
+                {/* <p className="text-xs text-gray-400">Payment Infrastructure</p> */}
               </div>
             </Link>
           </div>
@@ -305,10 +305,10 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-4 py-2 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-2 ${
+                  className={`px-4 py-2 text-sm hover:bg-pink-500/10 rounded-lg transition-all flex items-center space-x-2 ${
                     active
-                      ? "text-cyan-400 font-medium"
-                      : "text-gray-300 hover:text-cyan-400"
+                      ? "text-pink-400 font-medium"
+                      : "text-gray-300 hover:text-pink-400"
                   }`}
                 >
                   <span>{item.icon}</span>
@@ -335,9 +335,9 @@ export function Header() {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 hover:from-blue-600/30 hover:to-cyan-600/30 border border-blue-500/30 rounded-lg transition-all"
+                  className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-pink-600/20 to-orange-600/20 hover:from-pink-600/30 hover:to-orange-600/30 border border-pink-500/30 rounded-lg transition-all"
                 >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
                   {getAvatar() ? (
                     <img
                       src={getAvatar()!}
@@ -363,11 +363,11 @@ export function Header() {
 
               {/* Dropdown Menu */}
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-blue-500/30 rounded-xl shadow-xl overflow-hidden z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-pink-500/30 rounded-xl shadow-xl overflow-hidden z-50">
                   {/* User Info */}
-                  <div className="px-4 py-3 border-b border-blue-500/20">
+                  <div className="px-4 py-3 border-b border-pink-500/20">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium overflow-hidden flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center text-white text-sm font-medium overflow-hidden flex-shrink-0">
                         {getAvatar() ? (
                           <img
                             src={getAvatar()!}
@@ -398,8 +398,8 @@ export function Header() {
                           onClick={() => setUserMenuOpen(false)}
                           className={`flex items-center space-x-3 px-4 py-2.5 text-sm transition-all ${
                             active
-                              ? "text-cyan-400 bg-cyan-500/10"
-                              : "text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10"
+                              ? "text-pink-400 bg-pink-500/10"
+                              : "text-gray-300 hover:text-pink-400 hover:bg-pink-500/10"
                           }`}
                         >
                           <span>{item.icon}</span>
@@ -407,13 +407,17 @@ export function Header() {
                         </Link>
                       );
                     })}
-                    {/* User Wallet - opens Para modal for on-ramp and wallet tools */}
+                    {/* User Wallet - opens wallet provider's user profile/dashboard */}
                     <button
                       onClick={() => {
-                        openModal();
+                        if (openUserProfile) {
+                          openUserProfile();
+                        } else {
+                          openModal();
+                        }
                         setUserMenuOpen(false);
                       }}
-                      className="flex items-center space-x-3 px-4 py-2.5 text-sm transition-all text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10 w-full"
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm transition-all text-gray-300 hover:text-pink-400 hover:bg-pink-500/10 w-full"
                     >
                       <span>👛</span>
                       <span>User Wallet</span>
@@ -425,8 +429,8 @@ export function Header() {
                         onClick={() => setUserMenuOpen(false)}
                         className={`flex items-center space-x-3 px-4 py-2.5 text-sm transition-all ${
                           isActive("/wallet")
-                            ? "text-cyan-400 bg-cyan-500/10"
-                            : "text-gray-300 hover:text-cyan-400 hover:bg-blue-500/10"
+                            ? "text-pink-400 bg-pink-500/10"
+                            : "text-gray-300 hover:text-pink-400 hover:bg-pink-500/10"
                         }`}
                       >
                         <span>💰</span>
@@ -451,7 +455,7 @@ export function Header() {
                   </div>
 
                   {/* Logout */}
-                  <div className="border-t border-blue-500/20 py-2">
+                  <div className="border-t border-pink-500/20 py-2">
                     <button
                       onClick={async () => {
                         await disconnect();
@@ -496,7 +500,7 @@ export function Header() {
             // Not logged in - show Sign In button
             <button
               onClick={() => openModal()}
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+              className="px-6 py-2 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all"
             >
               Sign In
             </button>
@@ -505,7 +509,7 @@ export function Header() {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden mt-4 pt-4 border-t border-blue-500/20">
+          <div className="lg:hidden mt-4 pt-4 border-t border-pink-500/20">
             <nav className="flex flex-col space-y-2">
               {/* Link Wallet prompt (logged in but no wallet) */}
               {isConnected && !address && (
@@ -520,7 +524,7 @@ export function Header() {
                     <span>🔗</span>
                     <span>Link Wallet to Continue</span>
                   </button>
-                  <div className="border-t border-blue-500/20 my-2"></div>
+                  <div className="border-t border-pink-500/20 my-2"></div>
                 </>
               )}
               {/* User menu items (only when logged in with wallet) */}
@@ -533,10 +537,10 @@ export function Header() {
                         key={item.href}
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 ${
+                        className={`px-4 py-3 text-sm hover:bg-pink-500/10 rounded-lg transition-all flex items-center space-x-3 ${
                           active
-                            ? "text-cyan-400 font-medium"
-                            : "text-gray-300 hover:text-cyan-400"
+                            ? "text-pink-400 font-medium"
+                            : "text-gray-300 hover:text-pink-400"
                         }`}
                       >
                         <span>{item.icon}</span>
@@ -544,13 +548,17 @@ export function Header() {
                       </Link>
                     );
                   })}
-                  {/* User Wallet - opens Para modal for on-ramp and wallet tools */}
+                  {/* User Wallet - opens wallet provider's user profile/dashboard */}
                   <button
                     onClick={() => {
-                      openModal();
+                      if (openUserProfile) {
+                        openUserProfile();
+                      } else {
+                        openModal();
+                      }
                       setMobileMenuOpen(false);
                     }}
-                    className="px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 text-gray-300 hover:text-cyan-400 w-full text-left"
+                    className="px-4 py-3 text-sm hover:bg-pink-500/10 rounded-lg transition-all flex items-center space-x-3 text-gray-300 hover:text-pink-400 w-full text-left"
                   >
                     <span>👛</span>
                     <span>User Wallet</span>
@@ -560,10 +568,10 @@ export function Header() {
                     <Link
                       href="/wallet"
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 ${
+                      className={`px-4 py-3 text-sm hover:bg-pink-500/10 rounded-lg transition-all flex items-center space-x-3 ${
                         isActive("/wallet")
-                          ? "text-cyan-400 font-medium"
-                          : "text-gray-300 hover:text-cyan-400"
+                          ? "text-pink-400 font-medium"
+                          : "text-gray-300 hover:text-pink-400"
                       }`}
                     >
                       <span>💰</span>
@@ -585,7 +593,7 @@ export function Header() {
                       <span>Admin</span>
                     </Link>
                   )}
-                  <div className="border-t border-blue-500/20 my-2"></div>
+                  <div className="border-t border-pink-500/20 my-2"></div>
                 </>
               )}
 
@@ -598,10 +606,10 @@ export function Header() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`px-4 py-3 text-sm hover:bg-blue-500/10 rounded-lg transition-all flex items-center space-x-3 ${
+                    className={`px-4 py-3 text-sm hover:bg-pink-500/10 rounded-lg transition-all flex items-center space-x-3 ${
                       active
-                        ? "text-cyan-400 font-medium"
-                        : "text-gray-300 hover:text-cyan-400"
+                        ? "text-pink-400 font-medium"
+                        : "text-gray-300 hover:text-pink-400"
                     }`}
                   >
                     <span>{item.icon}</span>

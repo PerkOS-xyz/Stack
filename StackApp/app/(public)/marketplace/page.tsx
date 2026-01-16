@@ -171,14 +171,14 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-orange-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-orange-500/5 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-purple-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       </div>
 
@@ -191,7 +191,7 @@ export default function MarketplacePage() {
             {/* Page Header */}
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
                   Marketplace
                 </h2>
                 <p className="text-gray-400">Discover and connect with X402 service providers</p>
@@ -199,13 +199,13 @@ export default function MarketplacePage() {
 
               <div className="flex items-center space-x-4">
                 {/* Time Range Filter */}
-                <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+                <div className="inline-flex bg-slate-800/50 border border-pink-500/30 rounded-lg p-1 backdrop-blur-sm">
                   {(["24h", "7d", "30d"] as const).map((range) => (
                     <button
                       key={range}
                       onClick={() => setTimeRange(range)}
                       className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${timeRange === range
-                          ? "bg-slate-700 text-cyan-400"
+                          ? "bg-slate-700 text-pink-400"
                           : "text-gray-400 hover:text-gray-200"
                         }`}
                     >
@@ -218,19 +218,19 @@ export default function MarketplacePage() {
 
             {/* Overall Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+              <div className="p-4 bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Active Providers</div>
                 <div className="text-2xl font-bold text-gray-100">{stats.activeProviders}</div>
               </div>
-              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+              <div className="p-4 bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Services</div>
                 <div className="text-2xl font-bold text-gray-100">{vendors.length}</div>
               </div>
-              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+              <div className="p-4 bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Total Volume</div>
                 <div className="text-2xl font-bold text-gray-100">{stats.totalVolume}</div>
               </div>
-              <div className="p-4 bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm">
+              <div className="p-4 bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm">
                 <div className="text-sm text-gray-400 mb-1">Networks</div>
                 <div className="text-2xl font-bold text-gray-100">
                   {new Set(vendors.map((v) => v.network)).size}
@@ -246,8 +246,8 @@ export default function MarketplacePage() {
                     key={category}
                     onClick={() => setCategoryFilter(category)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize flex items-center space-x-2 ${categoryFilter === category
-                        ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
-                        : "bg-slate-800/50 border border-blue-500/30 text-gray-400 hover:text-gray-200 hover:border-blue-400/50"
+                        ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white shadow-lg"
+                        : "bg-slate-800/50 border border-pink-500/30 text-gray-400 hover:text-gray-200 hover:border-pink-400/50"
                       }`}
                   >
                     <span>{icon}</span>
@@ -260,7 +260,7 @@ export default function MarketplacePage() {
             {/* Loading State */}
             {isLoading && (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div>
               </div>
             )}
 
@@ -279,7 +279,7 @@ export default function MarketplacePage() {
 
             {/* Empty State */}
             {!isLoading && !error && vendors.length === 0 && (
-              <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-12 text-center">
+              <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-12 text-center">
                 <div className="text-6xl mb-4">🔌</div>
                 <h3 className="text-xl font-bold text-gray-200 mb-2">No Services Found</h3>
                 <p className="text-gray-400">
@@ -294,7 +294,7 @@ export default function MarketplacePage() {
                 {vendors.map((vendor) => (
                   <div
                     key={vendor.id}
-                    className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm hover:border-blue-400/50 hover:bg-slate-800/50 transition-all duration-300 overflow-hidden"
+                    className="bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm hover:border-pink-400/50 hover:bg-slate-800/50 transition-all duration-300 overflow-hidden"
                   >
                     <div className="p-6">
                       {/* Provider Header */}
@@ -309,7 +309,7 @@ export default function MarketplacePage() {
                               />
                             )}
                             <h3 className="text-xl font-bold text-gray-100">{vendor.name}</h3>
-                            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md text-xs font-medium capitalize">
+                            <span className="px-2 py-1 bg-pink-500/20 text-pink-400 rounded-md text-xs font-medium capitalize">
                               {categoryIcons[vendor.category] || "📦"} {vendor.category}
                             </span>
                           </div>
@@ -321,7 +321,7 @@ export default function MarketplacePage() {
                               {truncateAddress(vendor.wallet_address)}
                             </code>
                             {vendor.price_usd && (
-                              <span className="text-xs text-cyan-400">
+                              <span className="text-xs text-pink-400">
                                 ${vendor.price_usd}/call
                               </span>
                             )}
@@ -404,7 +404,7 @@ export default function MarketplacePage() {
                             href={vendor.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all"
+                            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all"
                           >
                             Connect
                           </a>
@@ -422,7 +422,7 @@ export default function MarketplacePage() {
         {showEndpoints && selectedVendor && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => setShowEndpoints(false)}>
-            <div className="bg-slate-900 border border-blue-500/30 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
+            <div className="bg-slate-900 border border-pink-500/30 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
               <div className="p-6 border-b border-slate-800">
@@ -446,22 +446,22 @@ export default function MarketplacePage() {
               <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
                 {loadingEndpoints ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div>
                   </div>
                 ) : selectedVendor.endpoints && selectedVendor.endpoints.length > 0 ? (
                   <div className="space-y-3">
                     {selectedVendor.endpoints.map((endpoint) => (
                       <div
                         key={endpoint.id}
-                        className="bg-slate-800/30 border border-slate-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors"
+                        className="bg-slate-800/30 border border-slate-700 rounded-lg p-4 hover:border-pink-500/50 transition-colors"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <span className="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                              <span className="px-2 py-1 bg-pink-600 text-white text-xs font-bold rounded">
                                 {endpoint.method}
                               </span>
-                              <code className="text-cyan-400 font-mono text-sm">
+                              <code className="text-pink-400 font-mono text-sm">
                                 {endpoint.path}
                               </code>
                             </div>

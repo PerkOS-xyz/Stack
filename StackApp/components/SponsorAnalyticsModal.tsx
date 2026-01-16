@@ -508,14 +508,14 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
         {/* ============== HEADER ============== */}
         <div className="relative overflow-hidden border-b border-slate-700/50">
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 via-blue-600/10 to-purple-600/10"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-500/10 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-pink-600/10 via-orange-600/10 to-purple-600/10"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-pink-500/10 via-transparent to-transparent"></div>
 
           <div className="relative px-6 py-5">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-orange-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
@@ -527,7 +527,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                     <p className="text-sm text-gray-400 mt-0.5">
                       {wallet.wallet_name || 'Sponsor Wallet'}
                       <span className="mx-2 text-gray-600">|</span>
-                      <span className="text-cyan-400 font-mono text-xs">{formatAddress(wallet.sponsor_address)}</span>
+                      <span className="text-pink-400 font-mono text-xs">{formatAddress(wallet.sponsor_address)}</span>
                     </p>
                   </div>
                 </div>
@@ -552,7 +552,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
               title="Payment Volume"
               value={`${summaryStats.totalPaymentUsdc > 0 ? summaryStats.totalPaymentUsdc.toFixed(2) : '0.00'} USDC`}
               subValue={summaryStats.totalPaymentVolumeUsd > 0 ? formatUsd(summaryStats.totalPaymentVolumeUsd) : 'x402 payments'}
-              gradient="bg-gradient-to-br from-blue-900/30 to-blue-800/10"
+              gradient="bg-gradient-to-br from-pink-900/30 to-pink-800/10"
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -563,7 +563,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
               title="Total Gas Paid"
               value={`${summaryStats.totalGas} ETH`}
               subValue="Sponsored gas fees"
-              gradient="bg-gradient-to-br from-cyan-900/30 to-cyan-800/10"
+              gradient="bg-gradient-to-br from-orange-900/30 to-orange-800/10"
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -605,7 +605,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                 <select
                   value={filterPeriod}
                   onChange={(e) => setFilterPeriod(e.target.value)}
-                  className="appearance-none bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent cursor-pointer hover:bg-slate-700 transition-colors"
+                  className="appearance-none bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent cursor-pointer hover:bg-slate-700 transition-colors"
                 >
                   {TIME_PERIODS.map(period => (
                     <option key={period.value} value={period.value}>{period.label}</option>
@@ -623,7 +623,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                 <select
                   value={filterChainId}
                   onChange={(e) => setFilterChainId(e.target.value)}
-                  className="appearance-none bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent cursor-pointer hover:bg-slate-700 transition-colors min-w-[180px]"
+                  className="appearance-none bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent cursor-pointer hover:bg-slate-700 transition-colors min-w-[180px]"
                 >
                   <optgroup label="All">
                     <option value="all">🌐 All Networks</option>
@@ -657,7 +657,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search tx hash, address..."
-                  className="bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent w-64 placeholder-gray-500"
+                  className="bg-slate-800 border border-slate-600 text-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent w-64 placeholder-gray-500"
                 />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2">
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -692,7 +692,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
               <button
                 onClick={exportToCSV}
                 disabled={exporting || !transactions.length}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg text-sm text-white font-medium transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-500 hover:to-orange-500 rounded-lg text-sm text-white font-medium transition-all shadow-lg shadow-pink-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exporting ? (
                   <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -713,7 +713,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
         <div className="flex-1 overflow-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+              <div className="w-12 h-12 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mb-4"></div>
               <p className="text-gray-400">Loading transactions...</p>
             </div>
           ) : filteredTransactions.length === 0 ? (
@@ -734,7 +734,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                 <thead className="bg-slate-800/50 sticky top-0 z-10">
                   <tr>
                     <th
-                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-cyan-400 transition-colors"
+                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-pink-400 transition-colors"
                       onClick={() => handleSort('spent_at')}
                     >
                       <div className="flex items-center gap-1">
@@ -750,7 +750,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                       Transaction
                     </th>
                     <th
-                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-cyan-400 transition-colors"
+                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-pink-400 transition-colors"
                       onClick={() => handleSort('payment_amount_wei')}
                     >
                       <div className="flex items-center gap-1">
@@ -763,7 +763,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                       </div>
                     </th>
                     <th
-                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-cyan-400 transition-colors"
+                      className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-pink-400 transition-colors"
                       onClick={() => handleSort('gas_fee_wei')}
                     >
                       <div className="flex items-center gap-1">
@@ -814,7 +814,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                                 href={getBlockExplorerUrl(tx.chain_id, tx.transaction_hash)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-mono text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                                className="font-mono text-sm text-pink-400 hover:text-pink-300 transition-colors"
                               >
                                 {formatAddress(tx.transaction_hash)}
                               </a>
@@ -827,7 +827,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
 
                         {/* Payment Amount (USDC) */}
                         <td className="px-4 py-3">
-                          <div className="font-mono text-sm text-blue-400">
+                          <div className="font-mono text-sm text-orange-400">
                             {payment.amount} {payment.symbol}
                           </div>
                           {tx.payment_amount_usd && (
@@ -873,7 +873,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                                 href={`https://${tx.server_domain}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                                className="text-sm text-pink-400 hover:text-pink-300 transition-colors"
                               >
                                 {tx.server_domain}
                               </a>
@@ -916,7 +916,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="bg-slate-800 border border-slate-600 text-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="bg-slate-800 border border-slate-600 text-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                 >
                   {PAGE_SIZES.map(size => (
                     <option key={size} value={size}>{size}</option>
@@ -924,7 +924,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                 </select>
               </div>
               <div className="text-sm text-gray-400">
-                Showing <span className="text-cyan-400 font-medium">{currentPage * pageSize + 1}</span> - <span className="text-cyan-400 font-medium">{Math.min((currentPage + 1) * pageSize, totalCount)}</span> of <span className="text-cyan-400 font-medium">{totalCount}</span>
+                Showing <span className="text-pink-400 font-medium">{currentPage * pageSize + 1}</span> - <span className="text-pink-400 font-medium">{Math.min((currentPage + 1) * pageSize, totalCount)}</span> of <span className="text-pink-400 font-medium">{totalCount}</span>
               </div>
             </div>
 
@@ -968,7 +968,7 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                       onClick={() => setCurrentPage(pageNum)}
                       className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
                         currentPage === pageNum
-                          ? 'bg-cyan-600 text-white'
+                          ? 'bg-pink-600 text-white'
                           : 'bg-slate-800 border border-slate-600 text-gray-300 hover:bg-slate-700'
                       }`}
                     >

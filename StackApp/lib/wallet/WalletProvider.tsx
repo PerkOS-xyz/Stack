@@ -50,9 +50,9 @@ const DynamicClientProvider = dynamic(
 // Loading skeleton while provider loads
 function WalletProviderSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0a0e1a]">
+    <div className="min-h-screen bg-[#0E0716]">
       <div className="animate-pulse">
-        <div className="h-16 bg-slate-800/50" />
+        <div className="h-16 bg-[#1B1833]/50" />
       </div>
     </div>
   );

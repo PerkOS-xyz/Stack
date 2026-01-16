@@ -368,12 +368,12 @@ export default function WalletPage() {
   // Not connected state
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -382,8 +382,8 @@ export default function WalletPage() {
         <Header />
         <main className="flex items-center justify-center flex-1">
           <div className="text-center p-8">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center backdrop-blur-sm">
-              <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-pink-500/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center backdrop-blur-sm">
+              <svg className="w-10 h-10 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
@@ -400,12 +400,12 @@ export default function WalletPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -414,7 +414,7 @@ export default function WalletPage() {
         <Header />
         <main className="flex items-center justify-center flex-1">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 mx-auto mb-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-400 text-sm">Loading wallet...</p>
           </div>
         </main>
@@ -427,12 +427,12 @@ export default function WalletPage() {
   // No wallet state
   if (allWallets.length === 0) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -450,7 +450,7 @@ export default function WalletPage() {
             <p className="text-gray-400 text-sm mb-6">Create a sponsor wallet from your dashboard</p>
             <Link
               href="/dashboard"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25"
             >
               Go to Dashboard
             </Link>
@@ -465,12 +465,12 @@ export default function WalletPage() {
   // If no wallet is selected yet, show loading
   if (!sponsorWallet) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -479,7 +479,7 @@ export default function WalletPage() {
         <Header />
         <main className="flex items-center justify-center flex-1">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 mx-auto mb-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-400 text-sm">Loading wallet...</p>
           </div>
         </main>
@@ -493,12 +493,12 @@ export default function WalletPage() {
   const currentNetwork = networks[selectedNetwork];
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -515,7 +515,7 @@ export default function WalletPage() {
             {/* Wallet Card - Metallic Glass Effect */}
             <div className="relative overflow-hidden rounded-3xl">
               {/* Metallic gradient border */}
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/50 via-blue-500/30 to-blue-600/50 rounded-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/50 via-orange-500/30 to-orange-600/50 rounded-3xl" />
               <div className="absolute inset-[1px] bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-blue-950/95 rounded-3xl" />
 
               {/* Shine effect */}
@@ -602,12 +602,12 @@ export default function WalletPage() {
                   <div className="relative flex-shrink-0">
                     <button
                       onClick={() => setShowNetworkSelector(!showNetworkSelector)}
-                      className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-slate-800/80 border border-blue-500/20 hover:border-cyan-500/40 transition-all backdrop-blur-sm"
+                      className="flex items-center space-x-2 px-3 py-2.5 rounded-xl bg-slate-800/80 border border-pink-500/20 hover:border-pink-500/40 transition-all backdrop-blur-sm"
                     >
                       <span className="text-lg">{currentNetwork?.icon}</span>
                       <span className="text-sm text-white font-medium">{currentNetwork?.name}</span>
                       {currentNetwork?.isTestnet && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">TEST</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">TEST</span>
                       )}
                       <svg className={`w-4 h-4 text-gray-400 transition-transform ${showNetworkSelector ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -616,8 +616,8 @@ export default function WalletPage() {
 
                     {/* Network Dropdown - filtered by wallet type */}
                     {showNetworkSelector && (
-                      <div className="absolute top-full right-0 mt-2 w-64 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 z-50 max-h-80 overflow-y-auto backdrop-blur-xl">
-                        <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">
+                      <div className="absolute top-full right-0 mt-2 w-64 py-2 bg-slate-800/95 border border-pink-500/20 rounded-2xl shadow-2xl shadow-black/50 z-50 max-h-80 overflow-y-auto backdrop-blur-xl">
+                        <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium">
                           {isCurrentWalletSolana ? 'Solana Networks' : 'Mainnets'}
                         </div>
                         {availableNetworks.filter(([, n]) => !n.isTestnet).map(([key, net]) => (
@@ -632,7 +632,7 @@ export default function WalletPage() {
                             <span className="text-lg">{net.icon}</span>
                             <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                             {selectedNetwork === key && (
-                              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
@@ -640,7 +640,7 @@ export default function WalletPage() {
                         ))}
                         {availableNetworks.some(([, n]) => n.isTestnet) && (
                           <>
-                            <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                            <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium border-t border-pink-500/10 mt-2">Testnets</div>
                             {availableNetworks.filter(([, n]) => n.isTestnet).map(([key, net]) => (
                               <button
                                 key={key}
@@ -653,7 +653,7 @@ export default function WalletPage() {
                                 <span className="text-lg">{net.icon}</span>
                                 <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                                 {selectedNetwork === key && (
-                                  <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <svg className="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
                                 )}
@@ -671,14 +671,14 @@ export default function WalletPage() {
                   <p className="text-sm text-gray-400 mb-2">Total Balance</p>
                   {currentBalance.loading ? (
                     <div className="h-14 flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-5xl font-bold bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent tracking-tight mb-1">
+                      <h2 className="text-5xl font-bold bg-gradient-to-r from-white via-pink-200 to-white bg-clip-text text-transparent tracking-tight mb-1">
                         {formatBalanceCompact(currentBalance.balance, networks[selectedNetwork]?.isSolana || false)}
                       </h2>
-                      <p className="text-lg text-cyan-400 font-medium">{currentBalance.symbol}</p>
+                      <p className="text-lg text-pink-400 font-medium">{currentBalance.symbol}</p>
                     </>
                   )}
                 </div>
@@ -687,11 +687,11 @@ export default function WalletPage() {
                 <div className="flex items-center justify-center mb-8">
                   <button
                     onClick={() => copyToClipboard(sponsorWallet.sponsor_address)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/60 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
+                    className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/60 border border-pink-500/20 hover:border-pink-500/40 transition-all group"
                   >
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-sm text-gray-300 font-mono">{truncateAddress(sponsorWallet.sponsor_address)}</span>
-                    <svg className="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-500 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </button>
@@ -701,7 +701,7 @@ export default function WalletPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => setActiveView('receive')}
-                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
+                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-pink-500/20 hover:border-pink-500/40 transition-all group"
                   >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -713,10 +713,10 @@ export default function WalletPage() {
 
                   <button
                     onClick={() => setActiveView('send')}
-                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
+                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-pink-500/20 hover:border-pink-500/40 transition-all group"
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                       </svg>
                     </div>
@@ -727,7 +727,7 @@ export default function WalletPage() {
                     href={`${currentNetwork?.explorer}/address/${sponsorWallet.sponsor_address}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all group"
+                    className="flex flex-col items-center justify-center py-4 rounded-2xl bg-gradient-to-b from-slate-700/50 to-slate-800/50 border border-pink-500/20 hover:border-pink-500/40 transition-all group"
                   >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-purple-500/30 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -741,14 +741,14 @@ export default function WalletPage() {
             </div>
 
             {/* Quick Actions Card */}
-            <div className="bg-slate-800/50 border border-blue-500/20 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="bg-slate-800/50 border border-pink-500/20 rounded-2xl overflow-hidden backdrop-blur-sm">
               <Link
                 href="/dashboard"
                 className="flex items-center justify-between p-4 hover:bg-blue-500/5 transition-colors"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
@@ -764,13 +764,13 @@ export default function WalletPage() {
             </div>
 
             {/* Activity Section */}
-            <div className="bg-slate-800/50 border border-blue-500/20 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="bg-slate-800/50 border border-pink-500/20 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-white">Recent Activity</h3>
-                <span className="text-xs text-cyan-400">View all</span>
+                <span className="text-xs text-pink-400">View all</span>
               </div>
               <div className="text-center py-8">
-                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-700/50 border border-blue-500/10 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-slate-700/50 border border-pink-500/10 flex items-center justify-center">
                   <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -788,7 +788,7 @@ export default function WalletPage() {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setActiveView('main')}
-                className="p-2 rounded-xl bg-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-colors"
+                className="p-2 rounded-xl bg-slate-800/50 border border-pink-500/20 hover:border-pink-500/40 transition-colors"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -800,13 +800,13 @@ export default function WalletPage() {
 
             {/* QR Card */}
             <div className="relative overflow-hidden rounded-3xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-blue-600/30 rounded-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 via-orange-500/20 to-orange-600/30 rounded-3xl" />
               <div className="absolute inset-[1px] bg-gradient-to-br from-slate-800/98 via-slate-900/98 to-blue-950/98 rounded-3xl" />
 
               <div className="relative p-6">
                 {/* Network Badge */}
                 <div className="flex items-center justify-center mb-6">
-                  <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/80 border border-blue-500/20">
+                  <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/80 border border-pink-500/20">
                     <span className="text-lg">{currentNetwork?.icon}</span>
                     <span className="text-sm text-white font-medium">{currentNetwork?.name}</span>
                   </div>
@@ -815,8 +815,8 @@ export default function WalletPage() {
                 {/* QR Code with metallic frame */}
                 <div className="flex justify-center mb-6">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/50 to-blue-500/50 rounded-2xl blur-sm" />
-                    <div className="relative p-1 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-cyan-500/30 rounded-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-500/50 to-orange-500/50 rounded-2xl blur-sm" />
+                    <div className="relative p-1 bg-gradient-to-br from-pink-500/30 via-orange-500/20 to-pink-500/30 rounded-2xl">
                       <div className="p-4 bg-white rounded-xl">
                         <QRCodeSVG
                           value={`ethereum:${sponsorWallet.sponsor_address}@${currentNetwork?.chainId || 1}`}
@@ -832,13 +832,13 @@ export default function WalletPage() {
                 {/* Address */}
                 <div className="text-center mb-6">
                   <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Your Address</p>
-                  <p className="text-sm font-mono text-cyan-400 break-all px-2">{sponsorWallet.sponsor_address}</p>
+                  <p className="text-sm font-mono text-pink-400 break-all px-2">{sponsorWallet.sponsor_address}</p>
                 </div>
 
                 {/* Copy Button */}
                 <button
                   onClick={() => copyToClipboard(sponsorWallet.sponsor_address)}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2"
+                  className="w-full py-4 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -857,7 +857,7 @@ export default function WalletPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-white mb-1">Only send <span className="text-cyan-400 font-medium">{currentNetwork?.symbol}</span> on <span className="text-cyan-400 font-medium">{currentNetwork?.name}</span></p>
+                  <p className="text-sm text-white mb-1">Only send <span className="text-pink-400 font-medium">{currentNetwork?.symbol}</span> on <span className="text-pink-400 font-medium">{currentNetwork?.name}</span></p>
                   <p className="text-xs text-gray-500">Sending other assets may result in permanent loss</p>
                 </div>
               </div>
@@ -872,7 +872,7 @@ export default function WalletPage() {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setActiveView('main')}
-                className="p-2 rounded-xl bg-slate-800/50 border border-blue-500/20 hover:border-cyan-500/40 transition-colors"
+                className="p-2 rounded-xl bg-slate-800/50 border border-pink-500/20 hover:border-pink-500/40 transition-colors"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -906,7 +906,7 @@ export default function WalletPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-400">Address</p>
-                    <p className="text-cyan-400 font-mono text-sm">
+                    <p className="text-pink-400 font-mono text-sm">
                       {sponsorWallet?.sponsor_address?.slice(0, 6)}...{sponsorWallet?.sponsor_address?.slice(-4)}
                     </p>
                   </div>
@@ -916,7 +916,7 @@ export default function WalletPage() {
 
             {/* Send Form Card */}
             <div className="relative overflow-hidden rounded-3xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-blue-600/30 rounded-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 via-orange-500/20 to-pink-600/30 rounded-3xl" />
               <div className="absolute inset-[1px] bg-gradient-to-br from-slate-800/98 via-slate-900/98 to-blue-950/98 rounded-3xl" />
 
               <div className="relative p-6 space-y-5">
@@ -925,13 +925,13 @@ export default function WalletPage() {
                   <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Network</label>
                   <button
                     onClick={() => setShowNetworkSelector(!showNetworkSelector)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-slate-800/60 border border-blue-500/20 hover:border-cyan-500/40 transition-all"
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-slate-800/60 border border-pink-500/20 hover:border-pink-500/40 transition-all"
                   >
                     <div className="flex items-center space-x-3">
                       <span className="text-lg">{currentNetwork?.icon}</span>
                       <span className="text-white font-medium">{currentNetwork?.name}</span>
                       {currentNetwork?.isTestnet && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">TEST</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">TEST</span>
                       )}
                     </div>
                     <svg className={`w-5 h-5 text-gray-400 transition-transform ${showNetworkSelector ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -940,8 +940,8 @@ export default function WalletPage() {
                   </button>
 
                   {showNetworkSelector && (
-                    <div className="mt-2 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 max-h-60 overflow-y-auto backdrop-blur-xl">
-                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">
+                    <div className="mt-2 py-2 bg-slate-800/95 border border-pink-500/20 rounded-2xl shadow-2xl shadow-black/50 max-h-60 overflow-y-auto backdrop-blur-xl">
+                      <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium">
                         {isCurrentWalletSolana ? 'Solana Networks' : 'Mainnets'}
                       </div>
                       {availableNetworks.filter(([, n]) => !n.isTestnet).map(([key, net]) => (
@@ -956,7 +956,7 @@ export default function WalletPage() {
                           <span className="text-lg">{net.icon}</span>
                           <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                           {selectedNetwork === key && (
-                            <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
@@ -964,7 +964,7 @@ export default function WalletPage() {
                       ))}
                       {availableNetworks.some(([, n]) => n.isTestnet) && (
                         <>
-                          <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                          <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium border-t border-pink-500/10 mt-2">Testnets</div>
                           {availableNetworks.filter(([, n]) => n.isTestnet).map(([key, net]) => (
                             <button
                               key={key}
@@ -977,7 +977,7 @@ export default function WalletPage() {
                               <span className="text-lg">{net.icon}</span>
                               <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                               {selectedNetwork === key && (
-                                <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                               )}
@@ -990,10 +990,10 @@ export default function WalletPage() {
                 </div>
 
                 {/* Available Balance */}
-                <div className="px-4 py-3 rounded-xl bg-slate-700/30 border border-blue-500/10">
+                <div className="px-4 py-3 rounded-xl bg-slate-700/30 border border-pink-500/10">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">Available Balance</span>
-                    <span className="text-sm text-cyan-400 font-medium">
+                    <span className="text-sm text-pink-400 font-medium">
                       {currentBalance.loading ? (
                         <span className="text-gray-500">Loading...</span>
                       ) : (
@@ -1012,13 +1012,13 @@ export default function WalletPage() {
                       value={sendAddress}
                       onChange={(e) => setSendAddress(e.target.value)}
                       placeholder={isCurrentWalletSolana ? "Solana address..." : "0x..."}
-                      className="flex-1 px-4 py-3.5 bg-slate-800/60 border border-blue-500/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors font-mono text-sm"
+                      className="flex-1 px-4 py-3.5 bg-slate-800/60 border border-pink-500/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50 transition-colors font-mono text-sm"
                     />
                     <button
                       onClick={startScanner}
-                      className="px-4 py-3.5 bg-slate-800/60 border border-blue-500/20 hover:border-cyan-500/40 rounded-xl transition-colors"
+                      className="px-4 py-3.5 bg-slate-800/60 border border-pink-500/20 hover:border-pink-500/40 rounded-xl transition-colors"
                     >
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                       </svg>
                     </button>
@@ -1038,7 +1038,7 @@ export default function WalletPage() {
                               className={`px-3 py-2 rounded-lg border transition-all text-xs ${
                                 sendAddress.toLowerCase() === wallet.sponsor_address.toLowerCase()
                                   ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
-                                  : 'bg-slate-800/40 border-blue-500/20 text-gray-400 hover:border-purple-500/40 hover:text-purple-300'
+                                  : 'bg-slate-800/40 border-pink-500/20 text-gray-400 hover:border-purple-500/40 hover:text-purple-300'
                               }`}
                             >
                               <span className="font-medium">{wallet.wallet_name || 'Wallet'}</span>
@@ -1075,8 +1075,8 @@ export default function WalletPage() {
                       readOnly={useSendMax}
                       className={`w-full px-4 py-3.5 pr-24 bg-slate-800/60 border rounded-xl text-lg placeholder-gray-500 focus:outline-none transition-colors ${
                         useSendMax
-                          ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/10'
-                          : 'border-blue-500/20 text-white focus:border-cyan-500/50'
+                          ? 'border-pink-500/50 text-pink-400 bg-pink-500/10'
+                          : 'border-pink-500/20 text-white focus:border-pink-500/50'
                       }`}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
@@ -1089,8 +1089,8 @@ export default function WalletPage() {
                         }}
                         className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
                           useSendMax
-                            ? 'text-white bg-cyan-500 hover:bg-cyan-600'
-                            : 'text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20'
+                            ? 'text-white bg-pink-500 hover:bg-pink-600'
+                            : 'text-pink-400 hover:text-pink-300 bg-pink-500/10 hover:bg-pink-500/20'
                         }`}
                       >
                         MAX
@@ -1104,7 +1104,7 @@ export default function WalletPage() {
                 <button
                   onClick={handleSend}
                   disabled={sending || !sendAddress || (!sendAmount && !useSendMax)}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 disabled:shadow-none flex items-center justify-center space-x-2"
+                  className="w-full py-4 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 disabled:shadow-none flex items-center justify-center space-x-2"
                 >
                   {sending ? (
                     <>
@@ -1140,7 +1140,7 @@ export default function WalletPage() {
         {/* QR Scanner Modal */}
         {showScanner && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 border border-blue-500/20 rounded-3xl p-6 max-w-sm w-full">
+            <div className="bg-slate-800 border border-pink-500/20 rounded-3xl p-6 max-w-sm w-full">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Scan QR Code</h3>
                 <button

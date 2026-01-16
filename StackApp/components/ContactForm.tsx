@@ -94,7 +94,7 @@ export function ContactForm() {
               htmlFor="name"
               className="block text-sm font-medium text-gray-300 mb-2"
             >
-              Name <span className="text-cyan-400">*</span>
+              Name <span className="text-pink-400">*</span>
             </label>
             <input
               type="text"
@@ -104,7 +104,7 @@ export function ContactForm() {
               onChange={handleChange}
               required
               placeholder="Your name"
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200"
+              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-200"
             />
           </div>
 
@@ -113,7 +113,7 @@ export function ContactForm() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-300 mb-2"
             >
-              Email <span className="text-cyan-400">*</span>
+              Email <span className="text-pink-400">*</span>
             </label>
             <input
               type="email"
@@ -123,7 +123,7 @@ export function ContactForm() {
               onChange={handleChange}
               required
               placeholder="you@example.com"
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200"
+              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-200"
             />
           </div>
         </div>
@@ -143,7 +143,7 @@ export function ContactForm() {
             value={formData.company}
             onChange={handleChange}
             placeholder="Your company name"
-            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-200"
           />
         </div>
 
@@ -153,7 +153,7 @@ export function ContactForm() {
             htmlFor="subject"
             className="block text-sm font-medium text-gray-300 mb-2"
           >
-            Subject <span className="text-cyan-400">*</span>
+            Subject <span className="text-pink-400">*</span>
           </label>
           <select
             id="subject"
@@ -161,7 +161,7 @@ export function ContactForm() {
             value={formData.subject}
             onChange={handleChange}
             required
-            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200 appearance-none cursor-pointer"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-200 appearance-none cursor-pointer"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
               backgroundPosition: "right 0.75rem center",
@@ -186,7 +186,7 @@ export function ContactForm() {
             htmlFor="message"
             className="block text-sm font-medium text-gray-300 mb-2"
           >
-            Message <span className="text-cyan-400">*</span>
+            Message <span className="text-pink-400">*</span>
           </label>
           <textarea
             id="message"
@@ -196,7 +196,7 @@ export function ContactForm() {
             required
             rows={5}
             placeholder="How can we help you?"
-            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200 resize-none"
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all duration-200 resize-none"
           />
         </div>
 
@@ -247,7 +247,7 @@ export function ContactForm() {
         <button
           type="submit"
           disabled={status.type === "loading"}
-          className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 disabled:shadow-none transition-all duration-300 flex items-center justify-center space-x-2"
+          className="w-full py-3.5 px-6 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-500 hover:to-orange-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 disabled:shadow-none transition-all duration-300 flex items-center justify-center space-x-2"
         >
           {status.type === "loading" ? (
             <>

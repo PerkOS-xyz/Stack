@@ -715,12 +715,12 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -729,7 +729,7 @@ export default function AdminPage() {
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
             <p className="text-gray-400">Verifying admin access...</p>
           </div>
         </main>
@@ -741,12 +741,12 @@ export default function AdminPage() {
 
   if (!address) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -768,12 +768,12 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -806,12 +806,12 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -832,14 +832,14 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-blue-500/20 pb-4">
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-pink-500/20 pb-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                 activeTab === tab.id
-                  ? "bg-blue-500/20 text-cyan-400 border border-blue-500/40"
+                  ? "bg-pink-500/20 text-pink-400 border border-pink-500/40"
                   : "text-gray-400 hover:text-gray-200 hover:bg-slate-800/50"
               }`}
             >
@@ -858,7 +858,7 @@ export default function AdminPage() {
               <StatCard title="Wallets" value={stats.wallets} icon="💰" color="green" />
               <StatCard title="Agents" value={stats.agents} icon="🤖" color="purple" />
               <StatCard title="Vendors" value={stats.vendors} icon="🏪" color="orange" />
-              <StatCard title="Endpoints" value={stats.endpoints} icon="🔗" color="cyan" />
+              <StatCard title="Endpoints" value={stats.endpoints} icon="🔗" color="pink" />
               <StatCard title="Transactions" value={stats.transactions} icon="💸" color="pink" />
               <StatCard
                 title="Volume (USD)"
@@ -870,7 +870,7 @@ export default function AdminPage() {
             </div>
 
             {/* Admin Actions */}
-            <div className="mt-6 p-4 bg-slate-900/50 border border-blue-500/20 rounded-xl">
+            <div className="mt-6 p-4 bg-slate-900/50 border border-pink-500/20 rounded-xl">
               <h3 className="text-lg font-bold text-gray-200 mb-4">Admin Actions</h3>
               <div className="flex flex-wrap gap-4 items-center">
                 <button
@@ -909,7 +909,7 @@ export default function AdminPage() {
         {activeTab === "users" && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">All Users ({users.length})</h2>
-            <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden">
+            <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead className="bg-slate-800/50">
                   <tr>
@@ -923,13 +923,13 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                    <tr key={user.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
                         <AddressDisplay address={user.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{user.display_name || "-"}</td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">
+                        <span className="px-2 py-1 text-xs rounded-full bg-pink-500/20 text-pink-400">
                           {user.account_type}
                         </span>
                       </td>
@@ -977,7 +977,7 @@ export default function AdminPage() {
                 <button
                   onClick={handleRefreshPerformance}
                   disabled={performanceLoading}
-                  className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 border border-pink-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {performanceLoading ? (
                     <>
@@ -1002,12 +1002,12 @@ export default function AdminPage() {
             {/* Stats Cards */}
             {performanceLoading && !performanceStats ? (
               <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div>
               </div>
             ) : performanceStats ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl p-4 text-center">
+                  <div className="bg-gradient-to-br from-pink-500/20 to-pink-600/10 border border-pink-500/30 rounded-xl p-4 text-center">
                     <div className="text-2xl mb-2">📊</div>
                     <p className="text-2xl font-bold text-gray-200">
                       {(performanceStats.totalRequests ?? 0).toLocaleString()}
@@ -1045,7 +1045,7 @@ export default function AdminPage() {
                 {/* Slow Queries Table */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-gray-200">Recent Slow Queries</h3>
-                  <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden">
+                  <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-slate-800/50">
                         <tr>
@@ -1058,14 +1058,14 @@ export default function AdminPage() {
                       </thead>
                       <tbody>
                         {slowQueries.map((query) => (
-                          <tr key={query.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                          <tr key={query.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                             <td className="px-4 py-3 font-mono text-sm text-gray-300 max-w-xs truncate">
                               {query.endpoint}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-1 text-xs rounded-full font-mono ${
                                 query.method === "GET" ? "bg-green-500/20 text-green-400" :
-                                query.method === "POST" ? "bg-blue-500/20 text-blue-400" :
+                                query.method === "POST" ? "bg-pink-500/20 text-pink-400" :
                                 query.method === "PUT" ? "bg-yellow-500/20 text-yellow-400" :
                                 query.method === "DELETE" ? "bg-red-500/20 text-red-400" :
                                 "bg-gray-500/20 text-gray-400"
@@ -1120,7 +1120,7 @@ export default function AdminPage() {
         {activeTab === "agents" && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">All Agents ({agents.length})</h2>
-            <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden">
+            <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead className="bg-slate-800/50">
                   <tr>
@@ -1134,7 +1134,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {agents.map((agent) => (
-                    <tr key={agent.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                    <tr key={agent.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
                         <AddressDisplay address={agent.wallet_address as Address} skipEns />
                       </td>
@@ -1143,7 +1143,7 @@ export default function AdminPage() {
                           className={`px-2 py-1 text-xs rounded-full ${
                             agent.agent_type === "provider"
                               ? "bg-green-500/20 text-green-400"
-                              : "bg-blue-500/20 text-blue-400"
+                              : "bg-pink-500/20 text-pink-400"
                           }`}
                         >
                           {agent.agent_type}
@@ -1180,7 +1180,7 @@ export default function AdminPage() {
               {vendors.map((vendor) => (
                 <div
                   key={vendor.id}
-                  className="bg-slate-900/50 border border-blue-500/20 rounded-xl p-4"
+                  className="bg-slate-900/50 border border-pink-500/20 rounded-xl p-4"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -1197,7 +1197,7 @@ export default function AdminPage() {
                       >
                         {vendor.status}
                       </span>
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">
+                      <span className="px-2 py-1 text-xs rounded-full bg-pink-500/20 text-pink-400">
                         {vendor.category}
                       </span>
                       <button
@@ -1228,7 +1228,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   {vendor.endpoints && vendor.endpoints.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-blue-500/10">
+                    <div className="mt-4 pt-4 border-t border-pink-500/10">
                       <p className="text-sm text-gray-500 mb-2">
                         Endpoints ({vendor.endpoints.length})
                       </p>
@@ -1261,7 +1261,7 @@ export default function AdminPage() {
         {activeTab === "transactions" && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">All Transactions ({transactions.length})</h2>
-            <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden overflow-x-auto">
+            <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden overflow-x-auto">
               <table className="w-full min-w-[800px]">
                 <thead className="bg-slate-800/50">
                   <tr>
@@ -1277,7 +1277,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {transactions.map((tx) => (
-                    <tr key={tx.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                    <tr key={tx.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs text-gray-400">
                           {tx.transaction_hash.slice(0, 10)}...
@@ -1337,7 +1337,7 @@ export default function AdminPage() {
         {activeTab === "wallets" && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-200">All Sponsor Wallets ({wallets.length})</h2>
-            <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden">
+            <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
               <table className="w-full">
                 <thead className="bg-slate-800/50">
                   <tr>
@@ -1351,7 +1351,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {wallets.map((wallet) => (
-                    <tr key={wallet.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                    <tr key={wallet.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3 text-gray-300">{wallet.wallet_name || "Unnamed"}</td>
                       <td className="px-4 py-3">
                         <AddressDisplay address={wallet.user_wallet_address as Address} skipEns />
@@ -1392,7 +1392,7 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold text-gray-200">All Coupons ({coupons.length})</h2>
               <button
                 onClick={handleCreateCoupon}
-                className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 transition-all flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 border border-pink-500/30 transition-all flex items-center gap-2"
               >
                 + Create Coupon
               </button>
@@ -1408,13 +1408,13 @@ export default function AdminPage() {
                   <div
                     key={coupon.id}
                     className={`bg-slate-900/50 border rounded-xl p-4 ${
-                      !coupon.enabled ? "border-gray-600/30 opacity-60" : "border-blue-500/20"
+                      !coupon.enabled ? "border-gray-600/30 opacity-60" : "border-pink-500/20"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold text-cyan-400 font-mono">{coupon.code}</span>
+                          <span className="text-lg font-bold text-pink-400 font-mono">{coupon.code}</span>
                           <button
                             onClick={() => handleCopyCouponCode(coupon.id, coupon.code)}
                             className="p-1 rounded hover:bg-slate-700/50 transition-all group"
@@ -1425,7 +1425,7 @@ export default function AdminPage() {
                             ) : (
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-gray-400 group-hover:text-cyan-400 transition-colors"
+                                className="h-4 w-4 text-gray-400 group-hover:text-pink-400 transition-colors"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -1482,7 +1482,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => handleEditCoupon(coupon)}
-                          className="px-3 py-1 text-xs rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 transition-all"
+                          className="px-3 py-1 text-xs rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 border border-pink-500/30 transition-all"
                         >
                           Edit
                         </button>
@@ -1547,7 +1547,7 @@ export default function AdminPage() {
         {/* Coupon Form Modal */}
         {showCouponForm && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-900 border border-blue-500/20 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-900 border border-pink-500/20 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-bold text-gray-200">
@@ -1579,7 +1579,7 @@ export default function AdminPage() {
                       value={couponFormData.code}
                       onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value.toUpperCase() })}
                       placeholder="e.g., WINTER2026"
-                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                     />
                   </div>
 
@@ -1591,7 +1591,7 @@ export default function AdminPage() {
                       onChange={(e) => setCouponFormData({ ...couponFormData, description: e.target.value })}
                       placeholder="Internal notes about this coupon"
                       rows={2}
-                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                     />
                   </div>
 
@@ -1602,7 +1602,7 @@ export default function AdminPage() {
                       <select
                         value={couponFormData.discount_type}
                         onChange={(e) => setCouponFormData({ ...couponFormData, discount_type: e.target.value as "percentage" | "fixed" })}
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       >
                         <option value="percentage">Percentage (%)</option>
                         <option value="fixed">Fixed Amount ($)</option>
@@ -1619,7 +1619,7 @@ export default function AdminPage() {
                         min={couponFormData.discount_type === "percentage" ? 1 : 0.01}
                         max={couponFormData.discount_type === "percentage" ? 100 : undefined}
                         step={couponFormData.discount_type === "percentage" ? 1 : 0.01}
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       />
                     </div>
                   </div>
@@ -1639,7 +1639,7 @@ export default function AdminPage() {
                         }}
                         onFocus={() => setShowUserSearch(true)}
                         placeholder="Search by name or wallet address..."
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       />
                       {couponFormData.assigned_wallet && (
                         <button
@@ -1653,7 +1653,7 @@ export default function AdminPage() {
                         </button>
                       )}
                       {showUserSearch && userSearchResults.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-slate-800 border border-blue-500/20 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-10 w-full mt-1 bg-slate-800 border border-pink-500/20 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {userSearchResults.map((user) => (
                             <button
                               key={user.id}
@@ -1681,7 +1681,7 @@ export default function AdminPage() {
                       value={couponFormData.max_redemptions}
                       onChange={(e) => setCouponFormData({ ...couponFormData, max_redemptions: parseInt(e.target.value) || 1 })}
                       min={-1}
-                      className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                      className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                     />
                   </div>
 
@@ -1709,7 +1709,7 @@ export default function AdminPage() {
                                 });
                               }
                             }}
-                            className="rounded border-blue-500/30"
+                            className="rounded border-pink-500/30"
                           />
                           <span className="text-gray-300 capitalize">{tier}</span>
                         </label>
@@ -1729,7 +1729,7 @@ export default function AdminPage() {
                         onChange={(e) => setCouponFormData({ ...couponFormData, min_amount: parseFloat(e.target.value) || 0 })}
                         min={0}
                         step={0.01}
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       />
                     </div>
                   )}
@@ -1742,7 +1742,7 @@ export default function AdminPage() {
                         type="date"
                         value={couponFormData.starts_at}
                         onChange={(e) => setCouponFormData({ ...couponFormData, starts_at: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       />
                     </div>
                     <div>
@@ -1751,7 +1751,7 @@ export default function AdminPage() {
                         type="date"
                         value={couponFormData.expires_at}
                         onChange={(e) => setCouponFormData({ ...couponFormData, expires_at: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-800 border border-blue-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        className="w-full px-3 py-2 bg-slate-800 border border-pink-500/20 rounded-lg text-gray-200 focus:outline-none focus:border-pink-500/50"
                       />
                     </div>
                   </div>
@@ -1763,7 +1763,7 @@ export default function AdminPage() {
                         type="checkbox"
                         checked={couponFormData.enabled}
                         onChange={(e) => setCouponFormData({ ...couponFormData, enabled: e.target.checked })}
-                        className="rounded border-blue-500/30"
+                        className="rounded border-pink-500/30"
                       />
                       <span className="text-gray-300">Enable coupon immediately</span>
                     </label>
@@ -1771,7 +1771,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-blue-500/10">
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-pink-500/10">
                   <button
                     onClick={() => {
                       setShowCouponForm(false);
@@ -1784,7 +1784,7 @@ export default function AdminPage() {
                   <button
                     onClick={handleSaveCoupon}
                     disabled={savingCoupon || !couponFormData.code}
-                    className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 border border-pink-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {savingCoupon ? (
                       <>
@@ -1848,11 +1848,11 @@ function StatCard({
   isString?: boolean;
 }) {
   const colorClasses: Record<string, string> = {
-    blue: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
+    blue: "from-pink-500/20 to-pink-600/10 border-pink-500/30",
     green: "from-green-500/20 to-green-600/10 border-green-500/30",
     purple: "from-purple-500/20 to-purple-600/10 border-purple-500/30",
     orange: "from-orange-500/20 to-orange-600/10 border-orange-500/30",
-    cyan: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30",
+    cyan: "from-pink-500/20 to-pink-600/10 border-pink-500/30",
     pink: "from-pink-500/20 to-pink-600/10 border-pink-500/30",
     yellow: "from-yellow-500/20 to-yellow-600/10 border-yellow-500/30",
   };
