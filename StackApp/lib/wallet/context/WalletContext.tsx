@@ -69,13 +69,13 @@ export const WalletContext = createContext<WalletContextValue>(defaultContextVal
 
 /**
  * Hook to access wallet context
+ * Returns default disconnected state if used outside WalletProvider
+ * This allows components to render without wallet functionality in public pages
  */
 export function useWalletContext(): WalletContextValue {
   const context = useContext(WalletContext);
-  if (!context) {
-    throw new Error("useWalletContext must be used within a WalletProvider");
-  }
-  return context;
+  // Return default context if not within provider (for public pages without wallet)
+  return context || defaultContextValue;
 }
 
 /**

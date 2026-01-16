@@ -38,12 +38,19 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   refetch: async () => {},
 });
 
+const defaultSubscriptionContext: SubscriptionContextType = {
+  tier: "free",
+  tierConfig: SUBSCRIPTION_TIERS.free,
+  subscription: null,
+  isLoading: false,
+  error: null,
+  refetch: async () => {},
+};
+
 export function useSubscription() {
   const context = useContext(SubscriptionContext);
-  if (!context) {
-    throw new Error("useSubscription must be used within SubscriptionProvider");
-  }
-  return context;
+  // Return default context if not within provider (for public pages)
+  return context || defaultSubscriptionContext;
 }
 
 interface SubscriptionProviderProps {

@@ -1,3 +1,9 @@
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -35,6 +41,16 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // Optimize package imports for faster builds
+    optimizePackageImports: [
+      'lucide-react',
+      'viem',
+      'wagmi',
+      'ethers',
+      '@tanstack/react-query',
+      '@getpara/react-sdk',
+      '@dynamic-labs/sdk-react-core',
+    ],
   },
   // Remove console.logs in production for smaller bundles
   compiler: {
@@ -43,7 +59,6 @@ const nextConfig = {
     } : false,
   },
   // Externalize Dynamic Labs packages to prevent bundling client-side code on server
-  // These packages have dependencies on @dynamic-labs that include React client components
   serverExternalPackages: [
     '@dynamic-labs-wallet/node',
     '@dynamic-labs-wallet/node-evm',
@@ -51,15 +66,11 @@ const nextConfig = {
     '@dynamic-labs/sdk-api',
     '@dynamic-labs/sdk-api-core',
   ],
-  // Custom webpack error handling
+  // Custom webpack configuration
   webpack: (config, { isServer, dev }) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
 
-    // Dynamic Labs packages are externalized via serverExternalPackages above
-    // This ensures they're loaded from node_modules at runtime, avoiding
-    // bundling of @dynamic-labs client-side dependencies on the server
-
-    // Ignore .node native binary files (return empty module)
+    // Ignore .node native binary files
     config.module.rules.push({
       test: /\.node$/,
       type: 'asset/resource',
@@ -68,12 +79,10 @@ const nextConfig = {
       },
     });
 
-    // Stub Para SDK peer dependencies (not needed modules)
-    // Note: Dynamic Labs packages are handled via serverExternalPackages above
+    // Stub unused dependencies to reduce bundle size
     config.resolve.alias = {
       ...config.resolve.alias,
       // Cosmos dependencies (not needed for EVM chains)
-      // Note: @cosmjs/encoding is required by Para SDK for address display
       '@cosmjs/stargate': false,
       '@cosmjs/proto-signing': false,
       '@cosmjs/amino': false,
@@ -90,49 +99,50 @@ const nextConfig = {
       '@solana/wallet-adapter-react': false,
       '@solana/wallet-adapter-wallets': false,
       '@getpara/solana-wallet-connectors': false,
-      // Note: @solana/web3.js and @getpara/solana-web3.js-v1-integration are enabled for server-side Solana wallet creation
       // Wagmi connector optional dependencies (not needed)
-      // Note: @metamask/sdk is ENABLED for Dynamic SDK MetaMask support
       '@base-org/account': false,
       '@gemini-wallet/core': false,
       'porto': false,
       'porto/internal': false,
       '@safe-global/safe-apps-sdk': false,
       '@safe-global/safe-apps-provider': false,
+      // Stub React Native modules (not needed for web)
+      '@react-native-async-storage/async-storage': false,
+      'react-native': false,
     };
 
-    // Fix for Para SDK + Next.js client-side compatibility
+    // Client-side fallbacks
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
-        // Wagmi connector optional dependencies
-        // Note: @metamask/sdk is ENABLED for Dynamic SDK MetaMask support
         '@base-org/account': false,
         '@gemini-wallet/core': false,
         'porto': false,
         'porto/internal': false,
         '@safe-global/safe-apps-sdk': false,
         '@safe-global/safe-apps-provider': false,
+        '@react-native-async-storage/async-storage': false,
       };
     }
 
-    // Ignore missing optional modules (wagmi connectors, Dynamic Labs native modules)
-    // Note: @metamask/sdk warnings are NOT ignored - it's enabled for Dynamic SDK
+    // Ignore missing optional modules
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
       { module: /node_modules\/@wagmi\/connectors/ },
       { module: /node_modules\/@dynamic-labs-wallet\/node/ },
+      { module: /node_modules\/@metamask\/sdk/ },
       { message: /Can't resolve '@base-org\/account'/ },
       { message: /Can't resolve '@gemini-wallet\/core'/ },
       { message: /Can't resolve 'porto'/ },
       { message: /Can't resolve '@safe-global'/ },
       { message: /Can't resolve '@dynamic-labs-wallet\/node'/ },
+      { message: /Can't resolve '@react-native-async-storage\/async-storage'/ },
     ];
 
-    // Suppress build errors in production
+    // Production optimizations
     if (!dev) {
       config.optimization = {
         ...config.optimization,
@@ -149,4 +159,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

@@ -70,6 +70,7 @@
     "wagmi": "^3.3.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.2",
     "@types/qrcode.react": "^1.0.5",
     "eslint": "^9.15.0",
     "eslint-config-next": "15.2.0-canary.30"
