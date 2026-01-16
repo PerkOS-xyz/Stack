@@ -103,12 +103,12 @@ export default function NetworksPage() {
   }, [fetchNetworks]);
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -125,14 +125,14 @@ export default function NetworksPage() {
               <div>
                 <Link
                   href="/"
-                  className="inline-flex items-center space-x-2 text-gray-400 hover:text-cyan-400 transition-colors mb-4 group"
+                  className="inline-flex items-center space-x-2 text-gray-400 hover:text-pink-400 transition-colors mb-4 group"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                   </svg>
                   <span className="text-sm font-medium">Back to Home</span>
                 </Link>
-                <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
                   Networks
                 </h2>
                 <p className="text-gray-400">Multi-chain x402 payment processing statistics</p>
@@ -160,7 +160,7 @@ export default function NetworksPage() {
                       onClick={() => setTimeRange(range)}
                       className={`px-4 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
                         timeRange === range
-                          ? "bg-slate-700 text-cyan-400"
+                          ? "bg-slate-700 text-pink-400"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function NetworksPage() {
                             {networkChartData.map((bar, i) => (
                               <div
                                 key={i}
-                                className="flex-1 bg-gradient-to-t from-blue-500/40 to-cyan-400/40 rounded-t-sm hover:from-blue-500/60 hover:to-cyan-400/60 transition-all duration-200"
+                                className="flex-1 bg-gradient-to-t from-pink-500/40 to-orange-400/40 rounded-t-sm hover:from-pink-500/60 hover:to-orange-400/60 transition-all duration-200"
                                 style={{ height: `${bar.height}%` }}
                                 title={`${bar.value} transactions`}
                               />

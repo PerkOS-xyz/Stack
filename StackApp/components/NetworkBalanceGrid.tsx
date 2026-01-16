@@ -252,7 +252,7 @@ export function NetworkBalanceGrid({ balances, isLoading, onRefresh }: NetworkBa
             className={`
               px-4 py-2 rounded-lg font-medium text-sm transition-all
               ${activeTab === 'mainnets'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25'
+                ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg shadow-pink-500/25'
                 : 'bg-slate-800/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700/50'
               }
             `}
@@ -287,7 +287,7 @@ export function NetworkBalanceGrid({ balances, isLoading, onRefresh }: NetworkBa
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-cyan-400 hover:text-cyan-300
+          className="flex items-center gap-2 px-3 py-2 text-sm text-pink-400 hover:text-pink-300
                      bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-all disabled:opacity-50"
         >
           <svg

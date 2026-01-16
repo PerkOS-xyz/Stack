@@ -633,7 +633,7 @@ function SubscriptionPaymentPageContent() {
             <p className="text-gray-400 mb-8">The selected plan is not valid for purchase.</p>
             <Link
               href="/subscription"
-              className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:opacity-90 transition-all"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-all"
             >
               View Available Plans
             </Link>
@@ -657,14 +657,14 @@ function SubscriptionPaymentPageContent() {
             </div>
             <h1 className="text-2xl font-bold text-gray-100 mb-4">Payment Successful!</h1>
             <p className="text-gray-400 mb-6">
-              Your subscription to <span className="text-cyan-400 font-semibold">{tierConfig.displayName}</span> is now active.
+              Your subscription to <span className="text-pink-400 font-semibold">{tierConfig.displayName}</span> is now active.
             </p>
             {txHash && (
               <a
                 href={`${getBlockExplorerUrl(getChainId(selectedNetwork) || 0)}/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-sm mb-8 inline-block"
+                className="text-pink-400 hover:text-pink-300 text-sm mb-8 inline-block"
               >
                 View Transaction →
               </a>
@@ -672,7 +672,7 @@ function SubscriptionPaymentPageContent() {
             <div className="mt-8">
               <Link
                 href="/subscription"
-                className="inline-block px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:opacity-90 transition-all font-medium"
+                className="inline-block px-8 py-3 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-all font-medium"
               >
                 Go to Dashboard
               </Link>
@@ -686,7 +686,7 @@ function SubscriptionPaymentPageContent() {
   return (
     <div className="min-h-screen bg-[#0a0e1a]">
       {/* Subtle gradient overlay */}
-      <div className="fixed inset-0 bg-gradient-to-b from-blue-950/20 via-transparent to-cyan-950/10 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-orange-950/10 pointer-events-none" />
 
       {/* Subtle dot pattern */}
       <div className="fixed inset-0 opacity-[0.03]" style={{
@@ -717,7 +717,7 @@ function SubscriptionPaymentPageContent() {
                 <div className="flex-1 bg-gradient-to-b from-slate-800/40 to-slate-900/40 border border-slate-700/30 rounded-2xl p-6 backdrop-blur-sm flex flex-col">
                   {/* Stack Logo */}
                   <div className="flex items-center gap-3 mb-8">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-400 to-orange-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
                       <img
                         src="/logo.png"
                         alt="Stack"
@@ -733,11 +733,11 @@ function SubscriptionPaymentPageContent() {
                   {/* Plan Info */}
                   <div className="flex items-start gap-4 mb-6">
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${
-                      tier === "starter" ? "from-blue-500 to-indigo-600" :
+                      tier === "starter" ? "from-pink-500 to-pink-600" :
                       tier === "pro" ? "from-violet-500 to-purple-600" :
                       "from-amber-500 to-orange-600"
                     } flex items-center justify-center text-2xl shadow-lg ${
-                      tier === "starter" ? "shadow-blue-500/25" :
+                      tier === "starter" ? "shadow-pink-500/25" :
                       tier === "pro" ? "shadow-violet-500/25" :
                       "shadow-amber-500/25"
                     }`}>
@@ -819,7 +819,7 @@ function SubscriptionPaymentPageContent() {
                           }}
                           onKeyDown={(e) => e.key === "Enter" && validateCoupon()}
                           placeholder="Enter code"
-                          className="flex-1 px-3 py-2.5 bg-slate-900/60 border border-slate-700/40 rounded-xl text-white placeholder-slate-600 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all uppercase"
+                          className="flex-1 px-3 py-2.5 bg-slate-900/60 border border-slate-700/40 rounded-xl text-white placeholder-slate-600 text-sm focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/20 transition-all uppercase"
                         />
                         <button
                           onClick={validateCoupon}
@@ -891,7 +891,7 @@ function SubscriptionPaymentPageContent() {
               <div className="lg:col-span-3 flex">
                 <div className="flex-1 bg-gradient-to-b from-slate-800/60 to-slate-900/60 border border-slate-700/40 rounded-2xl p-6 md:p-8 backdrop-blur-sm relative overflow-hidden flex flex-col">
                   {/* Subtle accent glow */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
 
                   <div className="relative flex-1 flex flex-col">
                     <h2 className="text-lg font-semibold text-white mb-6">Payment Details</h2>
@@ -904,7 +904,7 @@ function SubscriptionPaymentPageContent() {
                       <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-400 to-orange-600 flex items-center justify-center shadow-md shadow-pink-500/20">
                               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                               </svg>
@@ -933,7 +933,7 @@ function SubscriptionPaymentPageContent() {
                         <select
                           value={selectedNetwork}
                           onChange={(e) => setSelectedNetwork(e.target.value as SupportedNetwork)}
-                          className="w-full appearance-none bg-slate-900/60 border border-slate-700/40 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 cursor-pointer transition-all"
+                          className="w-full appearance-none bg-slate-900/60 border border-slate-700/40 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/20 cursor-pointer transition-all"
                         >
                           {PAYMENT_NETWORKS.map((network) => {
                             const info = NETWORK_INFO[network] || { name: network, icon: "⚫", color: "from-gray-500 to-gray-600" };
@@ -960,7 +960,7 @@ function SubscriptionPaymentPageContent() {
                       <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-3.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-blue-500/15 flex items-center justify-center">
+                            <div className="w-9 h-9 rounded-full bg-pink-500/15 flex items-center justify-center">
                               <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
                               </svg>
@@ -1076,9 +1076,9 @@ function SubscriptionPaymentPageContent() {
                     {showManualInput ? (
                       <div className="space-y-5 mt-auto">
                         {/* Payment Instructions */}
-                        <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-4">
-                          <h4 className="text-cyan-400 font-medium mb-3 flex items-center text-sm">
-                            <span className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center mr-2 text-xs font-bold">1</span>
+                        <div className="bg-pink-500/5 border border-pink-500/20 rounded-xl p-4">
+                          <h4 className="text-pink-400 font-medium mb-3 flex items-center text-sm">
+                            <span className="w-6 h-6 rounded-full bg-pink-500/20 flex items-center justify-center mr-2 text-xs font-bold">1</span>
                             Send USDC to this address
                           </h4>
                           <div className="bg-slate-900/60 rounded-lg p-3">
@@ -1110,8 +1110,8 @@ function SubscriptionPaymentPageContent() {
 
                         {/* Transaction Hash Input */}
                         <div>
-                          <h4 className="text-cyan-400 font-medium mb-3 flex items-center text-sm">
-                            <span className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center mr-2 text-xs font-bold">2</span>
+                          <h4 className="text-pink-400 font-medium mb-3 flex items-center text-sm">
+                            <span className="w-6 h-6 rounded-full bg-pink-500/20 flex items-center justify-center mr-2 text-xs font-bold">2</span>
                             Enter transaction hash
                           </h4>
                           <input
@@ -1119,7 +1119,7 @@ function SubscriptionPaymentPageContent() {
                             value={manualTxHash}
                             onChange={(e) => setManualTxHash(e.target.value)}
                             placeholder="0x..."
-                            className="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/40 rounded-xl text-white placeholder-slate-600 font-mono text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all"
+                            className="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/40 rounded-xl text-white placeholder-slate-600 font-mono text-sm focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/20 transition-all"
                           />
                         </div>
 
@@ -1129,7 +1129,7 @@ function SubscriptionPaymentPageContent() {
                           disabled={!manualTxHash || isProcessing}
                           className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all ${
                             manualTxHash && !isProcessing
-                              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20"
+                              ? "bg-gradient-to-r from-pink-500 to-orange-600 text-white hover:from-pink-400 hover:to-orange-500 shadow-lg shadow-pink-500/20"
                               : "bg-slate-800 text-slate-500 cursor-not-allowed"
                           }`}
                         >
@@ -1166,7 +1166,7 @@ function SubscriptionPaymentPageContent() {
                           disabled={!hasSufficientBalance || isProcessing || isSigning || !paymentReceiver || !canSign || isWalletClientLoading}
                           className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all ${
                             hasSufficientBalance && !isProcessing && !isSigning && paymentReceiver && canSign && !isWalletClientLoading
-                              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30"
+                              ? "bg-gradient-to-r from-pink-500 to-orange-600 text-white hover:from-pink-400 hover:to-orange-500 shadow-lg shadow-pink-500/20 hover:shadow-pink-500/30"
                               : "bg-slate-800 text-slate-500 cursor-not-allowed"
                           }`}
                         >
@@ -1201,7 +1201,7 @@ function SubscriptionPaymentPageContent() {
 
                         {/* Signing Info */}
                         {isSigning && (
-                          <p className="text-xs text-cyan-400 text-center animate-pulse">
+                          <p className="text-xs text-pink-400 text-center animate-pulse">
                             Please check your wallet to sign the payment authorization
                           </p>
                         )}

@@ -12,17 +12,19 @@
 }
 
 /*
- * PerkOS Stack Theme System
- * =========================
- * All theme colors are defined here using CSS variables.
- * To change the app theme, modify the values in :root (dark theme).
+ * PerkOS Stack Theme System - "Neon Dusk"
+ * ========================================
+ * A vibrant warm-to-cool gradient theme with coral/orange accents
+ * against deep purple-black backgrounds. Perfect for blockchain
+ * and fintech applications.
  *
  * Color Palette:
- * - Primary: Blue (#3B82F6) - Actions, links, focus states
- * - Accent: Cyan (#22D3EE) - Highlights, success states
- * - Background: Slate shades - Page and card backgrounds
- * - Text: Gray/White shades - Content hierarchy
- * - Borders: Slate shades - Separators, inputs
+ * - Primary: Vibrant Pink (#EB1B69) - Actions, links, focus states
+ * - Secondary: Orange (#FD8F50) - Secondary actions, highlights
+ * - Accent: Coral (#EF5B57) - Accents, notifications
+ * - Background: Deep Purple-Black (#0E0716) - Page backgrounds
+ * - Surface: Dark Navy-Purple (#1B1833) - Card backgrounds
+ * - Highlight: Peach (#FAB46C) - Text highlights, success states
  */
 
 :root {
@@ -30,112 +32,142 @@
    * CORE SEMANTIC COLORS (shadcn/ui compatible)
    * ========================================== */
 
-  /* Page backgrounds */
-  --background: 222 47% 6%;           /* slate-950: #0f172a → hsl(222, 47%, 11%) adjusted darker */
-  --foreground: 210 40% 98%;          /* slate-50: #f8fafc */
+  /* Page backgrounds - Deep Purple-Black #0E0716 */
+  --background: 268 52% 6%;
+  --foreground: 0 0% 100%;            /* White text */
 
-  /* Card/Panel backgrounds */
-  --card: 217 33% 12%;                /* slate-900: #0f172a adjusted */
-  --card-foreground: 210 40% 98%;     /* slate-50 */
+  /* Card/Panel backgrounds - Dark Navy-Purple #1B1833 */
+  --card: 248 38% 15%;
+  --card-foreground: 0 0% 100%;
 
-  /* Popover/Modal backgrounds */
-  --popover: 217 33% 10%;             /* Darker than card */
-  --popover-foreground: 210 40% 98%;
+  /* Popover/Modal backgrounds - Dark Purple #45193C */
+  --popover: 313 47% 18%;
+  --popover-foreground: 0 0% 100%;
 
-  /* Primary action color (Blue) */
-  --primary: 217 91% 60%;             /* blue-500: #3B82F6 */
-  --primary-foreground: 210 40% 98%;
+  /* Primary action color - Vibrant Pink #EB1B69 */
+  --primary: 340 84% 51%;
+  --primary-foreground: 0 0% 100%;
 
-  /* Secondary/Muted elements */
-  --secondary: 217 33% 17%;           /* slate-800 */
-  --secondary-foreground: 210 40% 98%;
+  /* Secondary elements - Orange #FD8F50 */
+  --secondary: 22 97% 65%;
+  --secondary-foreground: 268 52% 6%;  /* Dark text on orange */
 
-  /* Muted text and backgrounds */
-  --muted: 217 33% 17%;               /* slate-800 */
-  --muted-foreground: 215 20% 65%;    /* gray-400: #9CA3AF */
+  /* Muted text and backgrounds - Dusty Purple #76437B */
+  --muted: 295 29% 37%;
+  --muted-foreground: 30 93% 70%;     /* Peach text */
 
-  /* Accent color (Cyan) */
-  --accent: 188 94% 43%;              /* cyan-500: #06B6D4 */
-  --accent-foreground: 222 47% 11%;   /* Dark text on accent */
+  /* Accent color - Coral #EF5B57 */
+  --accent: 2 82% 64%;
+  --accent-foreground: 0 0% 100%;
 
   /* Destructive/Error states */
-  --destructive: 0 84% 60%;           /* red-500 */
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 2 82% 64%;           /* Using coral for errors */
+  --destructive-foreground: 0 0% 100%;
 
-  /* Borders */
-  --border: 217 33% 25%;              /* slate-700: #334155 */
-  --input: 217 33% 25%;               /* Same as border */
-  --ring: 217 91% 60%;                /* Same as primary for focus rings */
+  /* Borders - Maroon Purple #8E2051 */
+  --border: 332 63% 34%;
+  --input: 332 63% 34%;
+  --ring: 340 84% 51%;                /* Same as primary for focus rings */
 
   /* Border radius */
   --radius: 0.75rem;
 
   /* ==========================================
-   * EXTENDED COLOR PALETTE
+   * NEON DUSK EXTENDED COLOR PALETTE
    * ========================================== */
 
-  /* Slate scale (backgrounds, borders) */
-  --slate-950: 222 47% 6%;
-  --slate-900: 217 33% 10%;
-  --slate-800: 217 33% 17%;
-  --slate-700: 217 33% 25%;
-  --slate-600: 215 19% 35%;
-  --slate-500: 215 16% 47%;
+  /* Deep Purple scale (backgrounds) */
+  --purple-950: 268 52% 6%;           /* #0E0716 - Deepest background */
+  --purple-900: 248 38% 15%;          /* #1B1833 - Surface */
+  --purple-800: 313 47% 18%;          /* #45193C - Card */
+  --purple-700: 332 63% 34%;          /* #8E2051 - Borders, hover states */
+  --purple-600: 295 29% 37%;          /* #76437B - Muted elements */
+  --purple-500: 340 84% 51%;          /* #EB1B69 - Primary pink */
 
-  /* Gray scale (text) */
-  --gray-100: 220 14% 96%;
-  --gray-200: 220 13% 91%;
-  --gray-300: 216 12% 84%;
-  --gray-400: 218 11% 65%;
-  --gray-500: 220 9% 46%;
-  --gray-600: 215 14% 34%;
+  /* Warm scale (accents, highlights) */
+  --warm-100: 30 93% 90%;             /* Lightest peach */
+  --warm-200: 30 93% 80%;             /* Light peach */
+  --warm-300: 30 93% 70%;             /* #FAB46C - Peach highlight */
+  --warm-400: 22 97% 65%;             /* #FD8F50 - Orange */
+  --warm-500: 2 82% 64%;              /* #EF5B57 - Coral */
+  --warm-600: 340 84% 51%;            /* #EB1B69 - Vibrant pink */
 
-  /* Blue scale (primary actions) */
-  --blue-400: 213 94% 68%;
-  --blue-500: 217 91% 60%;
-  --blue-600: 221 83% 53%;
-  --blue-700: 224 76% 48%;
+  /* Pink scale (primary actions) */
+  --pink-300: 340 84% 71%;            /* Light pink */
+  --pink-400: 340 84% 61%;            /* Medium pink */
+  --pink-500: 340 84% 51%;            /* #EB1B69 - Primary */
+  --pink-600: 340 84% 41%;            /* Dark pink */
+  --pink-700: 340 84% 31%;            /* Darker pink */
 
-  /* Cyan scale (accent/highlight) */
-  --cyan-300: 187 92% 69%;
-  --cyan-400: 188 86% 53%;
-  --cyan-500: 188 94% 43%;
-  --cyan-600: 192 91% 36%;
+  /* Orange scale (secondary actions) */
+  --orange-300: 22 97% 75%;           /* Light orange */
+  --orange-400: 22 97% 65%;           /* #FD8F50 - Orange */
+  --orange-500: 22 97% 55%;           /* Medium orange */
+  --orange-600: 22 97% 45%;           /* Dark orange */
 
-  /* Green scale (success) */
+  /* Coral scale (accent) */
+  --coral-300: 2 82% 74%;             /* Light coral */
+  --coral-400: 2 82% 64%;             /* #EF5B57 - Coral */
+  --coral-500: 2 82% 54%;             /* Medium coral */
+  --coral-600: 2 82% 44%;             /* Dark coral */
+
+  /* Peach scale (highlights, text) */
+  --peach-200: 30 93% 80%;            /* Light peach */
+  --peach-300: 30 93% 70%;            /* #FAB46C - Peach */
+  --peach-400: 30 93% 60%;            /* Medium peach */
+  --peach-500: 30 93% 50%;            /* Dark peach */
+
+  /* Green scale (success) - kept for semantic use */
   --green-400: 142 69% 58%;
   --green-500: 142 71% 45%;
   --green-600: 142 76% 36%;
 
-  /* Yellow scale (warning) */
-  --yellow-400: 45 93% 58%;
-  --yellow-500: 45 93% 47%;
-
-  /* Red scale (error/destructive) */
-  --red-400: 0 91% 71%;
-  --red-500: 0 84% 60%;
-  --red-600: 0 72% 51%;
-
-  /* Purple scale (special states) */
-  --purple-500: 271 91% 65%;
-  --purple-600: 271 81% 56%;
+  /* Legacy support (mapped to new palette) */
+  --slate-950: 268 52% 6%;
+  --slate-900: 248 38% 15%;
+  --slate-800: 313 47% 18%;
+  --slate-700: 332 63% 34%;
+  --slate-600: 295 29% 37%;
+  --slate-500: 295 29% 47%;
+  --gray-100: 0 0% 96%;
+  --gray-200: 0 0% 91%;
+  --gray-300: 0 0% 84%;
+  --gray-400: 30 93% 70%;             /* Peach for muted text */
+  --gray-500: 295 29% 47%;
+  --gray-600: 295 29% 37%;
+  --blue-400: 340 84% 61%;            /* Mapped to pink */
+  --blue-500: 340 84% 51%;
+  --blue-600: 340 84% 41%;
+  --blue-700: 340 84% 31%;
+  --cyan-300: 22 97% 75%;             /* Mapped to orange */
+  --cyan-400: 22 97% 65%;
+  --cyan-500: 22 97% 55%;
+  --cyan-600: 22 97% 45%;
+  --yellow-400: 30 93% 70%;           /* Mapped to peach */
+  --yellow-500: 30 93% 60%;
+  --red-400: 2 82% 74%;               /* Mapped to coral */
+  --red-500: 2 82% 64%;
+  --red-600: 2 82% 54%;
+  --purple-500-legacy: 295 29% 47%;
 
   /* ==========================================
-   * GRADIENT DEFINITIONS
+   * GRADIENT DEFINITIONS - Neon Dusk
    * ========================================== */
-  --gradient-primary: linear-gradient(to right, hsl(var(--blue-500)), hsl(var(--cyan-500)));
-  --gradient-primary-hover: linear-gradient(to right, hsl(var(--blue-400)), hsl(var(--cyan-400)));
-  --gradient-accent: linear-gradient(to right, hsl(var(--cyan-500)), hsl(var(--green-500)));
-  --gradient-purple: linear-gradient(to right, hsl(var(--purple-600)), hsl(344, 89%, 59%));
+  --gradient-primary: linear-gradient(135deg, hsl(var(--pink-500)), hsl(var(--orange-400)));
+  --gradient-primary-hover: linear-gradient(135deg, hsl(var(--pink-400)), hsl(var(--orange-300)));
+  --gradient-accent: linear-gradient(135deg, hsl(var(--coral-400)), hsl(var(--peach-300)));
+  --gradient-purple: linear-gradient(135deg, hsl(var(--purple-700)), hsl(var(--pink-500)));
+  --gradient-sunset: linear-gradient(135deg, hsl(var(--pink-500)), hsl(var(--orange-400)), hsl(var(--peach-300)));
+  --gradient-dusk: linear-gradient(180deg, hsl(var(--purple-950)), hsl(var(--purple-900)));
 
   /* ==========================================
-   * CHART COLORS (shadcn/ui charts)
+   * CHART COLORS (shadcn/ui charts) - Neon Dusk
    * ========================================== */
-  --chart-1: 217 91% 60%;             /* blue-500 */
-  --chart-2: 188 94% 43%;             /* cyan-500 */
-  --chart-3: 142 71% 45%;             /* green-500 */
-  --chart-4: 45 93% 47%;              /* yellow-500 */
-  --chart-5: 271 91% 65%;             /* purple-500 */
+  --chart-1: 340 84% 51%;             /* Pink - Primary */
+  --chart-2: 22 97% 65%;              /* Orange - Secondary */
+  --chart-3: 2 82% 64%;               /* Coral - Accent */
+  --chart-4: 30 93% 70%;              /* Peach - Highlight */
+  --chart-5: 295 29% 47%;             /* Purple - Muted */
 }
 
 /* Light theme (if needed in future) */
@@ -194,4 +226,42 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ==========================================
+ * MARQUEE ANIMATION FOR NETWORK CAROUSEL
+ * ========================================== */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Fade edges for carousel */
+.marquee-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
 }

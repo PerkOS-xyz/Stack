@@ -53,9 +53,9 @@ const WALLET_TYPE_CONFIG: Record<string, {
     label: 'EVM Multi-Chain',
     shortLabel: 'EVM',
     icon: '⟠',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
-    borderColor: 'border-blue-500/30',
+    color: 'text-pink-400',
+    bgColor: 'bg-pink-500/20',
+    borderColor: 'border-pink-500/30',
     networks: 'Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets',
   },
   solana: {
@@ -553,21 +553,21 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+      <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
         {/* === ATMOSPHERIC BACKGROUND === */}
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
           <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
         </div>
 
         <div className="relative flex items-center justify-center min-h-screen p-4">
-          <div className="bg-slate-900/60 border border-cyan-500/20 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="bg-slate-900/60 border border-pink-500/20 backdrop-blur-sm rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
                 Stack Middleware
               </h1>
               <p className="text-gray-300">
@@ -577,18 +577,18 @@ export default function DashboardPage() {
 
             <button
               onClick={() => openModal()}
-              className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+              className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all"
             >
               Connect Wallet
             </button>
 
-            <div className="mt-6 pt-6 border-t border-blue-500/20">
+            <div className="mt-6 pt-6 border-t border-pink-500/20">
               <p className="text-sm text-gray-400 mb-3">Connect with:</p>
               <div className="flex flex-wrap gap-2 justify-center text-xs">
-                <span className="bg-blue-500/20 text-cyan-400 px-3 py-1 rounded-full font-medium">MetaMask</span>
-                <span className="bg-blue-500/20 text-cyan-400 px-3 py-1 rounded-full font-medium">Coinbase Wallet</span>
-                <span className="bg-blue-500/20 text-cyan-400 px-3 py-1 rounded-full font-medium">Rainbow</span>
-                <span className="bg-blue-500/20 text-cyan-400 px-3 py-1 rounded-full font-medium">Phantom</span>
+                <span className="bg-pink-500/20 text-pink-400 px-3 py-1 rounded-full font-medium">MetaMask</span>
+                <span className="bg-pink-500/20 text-pink-400 px-3 py-1 rounded-full font-medium">Coinbase Wallet</span>
+                <span className="bg-pink-500/20 text-pink-400 px-3 py-1 rounded-full font-medium">Rainbow</span>
+                <span className="bg-pink-500/20 text-pink-400 px-3 py-1 rounded-full font-medium">Phantom</span>
                 <span className="bg-slate-700/50 text-gray-300 px-3 py-1 rounded-full">Email</span>
                 <span className="bg-slate-700/50 text-gray-300 px-3 py-1 rounded-full">Google</span>
                 <span className="bg-slate-700/50 text-gray-300 px-3 py-1 rounded-full">Apple</span>
@@ -605,13 +605,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
       <Toaster position="top-right" richColors />
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -655,11 +655,11 @@ export default function DashboardPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/50 transition-all duration-300">
+          <div className="bg-slate-800/50 border border-pink-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-pink-400/50 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-400">Total Transactions</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mt-2">
+                <p className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mt-2">
                   {stats.totalTransactions.toLocaleString()}
                 </p>
               </div>
@@ -671,25 +671,25 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/50 transition-all duration-300">
+          <div className="bg-slate-800/50 border border-pink-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-pink-400/50 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-400">Total Volume</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mt-2">{stats.totalVolume}</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mt-2">{stats.totalVolume}</p>
               </div>
-              <div className="bg-blue-500/20 rounded-full p-3">
-                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-pink-500/20 rounded-full p-3">
+                <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-blue-400/50 transition-all duration-300">
+          <div className="bg-slate-800/50 border border-pink-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-pink-400/50 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-400">Active Agents</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent mt-2">
+                <p className="text-3xl font-bold bg-gradient-to-r from-green-400 to-pink-400 bg-clip-text text-transparent mt-2">
                   {stats.activeAgents}
                 </p>
               </div>
@@ -706,7 +706,7 @@ export default function DashboardPage() {
         <div className={`relative bg-slate-800/50 border backdrop-blur-sm rounded-xl p-6 mb-8 transition-all ${
           !isProfileComplete && !profileLoading
             ? 'border-slate-600/30 opacity-60'
-            : 'border-blue-500/30'
+            : 'border-pink-500/30'
         }`}>
           {/* Disabled Overlay */}
           {!isProfileComplete && !profileLoading && (
@@ -736,7 +736,7 @@ export default function DashboardPage() {
 
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Sponsor Wallets</h2>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">Sponsor Wallets</h2>
               <p className="text-sm text-gray-400 mt-1">
                 Create wallets to sponsor gas fees for your endpoints
               </p>
@@ -749,7 +749,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setShowCreateWalletModal(true)}
                 disabled={creatingWallet || !isProfileComplete}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-blue-500/20 disabled:border-slate-600"
+                className="flex-1 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center border border-pink-500/20 disabled:border-slate-600"
               >
                 <span className="mr-2 text-lg">⟠</span>
                 {wallets.length > 0 ? 'Add Wallet' : 'Create Sponsor Wallet'}
@@ -791,7 +791,7 @@ export default function DashboardPage() {
                 return (
                 <div
                   key={wallet.id}
-                  className="bg-slate-900/50 border border-blue-500/20 backdrop-blur-sm rounded-xl overflow-hidden hover:border-blue-400/40 transition-all"
+                  className="bg-slate-900/50 border border-pink-500/20 backdrop-blur-sm rounded-xl overflow-hidden hover:border-pink-400/40 transition-all"
                 >
                   {/* Compact Wallet Header */}
                   <div className="p-4">
@@ -814,7 +814,7 @@ export default function DashboardPage() {
                                     setEditingWalletId(null);
                                   }
                                 }}
-                                className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1 text-lg font-bold text-cyan-400 focus:outline-none focus:border-blue-400 w-48"
+                                className="bg-slate-800 border border-pink-500/50 rounded-lg px-3 py-1 text-lg font-bold text-pink-400 focus:outline-none focus:border-pink-400 w-48"
                                 autoFocus
                                 placeholder="Wallet name..."
                               />
@@ -843,7 +843,7 @@ export default function DashboardPage() {
                           ) : (
                             // Display mode with edit button
                             <div className="flex items-center gap-2 group">
-                              <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                              <h3 className="text-lg font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
                                 {wallet.wallet_name || 'Sponsor Wallet'}
                               </h3>
                               <button
@@ -851,7 +851,7 @@ export default function DashboardPage() {
                                   setEditingWalletId(wallet.id);
                                   setEditingWalletName(wallet.wallet_name || '');
                                 }}
-                                className="p-1 text-gray-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
+                                className="p-1 text-gray-500 hover:text-pink-400 opacity-0 group-hover:opacity-100 transition-all"
                                 title="Edit wallet name"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -909,12 +909,12 @@ export default function DashboardPage() {
                         </div>
                         {/* Address Row */}
                         <div className="flex items-center gap-2">
-                          <code className="text-xs font-mono text-cyan-400 font-semibold">
+                          <code className="text-xs font-mono text-pink-400 font-semibold">
                             {wallet.sponsor_address.slice(0, 6)}...{wallet.sponsor_address.slice(-5)}
                           </code>
                           <button
                             onClick={() => copyToClipboard(wallet.sponsor_address)}
-                            className="flex-shrink-0 text-gray-500 hover:text-cyan-400 transition-colors p-1"
+                            className="flex-shrink-0 text-gray-500 hover:text-pink-400 transition-colors p-1"
                             title="Copy address"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1012,7 +1012,7 @@ export default function DashboardPage() {
                   {/* Expandable Balance Section Toggle */}
                   <button
                     onClick={() => toggleWalletExpanded(wallet.id, wallet.sponsor_address, wallet.wallet_type || "EVM")}
-                    className="w-full px-4 py-3 bg-slate-800/50 border-t border-blue-500/10 flex items-center justify-between hover:bg-slate-800/80 transition-colors group"
+                    className="w-full px-4 py-3 bg-slate-800/50 border-t border-pink-500/10 flex items-center justify-between hover:bg-slate-800/80 transition-colors group"
                   >
                     <div className="flex items-center gap-2">
                       <svg
@@ -1027,7 +1027,7 @@ export default function DashboardPage() {
                         {isExpanded ? 'Hide Network Balances' : 'Show Network Balances'}
                       </span>
                       {loadingMultiNetworkBalances[wallet.sponsor_address] && (
-                        <svg className="animate-spin h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-4 w-4 text-pink-400" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -1042,7 +1042,7 @@ export default function DashboardPage() {
 
                   {/* Collapsible Network Balances */}
                   {isExpanded && (
-                    <div className="border-t border-blue-500/10 p-4">
+                    <div className="border-t border-pink-500/10 p-4">
                       {balanceData?.balances ? (
                         <NetworkBalanceGrid
                           balances={{
@@ -1058,7 +1058,7 @@ export default function DashboardPage() {
                         />
                       ) : (
                         <div className="text-center py-6">
-                          <svg className="animate-spin h-8 w-8 text-cyan-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin h-8 w-8 text-pink-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
@@ -1085,29 +1085,29 @@ export default function DashboardPage() {
         </div>
 
         {/* Instructions */}
-        <div className="bg-blue-500/10 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6">
-          <h3 className="font-semibold text-cyan-400 mb-3">How it works</h3>
+        <div className="bg-pink-500/10 border border-pink-500/30 backdrop-blur-sm rounded-xl p-6">
+          <h3 className="font-semibold text-pink-400 mb-3">How it works</h3>
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start">
-              <span className="font-bold mr-2 text-cyan-400">1.</span>
-              <span>Create an <span className="text-blue-400">⟠ EVM</span> sponsor wallet - <strong className="text-cyan-400">One address works on all EVM networks</strong></span>
+              <span className="font-bold mr-2 text-pink-400">1.</span>
+              <span>Create an <span className="text-blue-400">⟠ EVM</span> sponsor wallet - <strong className="text-pink-400">One address works on all EVM networks</strong></span>
             </li>
             <li className="flex items-start">
-              <span className="font-bold mr-2 text-cyan-400">2.</span>
+              <span className="font-bold mr-2 text-pink-400">2.</span>
               <span>Fund the wallet by sending native tokens (AVAX, ETH, SOL, etc.) on any supported network</span>
             </li>
             <li className="flex items-start">
-              <span className="font-bold mr-2 text-cyan-400">3.</span>
+              <span className="font-bold mr-2 text-pink-400">3.</span>
               <span>Configure rules to specify which domains/agents can use your wallet</span>
             </li>
             <li className="flex items-start">
-              <span className="font-bold mr-2 text-cyan-400">4.</span>
+              <span className="font-bold mr-2 text-pink-400">4.</span>
               <span>Gas fees will be automatically paid from your sponsor wallet - no intervention needed!</span>
             </li>
           </ol>
-          <div className="mt-4 pt-4 border-t border-blue-500/20">
+          <div className="mt-4 pt-4 border-t border-pink-500/20">
             <p className="text-xs text-gray-400">
-              <strong className="text-cyan-400">Supported EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+              <strong className="text-pink-400">Supported EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
             </p>
             <p className="text-xs text-gray-500 mt-1">
               <strong className="text-purple-400/60">Solana:</strong> Coming soon
@@ -1119,12 +1119,12 @@ export default function DashboardPage() {
         {/* Create Wallet Modal */}
         {showCreateWalletModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 border border-blue-500/30 rounded-xl max-w-md w-full">
+            <div className="bg-slate-800 border border-pink-500/30 rounded-xl max-w-md w-full">
               {/* Modal Header */}
-              <div className={`border-b ${newWalletType === 'evm' ? 'border-blue-500/20' : newWalletType === 'solana' ? 'border-purple-500/20' : 'border-indigo-500/20'} p-6 flex justify-between items-center`}>
+              <div className={`border-b ${newWalletType === 'evm' ? 'border-pink-500/20' : newWalletType === 'solana' ? 'border-purple-500/20' : 'border-indigo-500/20'} p-6 flex justify-between items-center`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-full ${
-                    newWalletType === 'evm' ? 'bg-blue-500/20 border-blue-500/30' :
+                    newWalletType === 'evm' ? 'bg-pink-500/20 border-pink-500/30' :
                     newWalletType === 'solana' ? 'bg-purple-500/20 border-purple-500/30' :
                     'bg-indigo-500/20 border-indigo-500/30'
                   } border flex items-center justify-center`}>
@@ -1132,7 +1132,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h2 className={`text-xl font-bold bg-gradient-to-r ${
-                      newWalletType === 'evm' ? 'from-cyan-400 to-blue-400' :
+                      newWalletType === 'evm' ? 'from-pink-400 to-orange-400' :
                       newWalletType === 'solana' ? 'from-purple-400 to-pink-400' :
                       'from-indigo-400 to-violet-400'
                     } bg-clip-text text-transparent`}>
@@ -1173,8 +1173,8 @@ export default function DashboardPage() {
                       onClick={() => setNewWalletType('evm')}
                       className={`p-4 rounded-xl border-2 transition-all ${
                         newWalletType === 'evm'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-slate-600 bg-slate-900/50 hover:border-blue-500/50'
+                          ? 'border-blue-500 bg-pink-500/10'
+                          : 'border-slate-600 bg-slate-900/50 hover:border-pink-500/50'
                       }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -1216,7 +1216,7 @@ export default function DashboardPage() {
                     value={newWalletName}
                     onChange={(e) => setNewWalletName(e.target.value)}
                     placeholder="e.g., Production API, Testing, Marketing"
-                    className="w-full bg-slate-900/80 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+                    className="w-full bg-slate-900/80 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 transition-colors"
                     maxLength={50}
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -1248,7 +1248,7 @@ export default function DashboardPage() {
 
                 {/* Info Box - Dynamic based on wallet type */}
                 {newWalletType === 'evm' && (
-                  <div className="p-4 bg-blue-500/10 border-blue-500/20 border rounded-lg">
+                  <div className="p-4 bg-pink-500/10 border-pink-500/20 border rounded-lg">
                     <div className="flex items-start gap-3">
                       <span className="text-xl flex-shrink-0">⟠</span>
                       <div className="text-sm text-gray-300">
@@ -1281,7 +1281,7 @@ export default function DashboardPage() {
                   className={`w-full bg-gradient-to-r ${
                     newWalletType === 'solana'
                       ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                      : 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                      : 'from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600'
                   } disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center`}
                 >
                   {creatingWallet ? (
@@ -1357,15 +1357,15 @@ export default function DashboardPage() {
         {/* Configure Rules Modal */}
         {showRulesModal && selectedWallet && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 border border-blue-500/30 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 border border-pink-500/30 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-slate-800 border-b border-blue-500/20 p-6 flex justify-between items-center">
+              <div className="sticky top-0 bg-slate-800 border-b border-pink-500/20 p-6 flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
                     Configure Sponsorship Rules
                   </h2>
                   <p className="text-sm text-gray-400 mt-1">
-                    Wallet: <code className="text-cyan-400 font-semibold font-mono">{selectedWallet.sponsor_address.slice(0, 6)}...{selectedWallet.sponsor_address.slice(-5)}</code>
+                    Wallet: <code className="text-pink-400 font-semibold font-mono">{selectedWallet.sponsor_address.slice(0, 6)}...{selectedWallet.sponsor_address.slice(-5)}</code>
                   </p>
                 </div>
                 <button
@@ -1384,12 +1384,12 @@ export default function DashboardPage() {
               {/* Modal Content */}
               <div className="p-6 space-y-6">
                 {/* Service Tabs - Responsive Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 border-b border-blue-500/20 pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 border-b border-pink-500/20 pb-4">
                   <button
                     onClick={() => setActiveTab('agent')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
                       activeTab === 'agent'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1404,7 +1404,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab('vendor')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all relative ${
                       activeTab === 'vendor'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1419,7 +1419,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab('spending')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all relative ${
                       activeTab === 'spending'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1435,7 +1435,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab('time')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all relative ${
                       activeTab === 'time'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1451,7 +1451,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab('multichain')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all relative ${
                       activeTab === 'multichain'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1467,7 +1467,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveTab('notifications')}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all relative ${
                       activeTab === 'notifications'
-                        ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-pink-600 to-orange-600 text-white shadow-lg'
                         : 'bg-slate-700/50 text-gray-400 hover:text-gray-200 hover:bg-slate-700'
                     }`}
                   >
@@ -1485,15 +1485,15 @@ export default function DashboardPage() {
                 {activeTab === 'agent' && (
                   <>
                     {/* Info Notice */}
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                    <div className="bg-pink-500/10 border border-pink-500/30 rounded-lg p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="bg-blue-500/20 rounded-full p-2 flex-shrink-0">
-                          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="bg-pink-500/20 rounded-full p-2 flex-shrink-0">
+                          <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-cyan-400 mb-1">Agent Whitelist</h3>
+                          <h3 className="font-semibold text-pink-400 mb-1">Agent Whitelist</h3>
                           <p className="text-sm text-gray-300">
                             Control which agent wallet addresses can use your sponsor wallet for gas fees.
                           </p>
@@ -1502,7 +1502,7 @@ export default function DashboardPage() {
                     </div>
 
                 {/* Add Agent Form */}
-                <div className="bg-slate-900/50 border border-blue-500/20 rounded-lg p-4">
+                <div className="bg-slate-900/50 border border-pink-500/20 rounded-lg p-4">
                   <h4 className="font-medium text-gray-200 mb-3">Add Agent Wallet</h4>
                   <div className="flex gap-2">
                     <input
@@ -1515,12 +1515,12 @@ export default function DashboardPage() {
                         }
                       }}
                       placeholder="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-                      className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors font-mono text-sm"
+                      className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors font-mono text-sm"
                     />
                     <button
                       onClick={addAgentRule}
                       disabled={addingRule || !newAgentAddress.trim()}
-                      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-all"
+                      className="bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium px-6 py-2 rounded-lg transition-all"
                     >
                       {addingRule ? 'Adding...' : 'Add'}
                     </button>
@@ -1616,15 +1616,15 @@ export default function DashboardPage() {
                 {activeTab === 'vendor' && (
                   <>
                 {/* Add Domain Form */}
-                <div className="bg-slate-900/50 border border-cyan-500/30 rounded-lg p-6">
+                <div className="bg-slate-900/50 border border-pink-500/30 rounded-lg p-6">
                   <div className="flex items-start space-x-3 mb-4">
-                    <div className="bg-cyan-500/20 rounded-full p-2 flex-shrink-0">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="bg-pink-500/20 rounded-full p-2 flex-shrink-0">
+                      <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-cyan-400 mb-1">Vendor Domain Whitelist</h3>
+                      <h3 className="text-lg font-semibold text-pink-400 mb-1">Vendor Domain Whitelist</h3>
                       <p className="text-sm text-gray-400">
                         Whitelist vendor server domains where x402 API services run. Your sponsor wallet will pay gas fees for requests from these domains.
                       </p>
@@ -1639,13 +1639,13 @@ export default function DashboardPage() {
                         value={newDomain}
                         onChange={(e) => setNewDomain(e.target.value)}
                         placeholder="api.vendor.com or *.platform.io"
-                        className="flex-1 bg-slate-800/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                        className="flex-1 bg-slate-800/50 border border-pink-500/30 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                         onKeyPress={(e) => e.key === 'Enter' && addDomainRule()}
                       />
                       <button
                         onClick={addDomainRule}
                         disabled={addingRule || !newDomain.trim()}
-                        className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                        className="bg-pink-500 hover:bg-pink-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center space-x-2"
                       >
                         {addingRule ? (
                           <>
@@ -1674,9 +1674,9 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Domain List */}
-                <div className="bg-slate-900/50 border border-cyan-500/30 rounded-lg p-6">
+                <div className="bg-slate-900/50 border border-pink-500/30 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-cyan-400">Whitelisted Domains</h3>
+                    <h3 className="text-lg font-semibold text-pink-400">Whitelisted Domains</h3>
                     <span className="text-sm text-gray-400">
                       {rules.filter(r => r.rule_type === 'domain_whitelist').length} domain(s)
                     </span>
@@ -1692,10 +1692,10 @@ export default function DashboardPage() {
                       {rules
                         .filter(r => r.rule_type === 'domain_whitelist')
                         .map((rule) => (
-                          <div key={rule.id} className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-4">
+                          <div key={rule.id} className="bg-slate-800/50 border border-pink-500/20 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <p className="font-mono text-cyan-400 text-sm">{rule.domain}</p>
+                                <p className="font-mono text-pink-400 text-sm">{rule.domain}</p>
                                 {rule.description && (
                                   <p className="text-xs text-gray-500 mt-1">{rule.description}</p>
                                 )}
@@ -1770,15 +1770,15 @@ export default function DashboardPage() {
                           <div className="space-y-2 text-sm text-gray-300">
                             <div className="flex items-center justify-between">
                               <span>Daily Limit</span>
-                              <span className="font-mono text-cyan-400">10 USDC/day</span>
+                              <span className="font-mono text-pink-400">10 USDC/day</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span>Monthly Limit</span>
-                              <span className="font-mono text-cyan-400">300 USDC/month</span>
+                              <span className="font-mono text-pink-400">300 USDC/month</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span>Per Transaction</span>
-                              <span className="font-mono text-cyan-400">5 USDC/tx</span>
+                              <span className="font-mono text-pink-400">5 USDC/tx</span>
                             </div>
                           </div>
                         </div>
@@ -1807,15 +1807,15 @@ export default function DashboardPage() {
                           <div className="space-y-2 text-sm text-gray-300">
                             <div className="flex items-center justify-between">
                               <span>Active Hours</span>
-                              <span className="font-mono text-cyan-400">9:00 AM - 5:00 PM</span>
+                              <span className="font-mono text-pink-400">9:00 AM - 5:00 PM</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span>Active Days</span>
-                              <span className="font-mono text-cyan-400">Mon-Fri</span>
+                              <span className="font-mono text-pink-400">Mon-Fri</span>
                             </div>
                             <div className="flex items-center justify-between">
                               <span>Timezone</span>
-                              <span className="font-mono text-cyan-400">UTC</span>
+                              <span className="font-mono text-pink-400">UTC</span>
                             </div>
                           </div>
                         </div>
@@ -1847,7 +1847,7 @@ export default function DashboardPage() {
                               <span>Avalanche C-Chain</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                              <div className="w-2 h-2 rounded-full bg-pink-400"></div>
                               <span>Base</span>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -1887,25 +1887,25 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-400 mb-2">Available notifications:</p>
                           <div className="space-y-2 text-sm text-gray-300 text-left">
                             <div className="flex items-start space-x-2">
-                              <svg className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-pink-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                               <span>Low balance warnings</span>
                             </div>
                             <div className="flex items-start space-x-2">
-                              <svg className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-pink-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                               <span>Spending limit alerts</span>
                             </div>
                             <div className="flex items-start space-x-2">
-                              <svg className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-pink-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                               <span>Suspicious activity detection</span>
                             </div>
                             <div className="flex items-start space-x-2">
-                              <svg className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-pink-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                               <span>Daily/weekly reports</span>
@@ -1923,13 +1923,13 @@ export default function DashboardPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-slate-800 border-t border-blue-500/20 p-6">
+              <div className="sticky bottom-0 bg-slate-800 border-t border-pink-500/20 p-6">
                 <button
                   onClick={() => {
                     setShowRulesModal(false);
                     setSelectedWallet(null);
                   }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium py-3 px-6 rounded-lg transition-all"
+                  className="w-full bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-medium py-3 px-6 rounded-lg transition-all"
                 >
                   Close
                 </button>

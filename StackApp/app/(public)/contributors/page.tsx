@@ -148,7 +148,7 @@ export default function ContributorsPage() {
   const getTypeColor = (type: string) => {
     const config = ACCOUNT_TYPE_CONFIG[type as keyof typeof ACCOUNT_TYPE_CONFIG];
     switch (config?.color) {
-      case 'blue': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'blue': return 'bg-blue-500/20 text-blue-400 border-pink-500/30';
       case 'green': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'purple': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'orange': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
@@ -163,12 +163,12 @@ export default function ContributorsPage() {
   const currentNetwork = networks[selectedNetwork];
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden flex flex-col">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -180,7 +180,7 @@ export default function ContributorsPage() {
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
               Contributors
             </h1>
             <p className="text-gray-400 mt-2">
@@ -193,19 +193,19 @@ export default function ContributorsPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <button
                 onClick={() => { setFilterType('all'); setPage(0); }}
-                className={`bg-slate-800/50 border backdrop-blur-sm rounded-xl p-4 text-center transition-all hover:border-cyan-500/50 ${
-                  filterType === 'all' ? 'border-cyan-500' : 'border-blue-500/30'
+                className={`bg-slate-800/50 border backdrop-blur-sm rounded-xl p-4 text-center transition-all hover:border-pink-500/50 ${
+                  filterType === 'all' ? 'border-pink-500' : 'border-pink-500/30'
                 }`}
               >
-                <div className="text-2xl font-bold text-cyan-400">{stats.total}</div>
+                <div className="text-2xl font-bold text-pink-400">{stats.total}</div>
                 <div className="text-sm text-gray-400">Total</div>
               </button>
               {Object.entries(ACCOUNT_TYPE_CONFIG).map(([type, config]) => (
                 <button
                   key={type}
                   onClick={() => { setFilterType(type); setPage(0); }}
-                  className={`bg-slate-800/50 border backdrop-blur-sm rounded-xl p-4 text-center transition-all hover:border-cyan-500/50 ${
-                    filterType === type ? 'border-cyan-500' : 'border-blue-500/30'
+                  className={`bg-slate-800/50 border backdrop-blur-sm rounded-xl p-4 text-center transition-all hover:border-pink-500/50 ${
+                    filterType === type ? 'border-pink-500' : 'border-pink-500/30'
                   }`}
                 >
                   <div className="text-2xl font-bold text-gray-200">
@@ -229,7 +229,7 @@ export default function ContributorsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name..."
-                  className="w-full bg-slate-800/50 border border-blue-500/30 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                  className="w-full bg-slate-800/50 border border-pink-500/30 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-pink-400 transition-colors"
                 />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -237,7 +237,7 @@ export default function ContributorsPage() {
               </div>
               <button
                 type="submit"
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium rounded-xl transition-all"
+                className="px-6 py-3 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700 text-white font-medium rounded-xl transition-all"
               >
                 Search
               </button>
@@ -247,7 +247,7 @@ export default function ContributorsPage() {
           {/* Loading State */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-cyan-400 border-r-transparent"></div>
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pink-400 border-r-transparent"></div>
               <span className="ml-3 text-gray-400">Loading contributors...</span>
             </div>
           ) : contributors.length === 0 ? (
@@ -276,7 +276,7 @@ export default function ContributorsPage() {
                     <div
                       key={contributor.id}
                       onClick={() => setSelectedContributor(contributor)}
-                      className="bg-slate-800/50 border border-blue-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-cyan-500/50 transition-all cursor-pointer"
+                      className="bg-slate-800/50 border border-pink-500/30 backdrop-blur-sm rounded-xl p-6 hover:border-pink-500/50 transition-all cursor-pointer"
                     >
                       {/* Header */}
                       <div className="flex items-start gap-4 mb-4">
@@ -285,10 +285,10 @@ export default function ContributorsPage() {
                           <img
                             src={contributor.avatarUrl}
                             alt={contributor.displayName || 'Avatar'}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-blue-500/30"
+                            className="w-16 h-16 rounded-full object-cover border-2 border-pink-500/30"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-full bg-slate-700 border-2 border-blue-500/30 flex items-center justify-center">
+                          <div className="w-16 h-16 rounded-full bg-slate-700 border-2 border-pink-500/30 flex items-center justify-center">
                             <span className="text-2xl">{typeConfig.icon}</span>
                           </div>
                         )}
@@ -300,7 +300,7 @@ export default function ContributorsPage() {
                               {contributor.displayName || contributor.displayAddress}
                             </h3>
                             {contributor.isVerified && (
-                              <span className="text-cyan-400" title="Verified">✓</span>
+                              <span className="text-pink-400" title="Verified">✓</span>
                             )}
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(contributor.accountType)}`}>
@@ -331,7 +331,7 @@ export default function ContributorsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 mb-3"
+                          className="inline-flex items-center gap-1 text-sm text-pink-400 hover:text-pink-300 mb-3"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -380,7 +380,7 @@ export default function ContributorsPage() {
                 <button
                   onClick={() => setPage(Math.max(0, page - 1))}
                   disabled={page === 0}
-                  className="px-4 py-2 bg-slate-800/50 border border-blue-500/30 rounded-lg text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-cyan-500/50 transition-colors"
+                  className="px-4 py-2 bg-slate-800/50 border border-pink-500/30 rounded-lg text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-pink-500/50 transition-colors"
                 >
                   Previous
                 </button>
@@ -390,7 +390,7 @@ export default function ContributorsPage() {
                 <button
                   onClick={() => setPage(page + 1)}
                   disabled={!hasMore}
-                  className="px-4 py-2 bg-slate-800/50 border border-blue-500/30 rounded-lg text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-cyan-500/50 transition-colors"
+                  className="px-4 py-2 bg-slate-800/50 border border-pink-500/30 rounded-lg text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-pink-500/50 transition-colors"
                 >
                   Next
                 </button>
@@ -412,7 +412,7 @@ export default function ContributorsPage() {
           }}
         >
           <div
-            className="bg-slate-800/95 border border-blue-500/30 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            className="bg-slate-800/95 border border-pink-500/30 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -435,10 +435,10 @@ export default function ContributorsPage() {
                   <img
                     src={selectedContributor.avatarUrl}
                     alt={selectedContributor.displayName || 'Avatar'}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-cyan-500/30 mb-4"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-pink-500/30 mb-4"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-slate-700 border-4 border-cyan-500/30 flex items-center justify-center mb-4">
+                  <div className="w-24 h-24 rounded-full bg-slate-700 border-4 border-pink-500/30 flex items-center justify-center mb-4">
                     <span className="text-4xl">{ACCOUNT_TYPE_CONFIG[selectedContributor.accountType].icon}</span>
                   </div>
                 )}
@@ -448,7 +448,7 @@ export default function ContributorsPage() {
                     {selectedContributor.displayName || selectedContributor.displayAddress}
                   </h2>
                   {selectedContributor.isVerified && (
-                    <span className="text-cyan-400 text-xl" title="Verified">✓</span>
+                    <span className="text-pink-400 text-xl" title="Verified">✓</span>
                   )}
                 </div>
 
@@ -482,7 +482,7 @@ export default function ContributorsPage() {
                   href={selectedContributor.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 text-cyan-400 hover:text-cyan-300"
+                  className="flex items-center justify-center gap-2 text-pink-400 hover:text-pink-300"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -520,13 +520,13 @@ export default function ContributorsPage() {
                 <div className="relative mb-4">
                   <button
                     onClick={() => setShowNetworkDropdown(!showNetworkDropdown)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-700/50 border border-blue-500/20 hover:border-cyan-500/40 transition-all"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-700/50 border border-pink-500/20 hover:border-pink-500/40 transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{currentNetwork?.icon}</span>
                       <span className="text-white font-medium">{currentNetwork?.name}</span>
                       {currentNetwork?.isTestnet && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">TESTNET</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30">TESTNET</span>
                       )}
                     </div>
                     <svg className={`w-5 h-5 text-gray-400 transition-transform ${showNetworkDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -535,8 +535,8 @@ export default function ContributorsPage() {
                   </button>
 
                   {showNetworkDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-2 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 z-10 max-h-60 overflow-y-auto backdrop-blur-xl">
-                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">Mainnets</div>
+                    <div className="absolute top-full left-0 right-0 mt-2 py-2 bg-slate-800/95 border border-pink-500/20 rounded-2xl shadow-2xl shadow-black/50 z-10 max-h-60 overflow-y-auto backdrop-blur-xl">
+                      <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium">Mainnets</div>
                       {Object.entries(networks).filter(([, n]) => !n.isTestnet).map(([key, net]) => (
                         <button
                           key={key}
@@ -549,13 +549,13 @@ export default function ContributorsPage() {
                           <span className="text-lg">{net.icon}</span>
                           <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                           {selectedNetwork === key && (
-                            <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-5 h-5 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
                         </button>
                       ))}
-                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                      <div className="px-4 py-2 text-xs text-pink-400 uppercase tracking-wider font-medium border-t border-pink-500/10 mt-2">Testnets</div>
                       {Object.entries(networks).filter(([, n]) => n.isTestnet).map(([key, net]) => (
                         <button
                           key={key}
@@ -568,7 +568,7 @@ export default function ContributorsPage() {
                           <span className="text-lg">{net.icon}</span>
                           <span className="text-sm text-white flex-1 text-left">{net.name}</span>
                           {selectedNetwork === key && (
-                            <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-5 h-5 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
@@ -581,8 +581,8 @@ export default function ContributorsPage() {
                 {/* QR Code */}
                 <div className="flex justify-center mb-4">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/50 to-blue-500/50 rounded-2xl blur-sm" />
-                    <div className="relative p-1 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-cyan-500/30 rounded-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-500/50 to-orange-500/50 rounded-2xl blur-sm" />
+                    <div className="relative p-1 bg-gradient-to-br from-pink-500/30 via-orange-500/20 to-pink-500/30 rounded-2xl">
                       <div className="p-4 bg-white rounded-xl">
                         <QRCodeSVG
                           value={`ethereum:${selectedContributor.walletAddress}@${currentNetwork?.chainId || 1}`}
@@ -598,7 +598,7 @@ export default function ContributorsPage() {
                 {/* Wallet Address */}
                 <div className="text-center mb-4">
                   <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Wallet Address</p>
-                  <code className="text-sm font-mono text-cyan-400 break-all px-2">
+                  <code className="text-sm font-mono text-pink-400 break-all px-2">
                     {selectedContributor.walletAddress}
                   </code>
                 </div>
@@ -606,7 +606,7 @@ export default function ContributorsPage() {
                 {/* Copy Button */}
                 <button
                   onClick={() => copyToClipboard(selectedContributor.walletAddress)}
-                  className="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -621,7 +621,7 @@ export default function ContributorsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="text-xs text-gray-400">
-                      Only send <span className="text-cyan-400 font-medium">{currentNetwork?.symbol}</span> on <span className="text-cyan-400 font-medium">{currentNetwork?.name}</span>.
+                      Only send <span className="text-pink-400 font-medium">{currentNetwork?.symbol}</span> on <span className="text-pink-400 font-medium">{currentNetwork?.name}</span>.
                       Sending other assets may result in permanent loss.
                     </p>
                   </div>

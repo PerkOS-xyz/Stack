@@ -112,29 +112,29 @@ export default function SubscriptionPage() {
 
   const tierColors: Record<SubscriptionTier, string> = {
     free: "from-gray-500 to-gray-600",
-    starter: "from-blue-500 to-blue-600",
+    starter: "from-pink-500 to-pink-600",
     pro: "from-purple-500 to-purple-600",
     scale: "from-orange-500 to-orange-600",
-    enterprise: "from-cyan-500 to-cyan-600",
+    enterprise: "from-pink-500 to-orange-500",
   };
 
   const tierBorderColors: Record<SubscriptionTier, string> = {
     free: "border-gray-500/30",
-    starter: "border-blue-500/30",
+    starter: "border-pink-500/30",
     pro: "border-purple-500/30",
     scale: "border-orange-500/30",
-    enterprise: "border-cyan-500/30",
+    enterprise: "border-pink-500/30",
   };
 
   const currentTier = subscriptionStatus?.tier || "free";
 
   return (
-    <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#0E0716] text-white overflow-x-hidden">
       {/* === ATMOSPHERIC BACKGROUND === */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/20 via-transparent to-amber-950/10" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #06b6d4 1px, transparent 1px), linear-gradient(to bottom, #06b6d4 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-cyan-500/10 via-transparent to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-950/20 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(to right, #EB1B69 1px, transparent 1px), linear-gradient(to bottom, #EB1B69 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-radial from-pink-500/10 via-transparent to-transparent blur-3xl" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-radial from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -147,7 +147,7 @@ export default function SubscriptionPage() {
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-4">
                 Subscription Plans
               </h1>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -158,7 +158,7 @@ export default function SubscriptionPage() {
             {/* Current Status (when logged in) */}
             {isConnected && address && subscriptionStatus && (
               <div className="mb-12">
-                <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-6 backdrop-blur-sm">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h2 className="text-xl font-bold text-gray-100 mb-1">Current Subscription</h2>
@@ -188,7 +188,7 @@ export default function SubscriptionPage() {
                               ? "bg-red-500"
                               : subscriptionStatus.usage.transactions.percentUsed > 70
                               ? "bg-yellow-500"
-                              : "bg-cyan-500"
+                              : "bg-pink-500"
                           }`}
                           style={{
                             width: `${Math.min(subscriptionStatus.usage.transactions.percentUsed, 100)}%`,
@@ -253,12 +253,12 @@ export default function SubscriptionPage() {
 
             {/* Billing Toggle */}
             <div className="flex justify-center mb-8">
-              <div className="inline-flex bg-slate-800/50 border border-blue-500/30 rounded-lg p-1 backdrop-blur-sm">
+              <div className="inline-flex bg-slate-800/50 border border-pink-500/30 rounded-lg p-1 backdrop-blur-sm">
                 <button
                   onClick={() => setBillingCycle("monthly")}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     billingCycle === "monthly"
-                      ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+                      ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
@@ -268,7 +268,7 @@ export default function SubscriptionPage() {
                   onClick={() => setBillingCycle("yearly")}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
                     billingCycle === "yearly"
-                      ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+                      ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`}
                 >
@@ -283,7 +283,7 @@ export default function SubscriptionPage() {
             {/* Loading State */}
             {isLoading && (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400"></div>
               </div>
             )}
 
@@ -299,16 +299,16 @@ export default function SubscriptionPage() {
                   return (
                     <div
                       key={tierName}
-                      className={`relative bg-slate-800/30 border rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-blue-400/50 hover:bg-slate-800/50 ${
+                      className={`relative bg-slate-800/30 border rounded-xl backdrop-blur-sm transition-all duration-300 hover:border-pink-400/50 hover:bg-slate-800/50 ${
                         isCurrentTier
-                          ? `${tierBorderColors[tierName]} ring-2 ring-cyan-500/50`
+                          ? `${tierBorderColors[tierName]} ring-2 ring-pink-500/50`
                           : tierBorderColors[tierName]
                       }`}
                     >
                       {/* Current Plan Badge */}
                       {isCurrentTier && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                          <span className="px-3 py-1 bg-cyan-500 text-white text-xs font-semibold rounded-full">
+                          <span className="px-3 py-1 bg-pink-500 text-white text-xs font-semibold rounded-full">
                             Current Plan
                           </span>
                         </div>
@@ -404,7 +404,7 @@ export default function SubscriptionPage() {
                           ) : tierName === "enterprise" ? (
                             <a
                               href="mailto:enterprise@perkos.xyz?subject=Enterprise Plan Inquiry"
-                              className="block w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg text-sm font-medium text-center transition-all"
+                              className="block w-full py-3 px-4 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white rounded-lg text-sm font-medium text-center transition-all"
                             >
                               Contact Sales
                             </a>
@@ -436,7 +436,7 @@ export default function SubscriptionPage() {
               <h2 className="text-2xl font-bold text-gray-100 text-center mb-8">
                 Feature Comparison
               </h2>
-              <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl backdrop-blur-sm overflow-hidden">
+              <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl backdrop-blur-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -575,7 +575,7 @@ export default function SubscriptionPage() {
                 Frequently Asked Questions
               </h2>
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-6 backdrop-blur-sm">
                   <h3 className="text-lg font-semibold text-gray-100 mb-2">
                     What happens if I exceed my limits?
                   </h3>
@@ -585,7 +585,7 @@ export default function SubscriptionPage() {
                     response. Consider upgrading to continue operations.
                   </p>
                 </div>
-                <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-6 backdrop-blur-sm">
                   <h3 className="text-lg font-semibold text-gray-100 mb-2">
                     Can I change plans at any time?
                   </h3>
@@ -595,7 +595,7 @@ export default function SubscriptionPage() {
                     current billing cycle.
                   </p>
                 </div>
-                <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-6 backdrop-blur-sm">
                   <h3 className="text-lg font-semibold text-gray-100 mb-2">
                     Which networks are supported?
                   </h3>
@@ -605,7 +605,7 @@ export default function SubscriptionPage() {
                     by subscription tier.
                   </p>
                 </div>
-                <div className="bg-slate-800/30 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+                <div className="bg-slate-800/30 border border-pink-500/20 rounded-xl p-6 backdrop-blur-sm">
                   <h3 className="text-lg font-semibold text-gray-100 mb-2">
                     How does billing work?
                   </h3>
@@ -621,7 +621,7 @@ export default function SubscriptionPage() {
             {/* CTA */}
             {!isConnected && (
               <div className="mt-16 text-center">
-                <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-xl p-8 backdrop-blur-sm">
+                <div className="bg-gradient-to-r from-pink-500/20 to-orange-500/20 border border-pink-500/30 rounded-xl p-8 backdrop-blur-sm">
                   <h2 className="text-2xl font-bold text-gray-100 mb-4">
                     Ready to get started?
                   </h2>
@@ -630,7 +630,7 @@ export default function SubscriptionPage() {
                   </p>
                   <button
                     onClick={() => {}}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
+                    className="px-8 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all"
                   >
                     Sign In
                   </button>

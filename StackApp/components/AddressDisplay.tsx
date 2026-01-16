@@ -26,7 +26,7 @@ export function AddressDisplay({
 
   if (isLoading && !skipEns) {
     return (
-      <span className={`font-mono text-cyan-400 ${className}`}>
+      <span className={`font-mono text-pink-400 ${className}`}>
         Loading...
       </span>
     );
@@ -37,7 +37,7 @@ export function AddressDisplay({
     : formatAddressDisplay(address, skipEns ? null : ensName);
 
   return (
-    <span className={`font-mono text-cyan-400 ${className}`} title={address}>
+    <span className={`font-mono text-pink-400 ${className}`} title={address}>
       {displayText}
     </span>
   );

@@ -43,6 +43,7 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
     primaryWallet,
     handleLogOut,
     setShowAuthFlow,
+    setShowDynamicUserProfile,
     sdkHasLoaded,
     network,
   } = useDynamicContext();
@@ -116,6 +117,7 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
     chainId,
     openModal: () => setShowAuthFlow(true),
     closeModal: () => setShowAuthFlow(false),
+    openUserProfile: () => setShowDynamicUserProfile(true),
     disconnect: async () => {
       try {
         await handleLogOut();
@@ -174,6 +176,9 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
         console.error("[Dynamic] Environment ID not configured");
       },
       closeModal: () => {},
+      openUserProfile: () => {
+        console.error("[Dynamic] Environment ID not configured");
+      },
       disconnect: async () => {},
       error: new Error("Dynamic environment ID not configured"),
     };

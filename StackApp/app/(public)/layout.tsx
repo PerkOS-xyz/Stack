@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from 'react';
+import { WalletProvider } from "@/lib/wallet/client";
+import { SubscriptionProvider } from "@/lib/contexts/SubscriptionContext";
 
-// Light layout without wallet providers - faster initial load
+// Public layout with WalletProvider and SubscriptionProvider for Header functionality
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -17,7 +19,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <WalletProvider>
+        <SubscriptionProvider>
+          {children}
+        </SubscriptionProvider>
+      </WalletProvider>
     </QueryClientProvider>
   );
 }

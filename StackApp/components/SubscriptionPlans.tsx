@@ -22,7 +22,7 @@ function PlanCard({ tier, isPopular, compact }: PlanCardProps) {
       case "scale":
         return "from-orange-500 to-red-500";
       case "pro":
-        return "from-blue-500 to-cyan-500";
+        return "from-pink-500 to-orange-500";
       case "starter":
         return "from-green-500 to-emerald-500";
       default:
@@ -32,21 +32,21 @@ function PlanCard({ tier, isPopular, compact }: PlanCardProps) {
 
   const getCardStyle = () => {
     if (isPopular) {
-      return "border-cyan-400/60 ring-2 ring-cyan-400/30 bg-slate-800/70 scale-[1.02] lg:scale-105";
+      return "border-pink-400/60 ring-2 ring-pink-400/30 bg-slate-800/70 scale-[1.02] lg:scale-105";
     }
-    return "border-blue-500/30 bg-slate-800/50";
+    return "border-pink-500/30 bg-slate-800/50";
   };
 
   const featureCount = compact ? 4 : 6;
 
   return (
     <div
-      className={`relative ${getCardStyle()} border rounded-2xl p-5 lg:p-6 backdrop-blur-sm hover:border-blue-400/50 transition-all duration-300 flex flex-col h-full min-w-[280px] sm:min-w-0`}
+      className={`relative ${getCardStyle()} border rounded-2xl p-5 lg:p-6 backdrop-blur-sm hover:border-pink-400/50 transition-all duration-300 flex flex-col h-full min-w-[280px] sm:min-w-0`}
     >
       {/* Popular Badge */}
       {isPopular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-          <span className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold rounded-full shadow-lg shadow-cyan-500/30 whitespace-nowrap">
+          <span className="px-3 py-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg shadow-pink-500/30 whitespace-nowrap">
             Most Popular
           </span>
         </div>
@@ -93,14 +93,14 @@ function PlanCard({ tier, isPopular, compact }: PlanCardProps) {
         <ul className="space-y-2.5">
           {config.features.slice(0, featureCount).map((feature, idx) => (
             <li key={idx} className="flex items-start gap-2">
-              <svg className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
               <span className="text-sm text-gray-300 leading-tight">{feature}</span>
             </li>
           ))}
           {config.features.length > featureCount && (
-            <li className="text-xs text-cyan-400/70 pl-6 pt-1">
+            <li className="text-xs text-pink-400/70 pl-6 pt-1">
               +{config.features.length - featureCount} more features
             </li>
           )}
@@ -112,12 +112,12 @@ function PlanCard({ tier, isPopular, compact }: PlanCardProps) {
         href="/subscription"
         className={`block w-full py-3 px-4 rounded-xl text-center font-semibold transition-all duration-200 ${
           isPopular
-            ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-400 hover:to-blue-400 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40"
+            ? "bg-gradient-to-r from-pink-500 to-orange-500 text-white hover:from-orange-400 hover:to-pink-400 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40"
             : isFree
             ? "bg-slate-700/50 text-gray-300 hover:bg-slate-600/50 border border-slate-600"
             : isEnterprise
             ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-purple-400 hover:from-purple-600/30 hover:to-pink-600/30 border border-purple-500/30"
-            : "bg-gradient-to-r from-blue-600/20 to-cyan-600/20 text-cyan-400 hover:from-blue-600/30 hover:to-cyan-600/30 border border-blue-500/30"
+            : "bg-gradient-to-r from-pink-600/20 to-orange-600/20 text-pink-400 hover:from-pink-600/30 hover:to-orange-600/30 border border-pink-500/30"
         }`}
       >
         {isEnterprise ? "Contact Sales" : isFree ? "Get Started Free" : "Upgrade Now"}
@@ -160,7 +160,7 @@ export function SubscriptionPlans() {
             {tiers.map((tier, idx) => (
               <div
                 key={tier}
-                className={`w-2 h-2 rounded-full ${idx === 2 ? "bg-cyan-400" : "bg-slate-600"}`}
+                className={`w-2 h-2 rounded-full ${idx === 2 ? "bg-pink-400" : "bg-slate-600"}`}
               />
             ))}
           </div>
@@ -191,7 +191,7 @@ export function SubscriptionPlans() {
               <span className="text-gray-300">Secure USDC</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span className="text-gray-300">Instant activation</span>
