@@ -118,6 +118,7 @@ PerkOS-Stack/
 The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack infrastructure:
 
 **Primary Functions:**
+
 - 🔄 **Protocol Orchestration**: Routes x402 payment requests between wallets and services
 - ✅ **Payment Verification**: Validates signatures, amounts, and network parameters
 - ⛓️ **On-Chain Settlement**: Executes payments on blockchain networks
@@ -126,6 +127,7 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 - 💰 **Deferred Payments**: Manages off-chain voucher aggregation and batch settlement
 
 **Key Capabilities:**
+
 - Supports 6 blockchain networks (Avalanche, Base, Celo + testnets)
 - Dual payment schemes (exact via EIP-3009, deferred via EIP-712)
 - Gasless transactions via Thirdweb sponsorship
@@ -135,7 +137,7 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 ### Technology Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Database**: Supabase (PostgreSQL) with 5 core tables (perkos_* prefix)
+- **Database**: Supabase (PostgreSQL) with 5 core tables (perkos\_\* prefix)
 - **Smart Contracts**: Foundry, Solidity 0.8.20+, OpenZeppelin Upgradeable
 - **Blockchain**: Viem 2.40+, Thirdweb 5.114+, multi-chain RPC providers
 - **Wallet Integration**: Para SDK (@getpara/react-sdk), Thirdweb SDK, Turnkey wallet service
@@ -147,6 +149,7 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 PerkOS Stack uses **Para SDK** for user wallet management with full customization:
 
 **Features:**
+
 - Multi-chain wallet support (Ethereum, Base, Celo, Optimism, Arbitrum)
 - External wallet connections (MetaMask, Phantom)
 - Social login (Google, Twitter, Discord)
@@ -154,6 +157,7 @@ PerkOS Stack uses **Para SDK** for user wallet management with full customizatio
 - Custom dark theme with full color palette
 
 **Theme Configuration** (`app/providers.tsx`):
+
 ```typescript
 paraModalConfig={{
   theme: {
@@ -188,6 +192,7 @@ paraModalConfig={{
 ### Middleware Server Architecture
 
 The **MiddlewareApp** is the main middleware server that:
+
 - Runs on port **3402** (configurable)
 - Orchestrates x402 payment protocol between wallets and services
 - Manages 6 blockchain networks (3 mainnet + 3 testnet)
@@ -198,35 +203,41 @@ The **MiddlewareApp** is the main middleware server that:
 ### Core Services
 
 #### 1. X402Service (Main Orchestrator)
+
 - Routes requests to ExactSchemeService or DeferredSchemeService
 - Validates x402 protocol version and network compatibility
 - Manages payment verification and settlement workflows
 - Coordinates multi-network support
 
 #### 2. ExactSchemeService (EIP-3009)
+
 - Implements immediate payment execution
 - ECDSA signature recovery and verification
 - Nonce tracking to prevent replay attacks
 - On-chain settlement via `transferWithAuthorization`
 
 #### 3. DeferredSchemeService (EIP-712)
+
 - Implements off-chain voucher aggregation
 - EIP-712 structured data signing
 - Batch settlement with escrow contracts
 - Voucher state management in database
 
 #### 4. EventIndexer
+
 - Monitors blockchain events across all networks
 - Indexes transaction data to Supabase
 - Updates agent reputation metrics
 - Aggregates network statistics
 
 #### 5. ThirdwebService
+
 - Thirdweb SDK integration for wallet interactions
 - Sponsored transactions for gasless payments
 - Multi-chain wallet management
 
 #### 6. TurnkeyService
+
 - Turnkey wallet infrastructure integration
 - Secure key management
 - Transaction signing and submission
@@ -329,14 +340,14 @@ POST /api/v2/x402/verify
 
 ### Supported Networks
 
-| Network | Chain ID | Type | USDC Address | Status |
-|---------|----------|------|--------------|--------|
-| Avalanche C-Chain | 43114 | Mainnet | 0xB97E...c48a6E | ✅ Active |
-| Base | 8453 | Mainnet | 0x8335...dA02913 | ✅ Active |
-| Celo | 42220 | Mainnet | 0xcebA...2118C | 🔧 Infrastructure only |
-| Avalanche Fuji | 43113 | Testnet | 0x5425...31Bc65 | ✅ Active |
-| Base Sepolia | 84532 | Testnet | 0x036C...3dCF7e | ✅ Active |
-| Celo Sepolia | 11142220 | Testnet | TBD | 🔧 Infrastructure only |
+| Network           | Chain ID | Type    | USDC Address     | Status                 |
+| ----------------- | -------- | ------- | ---------------- | ---------------------- |
+| Avalanche C-Chain | 43114    | Mainnet | 0xB97E...c48a6E  | ✅ Active              |
+| Base              | 8453     | Mainnet | 0x8335...dA02913 | ✅ Active              |
+| Celo              | 42220    | Mainnet | 0xcebA...2118C   | 🔧 Infrastructure only |
+| Avalanche Fuji    | 43113    | Testnet | 0x5425...31Bc65  | ✅ Active              |
+| Base Sepolia      | 84532    | Testnet | 0x036C...3dCF7e  | ✅ Active              |
+| Celo Sepolia      | 11142220 | Testnet | TBD              | 🔧 Infrastructure only |
 
 **Note**: Celo network support exists in infrastructure (chains.ts) but is currently hidden from UI screens. The middleware supports all 6 networks for future expansion.
 
@@ -384,6 +395,7 @@ function totalAgents() external view returns (uint256);
 ```
 
 **Key Features**:
+
 - ERC-721 compliant agent identity NFT
 - URIStorage for metadata management
 - Owner-controlled metadata updates
@@ -422,6 +434,7 @@ function getSummary(uint256 agentId) external view returns (ReputationSummary me
 ```
 
 **Key Features**:
+
 - EIP-712 typed signature support for delegated feedback
 - Rating scale from -100 (worst) to +100 (best)
 - Agent response capability
@@ -467,6 +480,7 @@ function hasValidAttestation(uint256 agentId, string memory attestationType) ext
 ```
 
 **Key Features**:
+
 - Stake-based validator registration (cryptoeconomic security)
 - Multiple attestation types (security, compliance, performance, etc.)
 - Expiring attestations with confidence scores
@@ -600,12 +614,14 @@ POST /api/erc8004/validation                                     # Create attest
 ### ERC-8004 Trust Models
 
 1. **Reputation System** (✅ Implemented)
+
    - On-chain feedback with EIP-712 signatures
    - Rating scale from -100 to +100
    - Agent response capability
    - Aggregated reputation metrics
 
 2. **Crypto-economic Validation** (✅ Implemented)
+
    - Stake-based validator registration
    - Multiple attestation types
    - Confidence scoring (0-100)
@@ -646,6 +662,7 @@ forge script scripts/deploy-erc8004.ts --rpc-url avalanche --broadcast
 ```
 
 The deployment script automatically:
+
 1. Deploys IdentityRegistry first
 2. Deploys ReputationRegistry linked to IdentityRegistry
 3. Deploys ValidationRegistry linked to IdentityRegistry
@@ -665,6 +682,7 @@ POST /api/v2/x402/verify
 ```
 
 **Request Body**:
+
 ```typescript
 {
   x402Version: number;
@@ -674,6 +692,7 @@ POST /api/v2/x402/verify
 ```
 
 **Response**:
+
 ```typescript
 {
   isValid: boolean;
@@ -693,6 +712,7 @@ POST /api/v2/x402/settle
 **Request Body**: Same as verify
 
 **Response**:
+
 ```typescript
 {
   success: boolean;
@@ -712,6 +732,7 @@ GET /api/v2/x402/supported
 ```
 
 **Response**:
+
 ```typescript
 {
   kinds: Array<{
@@ -823,6 +844,7 @@ export const USDC_ADDRESSES: Record<number, Address> = {
 ```
 
 To add new networks:
+
 1. Add chain definition to `chains` object
 2. Add to `SUPPORTED_NETWORKS` array
 3. Add USDC address to `USDC_ADDRESSES`
@@ -870,6 +892,7 @@ ANALYZE=true npm run build
 ```
 
 This opens an interactive visualization in your browser showing what's in each bundle. Use this to:
+
 - Identify large dependencies that may need optimization
 - Find duplicate packages
 - Verify code splitting is working correctly
@@ -956,6 +979,7 @@ PROXY_ADDRESS=0x... npm run upgrade:avalanche
 ```
 
 **Important**: See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_GUIDE.md) for:
+
 - Complete deployment procedures
 - Upgrade safety rules
 - State migration strategies
@@ -1030,6 +1054,7 @@ See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_G
 ## Roadmap
 
 ### Phase 1: Foundation (✅ Complete)
+
 - [x] x402 protocol implementation (exact + deferred)
 - [x] Multi-chain support (Avalanche, Base, Celo + 13 additional networks)
 - [x] ERC-8004 agent discovery endpoints
@@ -1038,16 +1063,18 @@ See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_G
 - [x] UUPS upgradeable contracts (OpenZeppelin)
 
 ### Phase 2: Trust & Reputation (✅ Complete)
+
 - [x] On-chain reputation tracking (ReputationRegistry)
 - [x] ERC-721 agent registry (IdentityRegistry)
 - [x] Community feedback system with EIP-712 signatures
 - [x] Rating and review mechanism (-100 to +100 scale)
 - [x] Third-party validator attestations (ValidationRegistry)
 - [x] Stake-based validator registration (cryptoeconomic security)
-- [x] ERC-8004 API endpoints (/api/erc8004/*)
+- [x] ERC-8004 API endpoints (/api/erc8004/\*)
 - [x] Frontend ABIs for all registries
 
 ### Phase 3: Advanced Features (🚧 In Progress)
+
 - [ ] TEE attestation support
 - [ ] zkML verification
 - [ ] Cross-chain messaging (LayerZero/Axelar)
@@ -1055,6 +1082,7 @@ See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_G
 - [ ] Agent reputation dashboards
 
 ### Phase 4: Ecosystem Growth (🔜 Planned)
+
 - [ ] Developer SDK/libraries
 - [ ] Plugin system for wallets
 - [ ] Integration with major DeFi protocols
@@ -1113,6 +1141,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Support
 
 Need help? We're here for you:
+
 - 📧 Email: support@perkos.io
 - 💬 Discord: [PerkOS Stack Community](#)
 - 🐛 Issues: [GitHub Issues](#)
@@ -1122,6 +1151,6 @@ Need help? We're here for you:
 
 **Stack it. Ship it. Scale it.** 🏗️
 
-*The infrastructure behind the spark*
+_The infrastructure behind the spark_
 
 Built on x402 · Powered by PerkOS Stack

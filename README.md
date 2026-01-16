@@ -2,7 +2,7 @@
 
 <img src="Media/Stack.png" alt="PerkOS Stack Logo" height="256" />
 
-# PerkOS Stack
+# PerkOS Stack Solution
 
 ### The Complete Agent Infrastructure Platform
 
@@ -48,6 +48,7 @@ flowchart LR
 ```
 
 **Problems with this approach:**
+
 - No visibility into which agent is spending what
 - No way to set limits per agent, domain, or time period
 - No way to whitelist specific agents or domains
@@ -135,20 +136,20 @@ flowchart TB
 
 <div align="center">
 
-| Feature | PerkOS Stack | Other Solutions |
-|:--------|:------------:|:---------------:|
-| **Multi-wallet per network** | **Unlimited** | Single wallet |
-| **Agent whitelisting** | **Per-agent control** | Open to all |
-| **Domain restrictions** | **Wildcard support** | None |
-| **Per-transaction limits** | **Configurable** | None |
-| **Daily spending limits** | **Per wallet/agent** | None |
-| **Monthly spending limits** | **Per wallet/agent** | None |
-| **Time-based restrictions** | **Hours & days** | None |
-| **Real-time spending analytics** | **Full dashboard** | Basic/None |
-| **Multi-network support** | **16 networks** | Limited |
-| **Spending tracking per agent** | **Complete history** | Aggregate only |
-| **Rule priority system** | **Flexible rules** | None |
-| **Wallet isolation** | **Per-purpose wallets** | Shared risk |
+| Feature                          |      PerkOS Stack       | Other Solutions |
+| :------------------------------- | :---------------------: | :-------------: |
+| **Multi-wallet per network**     |      **Unlimited**      |  Single wallet  |
+| **Agent whitelisting**           |  **Per-agent control**  |   Open to all   |
+| **Domain restrictions**          |  **Wildcard support**   |      None       |
+| **Per-transaction limits**       |    **Configurable**     |      None       |
+| **Daily spending limits**        |  **Per wallet/agent**   |      None       |
+| **Monthly spending limits**      |  **Per wallet/agent**   |      None       |
+| **Time-based restrictions**      |    **Hours & days**     |      None       |
+| **Real-time spending analytics** |   **Full dashboard**    |   Basic/None    |
+| **Multi-network support**        |     **16 networks**     |     Limited     |
+| **Spending tracking per agent**  |  **Complete history**   | Aggregate only  |
+| **Rule priority system**         |   **Flexible rules**    |      None       |
+| **Wallet isolation**             | **Per-purpose wallets** |   Shared risk   |
 
 </div>
 
@@ -355,6 +356,7 @@ FROM perkos_sponsor_wallet_analytics;
 ```
 
 **Dashboard features:**
+
 - Real-time spending by wallet, agent, and domain
 - Daily/monthly trend charts
 - Cost per agent breakdown
@@ -378,6 +380,7 @@ flowchart LR
 ```
 
 **Core Capabilities:**
+
 - **Payments** - x402 micropayments with immediate and deferred settlement
 - **Discovery** - ERC-8004 compliant agent identity and reputation
 - **Multi-Chain** - 16 EVM networks with native Circle USDC support
@@ -390,15 +393,15 @@ flowchart LR
 
 ### 1. Deploy in Minutes, Not Months
 
-| Without PerkOS Stack | With PerkOS Stack |
-|---------------------|-------------------|
-| Build x402 verification logic | `POST /api/v2/x402/verify` |
-| Implement EIP-3009 settlement | `POST /api/v2/x402/settle` |
-| Create discovery endpoints | `GET /.well-known/agent-card.json` |
-| Build gas control system | Pre-built with rules engine |
-| Setup database schema | Pre-configured Supabase |
-| Configure multiple RPCs | 16 networks ready |
-| Build analytics dashboard | Included with real-time data |
+| Without PerkOS Stack          | With PerkOS Stack                  |
+| ----------------------------- | ---------------------------------- |
+| Build x402 verification logic | `POST /api/v2/x402/verify`         |
+| Implement EIP-3009 settlement | `POST /api/v2/x402/settle`         |
+| Create discovery endpoints    | `GET /.well-known/agent-card.json` |
+| Build gas control system      | Pre-built with rules engine        |
+| Setup database schema         | Pre-configured Supabase            |
+| Configure multiple RPCs       | 16 networks ready                  |
+| Build analytics dashboard     | Included with real-time data       |
 
 **Time to production: Hours instead of months.**
 
@@ -406,16 +409,16 @@ flowchart LR
 
 Connect to **16 EVM networks** without managing multiple RPC connections:
 
-| Mainnet | Testnet |
-|---------|---------|
-| Ethereum (1) | Sepolia (11155111) |
-| Avalanche (43114) | Fuji (43113) |
-| Base (8453) | Base Sepolia (84532) |
-| Polygon (137) | Polygon Amoy (80002) |
-| Arbitrum (42161) | Arbitrum Sepolia (421614) |
-| Optimism (10) | OP Sepolia (11155420) |
-| Celo (42220) | Celo Sepolia (11142220) |
-| Monad (10142) | Monad Testnet (10143) |
+| Mainnet           | Testnet                   |
+| ----------------- | ------------------------- |
+| Ethereum (1)      | Sepolia (11155111)        |
+| Avalanche (43114) | Fuji (43113)              |
+| Base (8453)       | Base Sepolia (84532)      |
+| Polygon (137)     | Polygon Amoy (80002)      |
+| Arbitrum (42161)  | Arbitrum Sepolia (421614) |
+| Optimism (10)     | OP Sepolia (11155420)     |
+| Celo (42220)      | Celo Sepolia (11142220)   |
+| Monad (10142)     | Monad Testnet (10143)     |
 
 **All with official Circle USDC addresses configured.**
 
@@ -463,6 +466,7 @@ GET /.well-known/agent-card.json
 ### 5. Complete Business Intelligence
 
 Track everything out of the box:
+
 - Transaction volume by network, agent, and domain
 - Gas sponsorship ROI per wallet and agent
 - Success rates and error tracking
@@ -497,10 +501,11 @@ flowchart LR
 ```
 
 **Supported Strategies:**
+
 - **Fixed**: Simple per-request pricing
 - **Tiered**: Volume-based discounts (first 100 requests at $0.01, next 900 at $0.005, etc.)
 - **Usage-Based**: Per-token, per-byte, or per-compute-unit pricing
-- **Subscription**: Monthly plans with included requests *(coming soon)*
+- **Subscription**: Monthly plans with included requests _(coming soon)_
 - **Custom**: Register your own pricing logic
 
 **Idempotency Guarantee**: Same request characteristics always return the same price within the cache TTL, ensuring predictable costs for clients.
@@ -540,6 +545,7 @@ cp .env.example .env
 ```
 
 **Required variables:**
+
 ```bash
 # Your private key for settlement transactions
 PRIVATE_KEY=0x...
@@ -559,6 +565,7 @@ THIRDWEB_SECRET_KEY=your-secret-key
 ### 3. Setup Database
 
 Run the SQL migrations in Supabase:
+
 ```bash
 # See StackApp/supabase/migrations/ for schema files
 ```
@@ -589,49 +596,49 @@ curl http://localhost:3402/api/.well-known/agent-card.json
 
 ### Core x402 Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v2/x402/verify` | Verify payment without settlement |
-| `POST` | `/api/v2/x402/settle` | Verify and settle on-chain |
-| `GET` | `/api/v2/x402/supported` | List supported schemes/networks |
-| `GET` | `/api/v2/x402/config` | Get facilitator configuration |
-| `GET` | `/api/v2/x402/health` | Health check |
+| Method | Endpoint                 | Description                       |
+| ------ | ------------------------ | --------------------------------- |
+| `POST` | `/api/v2/x402/verify`    | Verify payment without settlement |
+| `POST` | `/api/v2/x402/settle`    | Verify and settle on-chain        |
+| `GET`  | `/api/v2/x402/supported` | List supported schemes/networks   |
+| `GET`  | `/api/v2/x402/config`    | Get facilitator configuration     |
+| `GET`  | `/api/v2/x402/health`    | Health check                      |
 
 ### Gas Sponsorship Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/sponsor/wallets` | List sponsor wallets |
-| `POST` | `/api/sponsor/wallets` | Create sponsor wallet |
-| `GET` | `/api/sponsor/wallets/{id}/balance` | Check wallet balance |
-| `GET` | `/api/sponsor/rules` | List sponsorship rules |
-| `POST` | `/api/sponsor/rules` | Create/update rules |
-| `GET` | `/api/sponsor/analytics` | Spending analytics |
+| Method | Endpoint                            | Description            |
+| ------ | ----------------------------------- | ---------------------- |
+| `GET`  | `/api/sponsor/wallets`              | List sponsor wallets   |
+| `POST` | `/api/sponsor/wallets`              | Create sponsor wallet  |
+| `GET`  | `/api/sponsor/wallets/{id}/balance` | Check wallet balance   |
+| `GET`  | `/api/sponsor/rules`                | List sponsorship rules |
+| `POST` | `/api/sponsor/rules`                | Create/update rules    |
+| `GET`  | `/api/sponsor/analytics`            | Spending analytics     |
 
 ### Discovery Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/.well-known/agent-card.json` | ActivityPub-style agent metadata |
-| `GET` | `/.well-known/erc-8004.json` | ERC-8004 registration |
-| `GET` | `/.well-known/x402-payment.json` | Payment configuration |
+| Method | Endpoint                         | Description                      |
+| ------ | -------------------------------- | -------------------------------- |
+| `GET`  | `/.well-known/agent-card.json`   | ActivityPub-style agent metadata |
+| `GET`  | `/.well-known/erc-8004.json`     | ERC-8004 registration            |
+| `GET`  | `/.well-known/x402-payment.json` | Payment configuration            |
 
 ### Deferred Payment Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/deferred/info` | Deferred scheme info |
-| `GET` | `/api/deferred/vouchers` | List vouchers |
-| `POST` | `/api/deferred/settle-batch` | Batch settle vouchers |
-| `GET` | `/api/deferred/escrow/balance` | Check escrow balance |
+| Method | Endpoint                       | Description           |
+| ------ | ------------------------------ | --------------------- |
+| `GET`  | `/api/deferred/info`           | Deferred scheme info  |
+| `GET`  | `/api/deferred/vouchers`       | List vouchers         |
+| `POST` | `/api/deferred/settle-batch`   | Batch settle vouchers |
+| `GET`  | `/api/deferred/escrow/balance` | Check escrow balance  |
 
 ### Analytics Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/dashboard/stats` | Aggregated statistics |
-| `GET` | `/api/transactions` | Transaction history |
-| `GET` | `/api/agents` | Registered agents |
+| Method | Endpoint               | Description           |
+| ------ | ---------------------- | --------------------- |
+| `GET`  | `/api/dashboard/stats` | Aggregated statistics |
+| `GET`  | `/api/transactions`    | Transaction history   |
+| `GET`  | `/api/agents`          | Registered agents     |
 
 ---
 
@@ -639,29 +646,29 @@ curl http://localhost:3402/api/.well-known/agent-card.json
 
 ### Mainnet Networks (8)
 
-| Network | Chain ID | Native | USDC Address |
-|---------|----------|--------|--------------|
-| Ethereum | 1 | ETH | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
-| Avalanche | 43114 | AVAX | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
-| Base | 8453 | ETH | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Polygon | 137 | POL | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
-| Arbitrum | 42161 | ETH | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
-| Optimism | 10 | ETH | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` |
-| Celo | 42220 | CELO | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
-| Monad | 10142 | MON | *Coming soon* |
+| Network   | Chain ID | Native | USDC Address                                 |
+| --------- | -------- | ------ | -------------------------------------------- |
+| Ethereum  | 1        | ETH    | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| Avalanche | 43114    | AVAX   | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
+| Base      | 8453     | ETH    | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Polygon   | 137      | POL    | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
+| Arbitrum  | 42161    | ETH    | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
+| Optimism  | 10       | ETH    | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` |
+| Celo      | 42220    | CELO   | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
+| Monad     | 10142    | MON    | _Coming soon_                                |
 
 ### Testnet Networks (8)
 
-| Network | Chain ID | Native | USDC Address |
-|---------|----------|--------|--------------|
-| Sepolia | 11155111 | ETH | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
-| Avalanche Fuji | 43113 | AVAX | `0x5425890298aed601595a70AB815c96711a31Bc65` |
-| Base Sepolia | 84532 | ETH | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
-| Polygon Amoy | 80002 | POL | `0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582` |
-| Arbitrum Sepolia | 421614 | ETH | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
-| OP Sepolia | 11155420 | ETH | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
-| Celo Sepolia | 11142220 | CELO | *TBD* |
-| Monad Testnet | 10143 | MON | *Coming soon* |
+| Network          | Chain ID | Native | USDC Address                                 |
+| ---------------- | -------- | ------ | -------------------------------------------- |
+| Sepolia          | 11155111 | ETH    | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
+| Avalanche Fuji   | 43113    | AVAX   | `0x5425890298aed601595a70AB815c96711a31Bc65` |
+| Base Sepolia     | 84532    | ETH    | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Polygon Amoy     | 80002    | POL    | `0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582` |
+| Arbitrum Sepolia | 421614   | ETH    | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
+| OP Sepolia       | 11155420 | ETH    | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
+| Celo Sepolia     | 11142220 | CELO   | _TBD_                                        |
+| Monad Testnet    | 10143    | MON    | _Coming soon_                                |
 
 > All USDC addresses are official Circle-issued tokens.
 
@@ -802,47 +809,47 @@ PerkOS Stack uses **Supabase (PostgreSQL)** with 15 tables organized by function
 
 ### Core x402 Tables
 
-| Table | Purpose |
-|-------|---------|
-| `perkos_x402_transactions` | All payment records |
-| `perkos_x402_agents` | Agent statistics |
-| `perkos_x402_network_stats` | Network analytics |
-| `perkos_vouchers` | Deferred payment vouchers |
+| Table                       | Purpose                   |
+| --------------------------- | ------------------------- |
+| `perkos_x402_transactions`  | All payment records       |
+| `perkos_x402_agents`        | Agent statistics          |
+| `perkos_x402_network_stats` | Network analytics         |
+| `perkos_vouchers`           | Deferred payment vouchers |
 
 ### Gas Sponsorship Tables (Unique to PerkOS)
 
-| Table | Purpose |
-|-------|---------|
-| `perkos_sponsor_wallets` | Multi-wallet configuration per network |
-| `perkos_sponsor_rules` | Agent/domain/spending/time rules |
-| `perkos_sponsor_spending` | Per-agent spending tracking |
-| `perkos_sponsor_transactions` | Complete sponsored tx logs |
+| Table                         | Purpose                                |
+| ----------------------------- | -------------------------------------- |
+| `perkos_sponsor_wallets`      | Multi-wallet configuration per network |
+| `perkos_sponsor_rules`        | Agent/domain/spending/time rules       |
+| `perkos_sponsor_spending`     | Per-agent spending tracking            |
+| `perkos_sponsor_transactions` | Complete sponsored tx logs             |
 
 ### Vendor Registry
 
-| Table | Purpose |
-|-------|---------|
-| `perkos_vendors` | Registered services |
-| `perkos_vendor_endpoints` | API pricing |
-| `perkos_vendor_verifications` | Discovery checks |
+| Table                         | Purpose             |
+| ----------------------------- | ------------------- |
+| `perkos_vendors`              | Registered services |
+| `perkos_vendor_endpoints`     | API pricing         |
+| `perkos_vendor_verifications` | Discovery checks    |
 
 ### User Management
 
-| Table | Purpose |
-|-------|---------|
-| `perkos_user_profiles` | User accounts |
-| `perkos_agents` | Agent reputation |
-| `perkos_reviews` | Community ratings |
+| Table                  | Purpose           |
+| ---------------------- | ----------------- |
+| `perkos_user_profiles` | User accounts     |
+| `perkos_agents`        | Agent reputation  |
+| `perkos_reviews`       | Community ratings |
 
 ### Dynamic Pricing Tables (NEW)
 
-| Table | Purpose |
-|-------|---------|
-| `perkos_vendor_pricing_configs` | Vendor pricing strategy configurations |
-| `perkos_vendor_user_tiers` | User tier and usage tracking per vendor |
-| `perkos_vendor_subscription_plans` | Vendor-defined subscription plans |
-| `perkos_vendor_user_subscriptions` | Active user subscriptions |
-| `perkos_price_calculations` | Price calculation analytics log |
+| Table                              | Purpose                                 |
+| ---------------------------------- | --------------------------------------- |
+| `perkos_vendor_pricing_configs`    | Vendor pricing strategy configurations  |
+| `perkos_vendor_user_tiers`         | User tier and usage tracking per vendor |
+| `perkos_vendor_subscription_plans` | Vendor-defined subscription plans       |
+| `perkos_vendor_user_subscriptions` | Active user subscriptions               |
+| `perkos_price_calculations`        | Price calculation analytics log         |
 
 See [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md) for complete schema.
 
@@ -850,35 +857,36 @@ See [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md) for complete sche
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Framework** | Next.js 15, React 19, TypeScript |
-| **Database** | Supabase (PostgreSQL) |
-| **Blockchain** | Viem 2.40+, Thirdweb 5.114+ |
-| **Contracts** | Hardhat, OpenZeppelin UUPS |
-| **Styling** | Tailwind CSS, Radix UI |
-| **Wallet** | Para SDK (`@getpara/react-sdk`) |
+| Layer          | Technology                       |
+| -------------- | -------------------------------- |
+| **Framework**  | Next.js 15, React 19, TypeScript |
+| **Database**   | Supabase (PostgreSQL)            |
+| **Blockchain** | Viem 2.40+, Thirdweb 5.114+      |
+| **Contracts**  | Hardhat, OpenZeppelin UUPS       |
+| **Styling**    | Tailwind CSS, Radix UI           |
+| **Wallet**     | Para SDK (`@getpara/react-sdk`)  |
 
 ### Para Wallet Integration
 
 PerkOS Stack integrates **Para SDK** for seamless wallet management and user onboarding:
 
-| Feature | Description |
-|---------|-------------|
+| Feature                 | Description                              |
+| ----------------------- | ---------------------------------------- |
 | **Multi-Chain Support** | Ethereum, Base, Celo, Optimism, Arbitrum |
-| **External Wallets** | MetaMask, Phantom |
-| **Social Login** | Google, Twitter, Discord OAuth |
-| **On-Ramp** | Fiat-to-crypto purchase integration |
-| **Recovery** | Secret recovery phrase enabled |
+| **External Wallets**    | MetaMask, Phantom                        |
+| **Social Login**        | Google, Twitter, Discord OAuth           |
+| **On-Ramp**             | Fiat-to-crypto purchase integration      |
+| **Recovery**            | Secret recovery phrase enabled           |
 
 **User Menu Options:**
 
-| Option | Description |
-|--------|-------------|
-| **User Wallet** | Opens Para modal for on-ramp, wallet management, and Para tools |
+| Option              | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| **User Wallet**     | Opens Para modal for on-ramp, wallet management, and Para tools              |
 | **Sponsor Wallets** | Links to sponsor wallet management page (visible when sponsor wallet exists) |
 
 **Theme Configuration:**
+
 - Dark mode with custom palette for text visibility
 - Colors: `text.primary` (#f3ebeb), `text.secondary` (#c4c4c4), `text.subtle` (#9ca3af)
 - Modal surface: main (#090b0e), footer (#111318), border (#2a2e37)
@@ -916,13 +924,13 @@ PROXY_ADDRESS=0x... npm run upgrade:base
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [StackApp/README.md](StackApp/README.md) | Detailed API documentation |
-| [Docs/SUPABASE_SETUP.md](Docs/SUPABASE_SETUP.md) | Database setup guide |
-| [Docs/DEPLOYMENT_CHECKLIST.md](Docs/DEPLOYMENT_CHECKLIST.md) | Production checklist |
-| [Docs/X402_DEFERRED_SCHEME.md](Docs/X402_DEFERRED_SCHEME.md) | Deferred payments guide |
-| [Docs/MULTI_CHAIN_GUIDE.md](Docs/MULTI_CHAIN_GUIDE.md) | Network configuration |
+| Document                                                     | Description                   |
+| ------------------------------------------------------------ | ----------------------------- |
+| [StackApp/README.md](StackApp/README.md)                     | Detailed API documentation    |
+| [Docs/SUPABASE_SETUP.md](Docs/SUPABASE_SETUP.md)             | Database setup guide          |
+| [Docs/DEPLOYMENT_CHECKLIST.md](Docs/DEPLOYMENT_CHECKLIST.md) | Production checklist          |
+| [Docs/X402_DEFERRED_SCHEME.md](Docs/X402_DEFERRED_SCHEME.md) | Deferred payments guide       |
+| [Docs/MULTI_CHAIN_GUIDE.md](Docs/MULTI_CHAIN_GUIDE.md)       | Network configuration         |
 | [Docs/DYNAMIC_PRICING_SPEC.md](Docs/DYNAMIC_PRICING_SPEC.md) | Dynamic pricing specification |
 
 ---
@@ -959,7 +967,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Stack it. Control it. Scale it.**
 
-*The only agent infrastructure with real gas control*
+_The only agent infrastructure with real gas control_
 
 Built on x402 | Powered by PerkOS
 
