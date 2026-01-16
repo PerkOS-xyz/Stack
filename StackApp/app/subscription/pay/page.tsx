@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useWalletContext, useWalletClient, ACTIVE_PROVIDER } from "@/lib/wallet/client";
 import { Header } from "@/components/Header";
@@ -98,7 +98,7 @@ const PAYMENT_NETWORKS = SUPPORTED_NETWORKS.filter((network) => {
   return usdcAddress && usdcAddress !== "0x0000000000000000000000000000000000000000";
 });
 
-export default function SubscriptionPaymentPage() {
+function SubscriptionPaymentPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isConnected, address } = useWalletContext();
@@ -1232,5 +1232,32 @@ export default function SubscriptionPaymentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense boundary
+function SubscriptionPaymentLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+      <Header />
+      <div className="container mx-auto px-4 py-20">
+        <div className="max-w-md mx-auto text-center">
+          <div className="animate-pulse">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-slate-700"></div>
+            <div className="h-6 bg-slate-700 rounded w-48 mx-auto mb-4"></div>
+            <div className="h-4 bg-slate-700 rounded w-64 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Default export with Suspense boundary (required for useSearchParams in Next.js 15)
+export default function SubscriptionPaymentPage() {
+  return (
+    <Suspense fallback={<SubscriptionPaymentLoading />}>
+      <SubscriptionPaymentPageContent />
+    </Suspense>
   );
 }
