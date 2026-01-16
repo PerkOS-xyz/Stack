@@ -122,7 +122,15 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
       try {
         await handleLogOut();
       } catch (error) {
-        console.error("[DynamicClientProvider] Logout error:", error);
+        // Dynamic WaaS SDK throws "Auth token is required" error during logout
+        // because the WaaS connector tries to end session after token is cleared.
+        // This is expected behavior - the logout still completes successfully.
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes("Auth token is required")) {
+          console.log("[DynamicClientProvider] Logout completed (WaaS session cleanup skipped)");
+        } else {
+          console.error("[DynamicClientProvider] Logout error:", error);
+        }
       }
     },
     switchChain: async (newChainId: number) => {
