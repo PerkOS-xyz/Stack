@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         chain_id,
         scheme,
         vendor_domain,
+        vendor_endpoint,
         status,
         created_at,
         gas_fee_wei
@@ -62,10 +63,12 @@ export async function GET(request: NextRequest) {
       )
       .order("created_at", { ascending: false });
 
-    // Apply filters
-    if (timeFilter) {
-      query = query.gte("created_at", timeFilter.toISOString());
-    }
+    // Note: Time filter disabled for now - legacy transactions don't have created_at
+    // All transactions are shown regardless of time period selection
+    // TODO: Re-enable once all transactions have created_at timestamps
+    // if (timeFilter) {
+    //   query = query.gte("created_at", timeFilter.toISOString());
+    // }
 
     if (network && network !== "all") {
       query = query.eq("network", network);
@@ -101,9 +104,10 @@ export async function GET(request: NextRequest) {
       .from("perkos_x402_transactions")
       .select("amount_usd, status, transaction_hash, payer_address, recipient_address");
 
-    if (timeFilter) {
-      statsQuery = statsQuery.gte("created_at", timeFilter.toISOString());
-    }
+    // Note: Time filter disabled for stats - legacy transactions don't have created_at
+    // if (timeFilter) {
+    //   statsQuery = statsQuery.gte("created_at", timeFilter.toISOString());
+    // }
 
     if (network && network !== "all") {
       statsQuery = statsQuery.eq("network", network);
@@ -150,6 +154,16 @@ export async function GET(request: NextRequest) {
         ? `${tx.amount_usd.toFixed(3)} ${tokenSymbol}`
         : `0.000 ${tokenSymbol}`;
 
+      // Handle null/invalid created_at for legacy transactions
+      let createdAt: Date | null = null;
+      if (tx.created_at && tx.created_at !== "") {
+        const parsed = new Date(tx.created_at);
+        // Check if date is valid (not NaN)
+        if (!isNaN(parsed.getTime())) {
+          createdAt = parsed;
+        }
+      }
+
       return {
         hash: truncateAddress(tx.transaction_hash),
         fullHash: tx.transaction_hash,
@@ -165,10 +179,12 @@ export async function GET(request: NextRequest) {
         gasFeeNativeSymbol: nativeSymbol,
         scheme: tx.scheme,
         network: tx.network,
+        vendorDomain: tx.vendor_domain || null,
+        vendorEndpoint: tx.vendor_endpoint || null,
         status: tx.status,
-        timestamp: formatTimeAgo(new Date(tx.created_at)),
-        datetime: formatDateTime(new Date(tx.created_at)),
-        datetimeRaw: tx.created_at,
+        timestamp: createdAt ? formatTimeAgo(createdAt) : "Recently",
+        datetime: createdAt ? formatDateTime(createdAt) : "Unknown",
+        datetimeRaw: tx.created_at || new Date().toISOString(),
       };
     });
 

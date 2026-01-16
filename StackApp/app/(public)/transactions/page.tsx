@@ -22,6 +22,8 @@ interface Transaction {
   gasFeeNativeSymbol: string; // e.g., "AVAX", "ETH", "CELO"
   scheme: string;
   network: string;
+  vendorDomain: string | null;   // e.g., "api.example.com"
+  vendorEndpoint: string | null; // e.g., "/api/v1/chat"
   status: string;
   timestamp: string;       // e.g., "5m ago"
   datetime: string;        // e.g., "Dec 14, 2025, 10:30:45"
@@ -370,8 +372,8 @@ export default function TransactionsPage() {
                 </div>
               </div>
 
-              {/* Card-based Transaction List */}
-              <div className="p-4">
+              {/* Table-based Transaction List */}
+              <div className="overflow-x-auto">
                 {loading ? (
                   <div className="text-center py-12 text-gray-400">
                     <div className="animate-spin w-8 h-8 border-2 border-pink-400 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -385,87 +387,118 @@ export default function TransactionsPage() {
                     No transactions found for this period
                   </div>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {transactions.map((tx) => (
-                      <a
-                        key={tx.fullHash}
-                        href={getExplorerUrl(tx.network, tx.fullHash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-4 bg-slate-900/50 border border-slate-700/50 rounded-xl hover:border-pink-400/30 hover:bg-slate-800/50 transition-all duration-200 cursor-pointer group"
-                      >
-                        {/* Card Header */}
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{networkIcons[tx.network] || "🌐"}</span>
-                            <span className="text-xs text-gray-400 capitalize">{tx.network}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              tx.status === "success"
-                                ? "bg-green-500/20 text-green-400"
-                                : tx.status === "pending"
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-red-500/20 text-red-400"
-                            }`}>
-                              {tx.status}
-                            </span>
-                            <svg className="w-4 h-4 text-gray-500 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </div>
-                        </div>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-700/50">
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Transaction</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Amount</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">From / To</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Vendor</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Network</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Date & Time</th>
+                        <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700/30">
+                      {transactions.map((tx) => (
+                        <tr
+                          key={tx.fullHash}
+                          className="hover:bg-slate-800/30 transition-colors group cursor-pointer"
+                          onClick={() => window.open(getExplorerUrl(tx.network, tx.fullHash), '_blank')}
+                        >
+                          {/* Transaction Hash & Scheme */}
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-1">
+                              <code className="text-sm text-pink-400 font-mono group-hover:text-pink-300">{tx.hash}</code>
+                              <span className={`inline-flex w-fit px-2 py-0.5 rounded-md text-xs font-medium ${
+                                tx.scheme === "exact"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : "bg-purple-500/20 text-purple-400"
+                              }`}>
+                                {tx.scheme}
+                              </span>
+                            </div>
+                          </td>
 
-                        {/* Transaction Hash */}
-                        <div className="mb-3">
-                          <div className="text-xs text-gray-500 mb-1">Transaction Hash</div>
-                          <code className="text-sm text-pink-400 font-mono break-all">{tx.hash}</code>
-                        </div>
+                          {/* Amount & Gas */}
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-base font-semibold text-green-400">{tx.amount}</span>
+                              {tx.gasFee !== "-" && (
+                                <span className="text-xs text-orange-400">Gas: {tx.gasFee}</span>
+                              )}
+                            </div>
+                          </td>
 
-                        {/* Amount and Gas Fee */}
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">Amount</div>
-                            <div className="text-lg font-semibold text-green-400">{tx.amount}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">Gas Fee</div>
-                            <div className="text-sm text-orange-400">{tx.gasFee}</div>
-                          </div>
-                        </div>
+                          {/* From / To */}
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-1 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-500">From:</span>
+                                <code className="text-gray-300 font-mono">{tx.from}</code>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-500">To:</span>
+                                <code className="text-gray-300 font-mono">{tx.to}</code>
+                              </div>
+                            </div>
+                          </td>
 
-                        {/* From / To */}
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">From</div>
-                            <code className="text-xs text-gray-300 font-mono">{tx.from}</code>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">To</div>
-                            <code className="text-xs text-gray-300 font-mono">{tx.to}</code>
-                          </div>
-                        </div>
+                          {/* Vendor */}
+                          <td className="px-4 py-4">
+                            {tx.vendorDomain || tx.vendorEndpoint ? (
+                              <div className="flex flex-col gap-0.5">
+                                {tx.vendorDomain && (
+                                  <span className="text-sm text-cyan-400 font-medium">{tx.vendorDomain}</span>
+                                )}
+                                {tx.vendorEndpoint && (
+                                  <code className="text-xs text-gray-400 font-mono truncate max-w-[200px]" title={tx.vendorEndpoint}>
+                                    {tx.vendorEndpoint}
+                                  </code>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-sm">-</span>
+                            )}
+                          </td>
 
-                        {/* Date/Time */}
-                        <div className="mb-3">
-                          <div className="text-xs text-gray-500 mb-1">Date & Time</div>
-                          <div className="text-sm text-gray-300">{tx.datetime}</div>
-                          <div className="text-xs text-gray-500">{tx.timestamp}</div>
-                        </div>
+                          {/* Network */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{networkIcons[tx.network] || "🌐"}</span>
+                              <span className="text-sm text-gray-300 capitalize">{tx.network}</span>
+                            </div>
+                          </td>
 
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
-                          <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
-                            tx.scheme === "exact"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-purple-500/20 text-purple-400"
-                          }`}>
-                            {tx.scheme}
-                          </span>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+                          {/* Date & Time */}
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm text-gray-300">{tx.datetime}</span>
+                              <span className="text-xs text-gray-500">{tx.timestamp}</span>
+                            </div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                tx.status === "success"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : tx.status === "pending"
+                                  ? "bg-yellow-500/20 text-yellow-400"
+                                  : "bg-red-500/20 text-red-400"
+                              }`}>
+                                {tx.status}
+                              </span>
+                              <svg className="w-4 h-4 text-gray-500 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
 
                 {/* Pagination */}

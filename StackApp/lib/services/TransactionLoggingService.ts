@@ -113,6 +113,7 @@ export class TransactionLoggingService {
         chain_id: chainId,
         scheme: data.scheme,
         status: data.status,
+        created_at: new Date().toISOString(), // Timestamp for dashboard analytics
       };
 
       // Add optional fields only if they have values
