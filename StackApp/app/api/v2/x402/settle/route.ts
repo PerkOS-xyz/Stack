@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
     console.log("   Requirements Network:", body.paymentRequirements?.network);
     console.log("   Pay To:", body.paymentRequirements?.payTo);
     console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
+    console.log("   Resource:", typeof body.paymentRequirements?.resource === 'string'
+      ? body.paymentRequirements.resource
+      : JSON.stringify(body.paymentRequirements?.resource));
 
     // Extract payment details for receipt
     let paymentAmount: string | undefined;
@@ -51,8 +54,46 @@ export async function POST(request: NextRequest) {
       paymentAsset = body.paymentRequirements.asset;
     }
 
+    // Extract vendor domain from request headers for domain-based rules
+    // Priority: 1) Origin header, 2) Referer header, 3) resource URL from paymentRequirements
+    const origin = request.headers.get("origin");
+    const referer = request.headers.get("referer");
+    let vendorDomain: string | undefined;
+
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        vendorDomain = originUrl.host; // Includes port if present
+        console.log("   Vendor Domain (from Origin):", vendorDomain);
+      } catch { /* ignore parse errors */ }
+    } else if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        vendorDomain = refererUrl.host;
+        console.log("   Vendor Domain (from Referer):", vendorDomain);
+      } catch { /* ignore parse errors */ }
+    }
+
+    // Fallback: Extract domain from resource URL in paymentRequirements
+    // This handles server-to-server calls where Origin/Referer aren't present
+    if (!vendorDomain && body.paymentRequirements?.resource) {
+      try {
+        // Import the helper to get the resource URL (handles both V1 string and V2 object)
+        const { getResourceUrl } = await import("@/lib/types/x402");
+        const resourceUrlStr = getResourceUrl(body.paymentRequirements);
+        if (resourceUrlStr) {
+          const resourceUrl = new URL(resourceUrlStr);
+          vendorDomain = resourceUrl.host;
+          console.log("   Vendor Domain (from resource):", vendorDomain);
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
+    if (!vendorDomain) {
+      console.log("   Vendor Domain: N/A");
+    }
     console.log("\n⏳ Executing settlement...");
-    const result = await x402Service.settle(body);
+    const result = await x402Service.settle(body, vendorDomain);
 
     // Log result
     console.log("\n📤 Settle Result:");

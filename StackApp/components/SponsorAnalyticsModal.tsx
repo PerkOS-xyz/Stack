@@ -782,6 +782,9 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                       Recipient
                     </th>
                     <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
+                      Vendor
+                    </th>
+                    <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
                       Network
                     </th>
                     <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">
@@ -867,24 +870,26 @@ export function SponsorAnalyticsModal({ isOpen, onClose, wallet }: SponsorAnalyt
                               </span>
                               <CopyButton text={tx.recipient_address} />
                             </div>
-                          ) : tx.server_domain ? (
+                          ) : (
+                            <span className="text-gray-500 text-sm">N/A</span>
+                          )}
+                        </td>
+
+                        {/* Vendor */}
+                        <td className="px-4 py-3">
+                          {tx.server_domain ? (
                             <div>
-                              <a
-                                href={`https://${tx.server_domain}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-pink-400 hover:text-pink-300 transition-colors"
-                              >
+                              <span className="text-sm text-cyan-400 font-medium">
                                 {tx.server_domain}
-                              </a>
+                              </span>
                               {tx.server_endpoint && (
-                                <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                                <div className="text-xs text-gray-500 truncate max-w-[180px]" title={tx.server_endpoint}>
                                   {tx.server_endpoint}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-500 text-sm">N/A</span>
+                            <span className="text-gray-500 text-sm">-</span>
                           )}
                         </td>
 
