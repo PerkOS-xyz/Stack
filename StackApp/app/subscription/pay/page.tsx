@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useAccount, useWallet } from "@getpara/react-sdk";
-import { useViemClient } from "@getpara/react-sdk/evm/hooks";
+import { useWalletContext, useWalletClient, ACTIVE_PROVIDER } from "@/lib/wallet/client";
 import { Header } from "@/components/Header";
 import { useSubscription } from "@/lib/contexts/SubscriptionContext";
 import Link from "next/link";
@@ -102,9 +101,7 @@ const PAYMENT_NETWORKS = SUPPORTED_NETWORKS.filter((network) => {
 export default function SubscriptionPaymentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isConnected } = useAccount();
-  const { data: wallet } = useWallet();
-  const address = wallet?.address as `0x${string}` | undefined;
+  const { isConnected, address } = useWalletContext();
   const { refetch: refetchSubscription } = useSubscription();
 
   // Get tier and billing from query params
@@ -138,69 +135,32 @@ export default function SubscriptionPaymentPage() {
   // Get chain config for selected network
   const currentChain = getChainByNetwork(selectedNetwork);
 
-  // Para SDK viem client for signing
-  const { viemClient, isLoading: isViemClientLoading } = useViemClient({
-    address: address,
-    walletClientConfig: {
-      chain: currentChain,
-      transport: http(),
-    },
+  // Wallet client for signing (works with Para, Dynamic, or external wallets)
+  const {
+    walletClient,
+    account: walletAccount,
+    isLoading: isWalletClientLoading,
+    canSign,
+    isExternalWallet,
+  } = useWalletClient({
+    chain: currentChain!,
   });
 
-  // Debug: Log viem client and wallet state
+  // Debug: Log wallet client state
   useEffect(() => {
     console.log("[Payment] Wallet and client state:", {
-      isViemClientLoading,
-      hasViemClient: !!viemClient,
+      isWalletClientLoading,
+      hasWalletClient: !!walletClient,
+      hasAccount: !!walletAccount,
       address,
       hasChain: !!currentChain,
       chainId: currentChain?.id,
-      walletType: wallet?.type,
-      isExternalWallet: (wallet as any)?.isExternal,
-      hasWindowEthereum: typeof window !== "undefined" && !!(window as any).ethereum,
+      canSign,
+      isExternalWallet,
+      provider: ACTIVE_PROVIDER,
+      hasWindowEthereum: typeof window !== "undefined" && !!(window as { ethereum?: object }).ethereum,
     });
-  }, [isViemClientLoading, viemClient, address, currentChain, wallet]);
-
-  // Check if wallet is external (requires browser wallet signing)
-  const isExternalWallet = !viemClient && !isViemClientLoading && isConnected;
-
-  // Create fallback wallet client for external wallets using window.ethereum
-  const [externalWalletClient, setExternalWalletClient] = useState<WalletClient | null>(null);
-
-  useEffect(() => {
-    async function setupExternalWalletClient() {
-      if (!isExternalWallet || !currentChain || !address) {
-        setExternalWalletClient(null);
-        return;
-      }
-
-      // Check if window.ethereum is available
-      if (typeof window === "undefined" || !(window as any).ethereum) {
-        console.log("[Payment] No window.ethereum available for external wallet");
-        setExternalWalletClient(null);
-        return;
-      }
-
-      try {
-        console.log("[Payment] Creating external wallet client...");
-        const client = createWalletClient({
-          chain: currentChain,
-          transport: custom((window as any).ethereum),
-          account: address,
-        });
-        setExternalWalletClient(client);
-        console.log("[Payment] External wallet client created successfully");
-      } catch (err) {
-        console.error("[Payment] Failed to create external wallet client:", err);
-        setExternalWalletClient(null);
-      }
-    }
-
-    setupExternalWalletClient();
-  }, [isExternalWallet, currentChain, address]);
-
-  // Determine which signing method to use
-  const canSign = !!(viemClient || externalWalletClient);
+  }, [isWalletClientLoading, walletClient, walletAccount, address, currentChain, canSign, isExternalWallet]);
 
   // Validate tier
   const isValidTier = tierParam && getAllTiers().includes(tierParam) && tierParam !== "free" && tierParam !== "enterprise";
@@ -394,23 +354,16 @@ export default function SubscriptionPaymentPage() {
           validAfter: authorization.validAfter.toString(),
           validBefore: authorization.validBefore.toString(),
         },
-        signingMethod: viemClient ? "para" : "external",
+        signingMethod: walletAccount ? "account" : "walletClient",
+        provider: ACTIVE_PROVIDER,
+        isExternalWallet,
       });
 
       let signature: `0x${string}`;
 
-      // Sign the payment authorization
-      if (viemClient) {
-        // Use Para's viem client for embedded wallets
-        signature = await viemClient.account.signTypedData({
-          domain,
-          types: TRANSFER_WITH_AUTHORIZATION_TYPES,
-          primaryType: "TransferWithAuthorization",
-          message: authorization,
-        });
-      } else if (externalWalletClient) {
-        // For external wallets, ensure we're on the correct chain first
-        const ethereum = (window as any).ethereum;
+      // For external wallets, ensure we're on the correct chain first
+      if (isExternalWallet) {
+        const ethereum = (window as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum;
         if (ethereum) {
           try {
             // Request chain switch to match the selected network
@@ -421,9 +374,10 @@ export default function SubscriptionPaymentPage() {
               params: [{ chainId: chainIdHex }],
             });
             console.log("[Payment] Chain switch successful");
-          } catch (switchError: any) {
+          } catch (switchError: unknown) {
+            const error = switchError as { code?: number };
             // If chain doesn't exist in wallet, try to add it
-            if (switchError.code === 4902) {
+            if (error.code === 4902) {
               console.log("[Payment] Chain not found, attempting to add...");
               const chain = getChainByNetwork(selectedNetwork);
               if (chain) {
@@ -438,7 +392,7 @@ export default function SubscriptionPaymentPage() {
                   }],
                 });
               }
-            } else if (switchError.code === 4001) {
+            } else if (error.code === 4001) {
               // User rejected the switch
               throw new Error("Please switch to the correct network in your wallet");
             } else {
@@ -447,9 +401,20 @@ export default function SubscriptionPaymentPage() {
             }
           }
         }
+      }
 
-        // Use external wallet client for browser wallets (MetaMask, etc.)
-        signature = await externalWalletClient.signTypedData({
+      // Sign the payment authorization using the unified wallet client
+      if (walletAccount) {
+        // Para SDK provides an account object with signTypedData
+        signature = await walletAccount.signTypedData({
+          domain,
+          types: TRANSFER_WITH_AUTHORIZATION_TYPES,
+          primaryType: "TransferWithAuthorization",
+          message: authorization,
+        });
+      } else if (walletClient) {
+        // Use wallet client for Dynamic or external wallets
+        signature = await walletClient.signTypedData({
           account: address,
           domain,
           types: TRANSFER_WITH_AUTHORIZATION_TYPES,
@@ -948,7 +913,7 @@ export default function SubscriptionPaymentPage() {
                               <p className="text-white font-mono text-sm">
                                 {address?.slice(0, 6)}...{address?.slice(-4)}
                               </p>
-                              <p className="text-slate-500 text-xs">Para Wallet</p>
+                              <p className="text-slate-500 text-xs capitalize">{ACTIVE_PROVIDER} Wallet</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 rounded-full">
@@ -1037,7 +1002,7 @@ export default function SubscriptionPaymentPage() {
                         )}
 
                         {/* Wallet client initialization warning */}
-                        {!isViemClientLoading && !canSign && isConnected && (
+                        {!isWalletClientLoading && !canSign && isConnected && (
                           <div className="mt-3 pt-3 border-t border-slate-700/30">
                             <p className="text-amber-400 text-sm flex items-center">
                               <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1198,14 +1163,14 @@ export default function SubscriptionPaymentPage() {
                         {/* Pay Button */}
                         <button
                           onClick={handlePayment}
-                          disabled={!hasSufficientBalance || isProcessing || isSigning || !paymentReceiver || !canSign || isViemClientLoading}
+                          disabled={!hasSufficientBalance || isProcessing || isSigning || !paymentReceiver || !canSign || isWalletClientLoading}
                           className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all ${
-                            hasSufficientBalance && !isProcessing && !isSigning && paymentReceiver && canSign && !isViemClientLoading
+                            hasSufficientBalance && !isProcessing && !isSigning && paymentReceiver && canSign && !isWalletClientLoading
                               ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30"
                               : "bg-slate-800 text-slate-500 cursor-not-allowed"
                           }`}
                         >
-                          {isViemClientLoading ? (
+                          {isWalletClientLoading ? (
                             <span className="flex items-center justify-center">
                               <svg className="animate-spin -ml-1 mr-2.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 export const dynamic = "force-dynamic";
-import { useWallet, useModal } from "@getpara/react-sdk";
+import { useWalletContext, useWalletModal } from "@/lib/wallet/client";
 import { toast, Toaster } from 'sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -121,10 +121,8 @@ const TIER_STYLES = {
 } as const;
 
 export default function ProfilePage() {
-  const { data: wallet } = useWallet();
-  const { openModal } = useModal();
-  const address = wallet?.address;
-  const isConnected = !!wallet;
+  const { address, isConnected } = useWalletContext();
+  const { openModal } = useWalletModal();
 
   // Subscription state
   const { tier, tierConfig, subscription, isLoading: subscriptionLoading, refetch: refetchSubscription } = useSubscription();

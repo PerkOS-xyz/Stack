@@ -9,7 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
-import { useAccount } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import Link from "next/link";
 
 // Types for API response
@@ -76,7 +76,7 @@ const getExplorerUrl = (network: string, hash: string): string => {
 };
 
 export default function Home() {
-  const { isConnected } = useAccount();
+  const { isConnected } = useWalletContext();
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
   const [loading, setLoading] = useState(true);

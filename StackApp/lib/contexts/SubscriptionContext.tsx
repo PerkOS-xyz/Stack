@@ -9,7 +9,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useAccount, useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import type { SubscriptionTier, TierConfig } from "@/lib/config/subscriptions";
 import { SUBSCRIPTION_TIERS } from "@/lib/config/subscriptions";
 
@@ -51,9 +51,7 @@ interface SubscriptionProviderProps {
 }
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { isConnected } = useAccount();
-  const { data: wallet } = useWallet();
-  const address = wallet?.address as `0x${string}` | undefined;
+  const { isConnected, address } = useWalletContext();
 
   const [tier, setTier] = useState<SubscriptionTier>("free");
   const [tierConfig, setTierConfig] = useState<TierConfig | null>(SUBSCRIPTION_TIERS.free);

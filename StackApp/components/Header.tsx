@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useModal, useAccount, useWallet, useLogout } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
@@ -46,17 +46,11 @@ export function Header() {
   const [hasSponsorWallet, setHasSponsorWallet] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Para SDK hooks
-  const { openModal } = useModal();
-  const { data: wallet } = useWallet();
-  const { isConnected } = useAccount();
-  const { logout } = useLogout();
+  // Wallet abstraction hooks - works with Para, Dynamic, or any configured provider
+  const { openModal, isConnected, address, disconnect } = useWalletContext();
 
   // Subscription context - centralized to prevent duplicate API calls
   const { tier: subscriptionTier } = useSubscription();
-
-  // Get address from wallet
-  const address = wallet?.address as `0x${string}` | undefined;
 
   const pathname = usePathname();
   const router = useRouter();
@@ -70,6 +64,16 @@ export function Header() {
         setEnsAvatar(null);
         return;
       }
+
+      // Validate that we have an EVM address (starts with 0x)
+      // This prevents ENS lookup errors when a non-EVM address (e.g., Solana) is provided
+      if (!address.startsWith("0x") || address.length !== 42) {
+        console.warn("[Header] Skipping ENS lookup for non-EVM address:", address);
+        setEnsName(null);
+        setEnsAvatar(null);
+        return;
+      }
+
       try {
         // Reverse lookup ENS name
         const name = await ensClient.getEnsName({
@@ -141,6 +145,24 @@ export function Header() {
         if (profileRes?.ok) {
           const data = await profileRes.json();
           setUserAvatar(data.profile?.avatar_url || null);
+
+          // Auto-create profile if it doesn't exist (for new users)
+          if (!data.exists && address) {
+            console.log("[Header] Creating profile for new user:", address);
+            try {
+              await fetch("/api/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  walletAddress: address,
+                  accountType: "personal",
+                  isPublic: true,
+                }),
+              });
+            } catch (err) {
+              console.error("[Header] Failed to auto-create profile:", err);
+            }
+          }
         }
 
         // Process wallets response
@@ -197,6 +219,16 @@ export function Header() {
   // Get avatar: profile avatar > ENS avatar > null
   const getAvatar = () => {
     return userAvatar || ensAvatar || null;
+  };
+
+  // Get avatar initials from address (handles both EVM and Solana)
+  const getAvatarInitials = (addr: string) => {
+    // For EVM addresses (0x prefixed), skip the 0x prefix
+    if (addr.startsWith("0x") && addr.length === 42) {
+      return addr.slice(2, 4).toUpperCase();
+    }
+    // For Solana or other addresses, use first 2 characters
+    return addr.slice(0, 2).toUpperCase();
   };
 
   const isActive = (href: string) => pathname === href;
@@ -288,7 +320,7 @@ export function Header() {
 
           {/* Right Side - User Menu or Connect Button */}
           {isConnected && address ? (
-            // Logged in - show tier badge and user dropdown
+            // Logged in with wallet - show tier badge and user dropdown
             <div className="flex items-center space-x-2">
               {/* Subscription Tier Badge */}
               <Link
@@ -313,7 +345,7 @@ export function Header() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    address.slice(2, 4).toUpperCase()
+                    getAvatarInitials(address)
                   )}
                 </div>
                 <span className="text-gray-200 text-sm font-medium hidden sm:block max-w-[140px] truncate">
@@ -343,7 +375,7 @@ export function Header() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          address.slice(2, 4).toUpperCase()
+                          getAvatarInitials(address)
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -421,8 +453,8 @@ export function Header() {
                   {/* Logout */}
                   <div className="border-t border-blue-500/20 py-2">
                     <button
-                      onClick={() => {
-                        logout();
+                      onClick={async () => {
+                        await disconnect();
                         setUserMenuOpen(false);
                         router.push("/");
                       }}
@@ -438,8 +470,30 @@ export function Header() {
               )}
               </div>
             </div>
+          ) : isConnected && !address ? (
+            // Logged in but no wallet linked - show Link Wallet button and logout option
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => openModal()}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-lg transition-all"
+              >
+                Link Wallet
+              </button>
+              <button
+                onClick={async () => {
+                  await disconnect();
+                  router.push("/");
+                }}
+                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                title="Logout"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
           ) : (
-            // Not logged in - show Para Connect button
+            // Not logged in - show Sign In button
             <button
               onClick={() => openModal()}
               className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
@@ -453,7 +507,23 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-blue-500/20">
             <nav className="flex flex-col space-y-2">
-              {/* User menu items (only when logged in) */}
+              {/* Link Wallet prompt (logged in but no wallet) */}
+              {isConnected && !address && (
+                <>
+                  <button
+                    onClick={() => {
+                      openModal();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-sm bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/30 rounded-lg transition-all flex items-center space-x-3 text-orange-400 w-full text-left"
+                  >
+                    <span>🔗</span>
+                    <span>Link Wallet to Continue</span>
+                  </button>
+                  <div className="border-t border-blue-500/20 my-2"></div>
+                </>
+              )}
+              {/* User menu items (only when logged in with wallet) */}
               {isConnected && address && (
                 <>
                   {userMenuItems.map((item) => {

@@ -100,11 +100,11 @@ export class TransactionLoggingService {
         scheme: data.scheme,
       });
 
-      const { error } = await firebaseAdmin.from("perkos_x402_transactions").insert({
+      // Build insert object, filtering out undefined values (Firestore doesn't allow undefined)
+      const insertData: Record<string, unknown> = {
         transaction_hash: data.transactionHash,
         payer_address: data.payerAddress.toLowerCase(),
         recipient_address: data.recipientAddress.toLowerCase(),
-        sponsor_address: data.sponsorAddress?.toLowerCase(),
         amount_wei: data.amountWei,
         amount_usd: amountUsd,
         asset_address: data.assetAddress.toLowerCase(),
@@ -112,13 +112,18 @@ export class TransactionLoggingService {
         network: data.network,
         chain_id: chainId,
         scheme: data.scheme,
-        vendor_domain: data.vendorDomain,
-        vendor_endpoint: data.vendorEndpoint,
         status: data.status,
-        error_message: data.errorMessage,
-        gas_fee_wei: data.gasFeeWei,
-        gas_fee_usd: data.gasFeeUsd,
-      });
+      };
+
+      // Add optional fields only if they have values
+      if (data.sponsorAddress) insertData.sponsor_address = data.sponsorAddress.toLowerCase();
+      if (data.vendorDomain) insertData.vendor_domain = data.vendorDomain;
+      if (data.vendorEndpoint) insertData.vendor_endpoint = data.vendorEndpoint;
+      if (data.errorMessage) insertData.error_message = data.errorMessage;
+      if (data.gasFeeWei) insertData.gas_fee_wei = data.gasFeeWei;
+      if (data.gasFeeUsd !== undefined) insertData.gas_fee_usd = data.gasFeeUsd;
+
+      const { error } = await firebaseAdmin.from("perkos_x402_transactions").insert(insertData);
 
       if (error) {
         // Check if it's a duplicate (transaction already logged)
@@ -161,16 +166,22 @@ export class TransactionLoggingService {
         transactionHash: data.transactionHash,
       });
 
-      const { error } = await firebaseAdmin.from("perkos_sponsor_spending").insert({
+      // Build insert object, filtering out undefined values (Firestore doesn't allow undefined)
+      const insertData: Record<string, unknown> = {
         sponsor_wallet_id: data.sponsorWalletId,
         amount_wei: data.amountWei,
         agent_address: data.agentAddress.toLowerCase(),
         transaction_hash: data.transactionHash,
-        server_domain: data.serverDomain,
-        server_endpoint: data.serverEndpoint,
         chain_id: data.chainId.toString(),
         network_name: data.networkName,
-      });
+        spent_at: new Date().toISOString(), // Timestamp for analytics ordering
+      };
+
+      // Add optional fields only if they have values
+      if (data.serverDomain) insertData.server_domain = data.serverDomain;
+      if (data.serverEndpoint) insertData.server_endpoint = data.serverEndpoint;
+
+      const { error } = await firebaseAdmin.from("perkos_sponsor_spending").insert(insertData);
 
       if (error) {
         logger.error("Failed to log sponsor spending", {

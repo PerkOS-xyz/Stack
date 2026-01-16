@@ -1,6 +1,6 @@
 'use client';
 
-import { useWallet, useModal } from "@getpara/react-sdk";
+import { useWalletContext, useWalletModal } from "@/lib/wallet/client";
 import { useState, useEffect } from 'react';
 
 export const dynamic = "force-dynamic";
@@ -9,6 +9,7 @@ import { AddressDisplay } from '@/components/AddressDisplay';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { NetworkBalanceGrid } from "@/components/NetworkBalanceGrid";
+import { SponsorAnalyticsModal } from "@/components/SponsorAnalyticsModal";
 import type { Address } from 'viem';
 import Link from 'next/link';
 
@@ -103,10 +104,8 @@ interface AnalyticsSummary {
 }
 
 export default function DashboardPage() {
-  const { data: wallet } = useWallet();
-  const { openModal } = useModal();
-  const address = wallet?.address;
-  const isConnected = !!wallet;
+  const { address, isConnected } = useWalletContext();
+  const { openModal } = useWalletModal();
 
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -771,7 +770,7 @@ export default function DashboardPage() {
               <span className="text-blue-400">⟠ EVM</span> works on all networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
             </p>
             <p className="text-xs text-gray-500 mt-1 text-center">
-              <span className="text-purple-400">◎ Solana</span> available • <span className="text-indigo-400/60">⚛ Cosmos</span> coming soon
+              <span className="text-purple-400/60">◎ Solana</span> coming soon
             </p>
           </div>
 
@@ -1091,7 +1090,7 @@ export default function DashboardPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">1.</span>
-              <span>Create an <span className="text-blue-400">⟠ EVM</span> or <span className="text-purple-400">◎ Solana</span> sponsor wallet - <strong className="text-cyan-400">EVM address works on all EVM networks</strong></span>
+              <span>Create an <span className="text-blue-400">⟠ EVM</span> sponsor wallet - <strong className="text-cyan-400">One address works on all EVM networks</strong></span>
             </li>
             <li className="flex items-start">
               <span className="font-bold mr-2 text-cyan-400">2.</span>
@@ -1108,10 +1107,10 @@ export default function DashboardPage() {
           </ol>
           <div className="mt-4 pt-4 border-t border-blue-500/20">
             <p className="text-xs text-gray-400">
-              <strong className="text-cyan-400">EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+              <strong className="text-cyan-400">Supported EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
             </p>
-            <p className="text-xs text-gray-400 mt-1">
-              <strong className="text-purple-400">Solana:</strong> Mainnet, Devnet
+            <p className="text-xs text-gray-500 mt-1">
+              <strong className="text-purple-400/60">Solana:</strong> Coming soon
             </p>
           </div>
         </div>
@@ -1168,7 +1167,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-medium text-gray-300 mb-3">
                     Wallet Type
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* EVM - Available */}
                     <button
                       onClick={() => setNewWalletType('evm')}
@@ -1186,41 +1185,24 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </button>
-                    {/* Solana - Available */}
-                    <button
-                      onClick={() => setNewWalletType('solana')}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        newWalletType === 'solana'
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-slate-600 bg-slate-900/50 hover:border-purple-500/50'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="text-2xl">◎</span>
-                        <div className="text-center">
-                          <p className={`font-medium text-sm ${newWalletType === 'solana' ? 'text-purple-400' : 'text-gray-300'}`}>Solana</p>
-                          <p className="text-xs text-gray-500">SOL Network</p>
-                        </div>
-                      </div>
-                    </button>
-                    {/* Cosmos - Coming Soon (Para SDK limitation) */}
+                    {/* Solana - Coming Soon */}
                     <div className="relative">
-                      <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50">
+                      <div className="p-4 rounded-xl border-2 border-slate-700 bg-slate-900/30 opacity-50 cursor-not-allowed">
                         <div className="flex flex-col items-center gap-2">
-                          <span className="text-2xl grayscale">⚛</span>
+                          <span className="text-2xl">◎</span>
                           <div className="text-center">
-                            <p className="font-medium text-sm text-gray-500">Cosmos</p>
-                            <p className="text-xs text-gray-600">IBC Network</p>
+                            <p className="font-medium text-sm text-gray-500">Solana</p>
+                            <p className="text-xs text-gray-600">SOL Network</p>
                           </div>
                         </div>
                       </div>
-                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full text-[10px] font-medium text-white shadow-lg">
+                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-[10px] font-medium text-white shadow-lg">
                         Soon
                       </div>
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Cosmos wallet pregeneration coming soon
+                    Solana wallet pregeneration coming soon
                   </p>
                 </div>
 
@@ -1956,231 +1938,17 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Analytics Modal */}
-        {showAnalyticsModal && selectedWallet && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 border border-blue-500/30 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-b border-blue-500/20 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                      Gas Payment Analytics
-                    </h2>
-                    <p className="text-gray-400 text-sm mt-1">
-                      Network: <span className="text-cyan-400 font-medium">{selectedWallet.network}</span>
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowAnalyticsModal(false);
-                      setSelectedWallet(null);
-                      setTransactions([]);
-                    }}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Filters and Summary */}
-              <div className="border-b border-blue-500/20 p-6 space-y-4">
-                {/* Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Time Period Filter */}
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-2">Time Period</label>
-                    <select
-                      value={filterPeriod}
-                      onChange={(e) => {
-                        setFilterPeriod(e.target.value as any);
-                        setTimeout(handleFilterChange, 100);
-                      }}
-                      className="w-full bg-slate-700 border border-slate-600 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                    >
-                      <option value="24h">Last 24 Hours</option>
-                      <option value="week">Last Week</option>
-                      <option value="3months">Last 3 Months</option>
-                      <option value="all">All Time</option>
-                    </select>
-                  </div>
-
-                  {/* Chain Filter */}
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-2">Blockchain</label>
-                    <select
-                      value={filterChainId}
-                      onChange={(e) => {
-                        setFilterChainId(e.target.value);
-                        setTimeout(handleFilterChange, 100);
-                      }}
-                      className="w-full bg-slate-700 border border-slate-600 text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                    >
-                      <option value="all">All Chains</option>
-                      <option value="43114">Avalanche C-Chain</option>
-                      <option value="43113">Avalanche Fuji</option>
-                      <option value="8453">Base</option>
-                      <option value="84532">Base Sepolia</option>
-                    </select>
-                  </div>
-
-                  {/* Summary Stats */}
-                  <div className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 rounded-lg p-3">
-                    <p className="text-xs text-gray-400 mb-1">Total Gas Paid</p>
-                    {summary && (
-                      <p className="text-lg font-bold text-cyan-400">
-                        {(Number(summary.totalGasPaidWei) / 1e18).toFixed(8)} {selectedWallet?.network === 'avalanche' ? 'AVAX' : selectedWallet?.network === 'base' ? 'ETH' : selectedWallet?.network === 'celo' ? 'CELO' : 'ETH'}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">
-                      {summary?.totalTransactions || 0} transaction{(summary?.totalTransactions || 0) !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                {loadingTransactions ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-cyan-400 border-r-transparent"></div>
-                    <p className="text-gray-400 mt-4">Loading transactions...</p>
-                  </div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-lg">No transactions yet</p>
-                    <p className="text-sm mt-2 text-gray-500">Sponsored transactions will appear here</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4 hover:bg-slate-700/50 transition-all"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {/* Agent Wallet */}
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">Agent Wallet</p>
-                            {tx.agent_address ? (
-                              <AddressDisplay address={tx.agent_address as Address} />
-                            ) : (
-                              <p className="text-gray-500 text-sm">N/A</p>
-                            )}
-                          </div>
-
-                          {/* Amount */}
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">Gas Fee Paid</p>
-                            <p className="text-cyan-400 font-mono text-sm">
-                              {(Number(tx.amount_wei) / 1e18).toFixed(8)} {tx.network_name === 'avalanche' || tx.chain_id === '43114' ? 'AVAX' : tx.network_name === 'base' || tx.chain_id === '8453' ? 'ETH' : tx.network_name === 'celo' || tx.chain_id === '42220' ? 'CELO' : selectedWallet?.network === 'avalanche' ? 'AVAX' : 'ETH'}
-                            </p>
-                          </div>
-
-                          {/* Vendor URL */}
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">Vendor</p>
-                            {tx.server_domain ? (
-                              <a
-                                href={`https://${tx.server_domain}${tx.server_endpoint || ''}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-cyan-400 hover:text-cyan-300 text-sm font-mono truncate block transition-colors"
-                              >
-                                {tx.server_domain}
-                              </a>
-                            ) : (
-                              <p className="text-gray-500 text-sm">N/A</p>
-                            )}
-                            {tx.server_endpoint && (
-                              <p className="text-gray-500 text-xs mt-1 truncate">{tx.server_endpoint}</p>
-                            )}
-                          </div>
-
-                          {/* Chain & Time */}
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">Chain & Time</p>
-                            <p className="text-gray-200 text-sm">
-                              {tx.network_name || `Chain ${tx.chain_id || 'Unknown'}`}
-                            </p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              {new Date(tx.spent_at).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Transaction Hash */}
-                        {tx.transaction_hash && (
-                          <div className="mt-3 pt-3 border-t border-slate-600/30">
-                            <p className="text-xs text-gray-400 mb-1">Transaction Hash</p>
-                            <a
-                              href={`https://snowtrace.io/tx/${tx.transaction_hash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-cyan-400 hover:text-cyan-300 font-mono text-xs break-all transition-colors"
-                            >
-                              {tx.transaction_hash}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer with Pagination */}
-              <div className="sticky bottom-0 bg-slate-800 border-t border-blue-500/20 p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  {/* Pagination Info */}
-                  <div className="flex items-center space-x-4">
-                    <p className="text-sm text-gray-400">
-                      Page <span className="text-cyan-400 font-medium">{currentPage + 1}</span> of <span className="text-cyan-400 font-medium">{totalPages || 1}</span>
-                    </p>
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 0}
-                          className="px-3 py-1 bg-slate-700 border border-slate-600 text-gray-300 rounded-lg text-sm hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage >= totalPages - 1}
-                          className="px-3 py-1 bg-slate-700 border border-slate-600 text-gray-300 rounded-lg text-sm hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Close Button */}
-                  <button
-                    onClick={() => {
-                      setShowAnalyticsModal(false);
-                      setSelectedWallet(null);
-                      setTransactions([]);
-                      setSummary(null);
-                    }}
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium py-3 px-8 rounded-lg transition-all"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Analytics Modal - Using new component */}
+        <SponsorAnalyticsModal
+          isOpen={showAnalyticsModal}
+          onClose={() => {
+            setShowAnalyticsModal(false);
+            setSelectedWallet(null);
+            setTransactions([]);
+            setSummary(null);
+          }}
+          wallet={selectedWallet}
+        />
 
         <Footer />
       </div>

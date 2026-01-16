@@ -318,6 +318,76 @@ export class ParaService {
   }
 
   /**
+   * Gets a Solana signer for a Para wallet
+   *
+   * @param walletId - Para wallet ID
+   * @param userShare - User share for signing
+   * @returns Solana signer object with signTransaction method
+   */
+  async getSolanaSigner(walletId: string, userShare?: string): Promise<{
+    signTransaction: (transaction: import("@solana/web3.js").Transaction) => Promise<import("@solana/web3.js").Transaction>;
+    publicKey: import("@solana/web3.js").PublicKey;
+  }> {
+    try {
+      const { Transaction, PublicKey } = await import("@solana/web3.js");
+
+      // Set user share if provided
+      if (userShare) {
+        await this.para.setUserShare(userShare);
+      }
+
+      // Get the wallet to get its address
+      const wallets = await this.para.getPregenWallets({});
+      const wallet = wallets.find(w => w.id === walletId);
+      if (!wallet || !wallet.address) {
+        throw new Error(`Wallet ${walletId} not found`);
+      }
+
+      const publicKey = new PublicKey(wallet.address);
+
+      return {
+        publicKey,
+        signTransaction: async (transaction: import("@solana/web3.js").Transaction) => {
+          // Serialize the transaction to base64
+          const serializedMessage = transaction.serializeMessage();
+          const messageBase64 = Buffer.from(serializedMessage).toString('base64');
+
+          console.log(`[ParaService] Signing Solana transaction for wallet ${walletId}`);
+
+          // Sign the transaction using Para
+          const signResult = await this.para.signMessage({
+            walletId,
+            messageBase64,
+          });
+
+          // Extract signature from result
+          let signatureBase64: string;
+          if (typeof signResult === 'string') {
+            signatureBase64 = signResult;
+          } else if (signResult && typeof signResult === 'object' && 'signature' in signResult) {
+            signatureBase64 = (signResult as { signature: string }).signature;
+          } else {
+            throw new Error('Unexpected sign response format');
+          }
+
+          // Convert base64 signature to Uint8Array
+          const signatureBuffer = Buffer.from(signatureBase64, 'base64');
+
+          // Add signature to transaction
+          transaction.addSignature(publicKey, signatureBuffer);
+
+          return transaction;
+        },
+      };
+    } catch (error) {
+      console.error("Error getting Solana signer:", error);
+      throw new Error(
+        `Failed to get Solana signer: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
    * Gets the Para client instance for advanced operations
    */
   getClient(): Para {
