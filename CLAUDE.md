@@ -860,6 +860,23 @@ npm run build
 npm start
 ```
 
+### Bundle Analysis
+
+To analyze bundle size and identify heavy dependencies:
+
+```bash
+cd StackApp
+ANALYZE=true npm run build
+```
+
+This opens an interactive visualization in your browser showing what's in each bundle. Use this to:
+- Identify large dependencies that may need optimization
+- Find duplicate packages
+- Verify code splitting is working correctly
+- Track bundle size changes over time
+
+**Note**: The `@next/bundle-analyzer` package is a devDependency and only runs locally. It is not included in production builds.
+
 ### Smart Contract Development
 
 ```bash

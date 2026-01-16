@@ -142,6 +142,22 @@ npm run dev
 
 Visit [http://localhost:3402](http://localhost:3402)
 
+### 4. Build for Production
+
+```bash
+npm run build
+```
+
+### 5. Bundle Analysis (Optional)
+
+To analyze bundle size and identify heavy dependencies:
+
+```bash
+ANALYZE=true npm run build
+```
+
+This opens an interactive visualization showing what's in each bundle.
+
 ## API Reference
 
 ### x402 V2 Protocol Endpoints
