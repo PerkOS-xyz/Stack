@@ -51,8 +51,18 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/sponsor/wallets
- * Creates a new sponsor wallet via the active wallet provider (Dynamic or Para)
- * Supports multiple wallets per user with naming and public/private visibility
+ * Creates a SERVER WALLET for the user - fully controlled by the app.
+ *
+ * Architecture:
+ * - User logs in with embedded wallet (user controls)
+ * - User creates sponsor wallets from dashboard
+ * - Sponsor wallets are SERVER WALLETS (app has full control)
+ * - App can sign transactions without user permission
+ * - Each sponsor wallet is assigned to the user in the database
+ *
+ * Requirements:
+ * - Dynamic Dashboard: "Multiple embedded wallets per chain" must be ENABLED
+ * - This allows creating unique server wallets for each user
  */
 export async function POST(req: NextRequest) {
   try {
@@ -98,7 +108,7 @@ export async function POST(req: NextRequest) {
     const { getServerWalletService } = await import("@/lib/wallet/server");
     const { ACTIVE_PROVIDER } = await import("@/lib/wallet/config");
 
-    // Get the active wallet service (Dynamic or Para based on NEXT_PUBLIC_WALLET_PROVIDER)
+    // Get the wallet service
     const walletService = await getServerWalletService();
 
     if (!walletService.isInitialized()) {
@@ -109,27 +119,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[Sponsor Wallets] Creating ${network} wallet using ${ACTIVE_PROVIDER} provider`);
+    console.log(`[Sponsor Wallets] Creating server wallet for user ${userWalletAddress}`);
+    console.log(`[Sponsor Wallets] Network: ${network}, Provider: ${ACTIVE_PROVIDER}`);
 
-    // Create server-controlled sponsor wallet using the active provider
+    // Create a NEW server wallet for this user
+    // With "Multiple embedded wallets per chain" enabled in Dynamic Dashboard,
+    // each call creates a unique wallet that the APP fully controls
     const sponsorWallet = await walletService.createWallet(
-      userWalletAddress,
+      userWalletAddress, // Associate with user for tracking
       network as "evm" | "solana"
     );
 
-    // Store wallet in database
-    // - para_wallet_id stores the provider's wallet ID (works with any provider)
-    // - para_user_share stores key material (userShare for Para, keyMaterial for Dynamic)
-    // Note: Field names kept as para_* for backward compatibility
+    console.log(`[Sponsor Wallets] Server wallet created: ${sponsorWallet.address}`);
+
+    // Store the server wallet in database, assigned to the user
+    // - para_wallet_id: Dynamic wallet ID for server-side signing
+    // - para_user_share: Key material (externalServerKeyShares) for signing
+    // - sponsor_address: The wallet's EOA address
     const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
         network,
-        wallet_type: sponsorWallet.walletType, // EVM or SOLANA
-        para_wallet_id: sponsorWallet.walletId, // Provider wallet ID for signing
-        para_user_share: sponsorWallet.keyMaterial, // Key material for server-side signing
-        sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains) or Solana address
+        wallet_type: sponsorWallet.walletType,
+        para_wallet_id: sponsorWallet.walletId,
+        para_user_share: sponsorWallet.keyMaterial,
+        sponsor_address: sponsorWallet.address,
         balance: "0",
         wallet_name: finalWalletName,
         is_public: isPublic,
@@ -141,22 +156,23 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("Error storing sponsor wallet:", error);
       return NextResponse.json(
-        { error: "Failed to create wallet" },
+        { error: "Failed to store wallet" },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Sponsor wallet created successfully:`);
+    console.log(`✅ Server wallet created and assigned to user:`);
     console.log(`   Provider: ${ACTIVE_PROVIDER}`);
+    console.log(`   User: ${userWalletAddress}`);
     console.log(`   Name: ${finalWalletName}`);
     console.log(`   Address: ${sponsorWallet.address}`);
     console.log(`   Wallet ID: ${sponsorWallet.walletId}`);
-    console.log(`   Network: ${network} (works on all EVM chains)`);
+    console.log(`   Network: ${network}`);
     console.log(`   Public: ${isPublic}`);
 
     return NextResponse.json({
       wallet,
-      message: "Sponsor wallet created successfully",
+      message: "Server wallet created successfully",
     });
   } catch (error) {
     console.error("Error in POST /api/sponsor/wallets:", error);
