@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
@@ -42,9 +42,7 @@ interface SubscriptionStatus {
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const { isConnected } = useAccount();
-  const { data: wallet } = useWallet();
-  const address = wallet?.address as `0x${string}` | undefined;
+  const { isConnected, address } = useWalletContext();
 
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);

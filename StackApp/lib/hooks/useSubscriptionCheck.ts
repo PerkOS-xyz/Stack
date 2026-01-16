@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAccount, useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 
 /**
  * Hook to check and initialize user subscription on login
@@ -10,9 +10,7 @@ import { useAccount, useWallet } from "@getpara/react-sdk";
  * If no subscription exists, a free tier subscription is automatically created.
  */
 export function useSubscriptionCheck() {
-  const { isConnected } = useAccount();
-  const { data: wallet } = useWallet();
-  const address = wallet?.address as `0x${string}` | undefined;
+  const { isConnected, address } = useWalletContext();
 
   // Track if we've already checked for this address to prevent duplicate calls
   const checkedAddressRef = useRef<string | null>(null);

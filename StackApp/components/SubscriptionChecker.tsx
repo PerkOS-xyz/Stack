@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAccount, useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 
 /**
  * Component that checks and initializes user subscription on wallet connection
@@ -9,12 +9,10 @@ import { useAccount, useWallet } from "@getpara/react-sdk";
  * This component monitors wallet connection and ensures users have a subscription.
  * If no subscription exists, a free tier subscription is automatically created.
  *
- * Place this component inside the ParaProvider to access wallet hooks.
+ * Place this component inside the WalletProvider to access wallet hooks.
  */
 export function SubscriptionChecker() {
-  const { isConnected } = useAccount();
-  const { data: wallet } = useWallet();
-  const address = wallet?.address as `0x${string}` | undefined;
+  const { isConnected, address } = useWalletContext();
 
   // Track if we've already checked for this address to prevent duplicate calls
   const checkedAddressRef = useRef<string | null>(null);

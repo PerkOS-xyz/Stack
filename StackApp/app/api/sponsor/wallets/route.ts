@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+// Note: Wallet service imports are done dynamically in POST handler to avoid
+// loading SDK modules for GET requests that don't need them
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +11,7 @@ export const dynamic = "force-dynamic";
  * Returns sponsor wallets for a user
  */
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
   try {
     const { searchParams } = new URL(req.url);
     const address = searchParams.get("address");
@@ -33,9 +37,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    logApiPerformance("/api/sponsor/wallets", "GET", startTime, 200);
     return NextResponse.json({ wallets: wallets || [] });
   } catch (error) {
     console.error("Error in GET /api/sponsor/wallets:", error);
+    logApiPerformance("/api/sponsor/wallets", "GET", startTime, 500);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -45,7 +51,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/sponsor/wallets
- * Creates a new sponsor wallet via Para
+ * Creates a new sponsor wallet via the active wallet provider (Dynamic or Para)
  * Supports multiple wallets per user with naming and public/private visibility
  */
 export async function POST(req: NextRequest) {
@@ -88,25 +94,41 @@ export async function POST(req: NextRequest) {
       : "Default Wallet";
     const finalWalletName = walletName?.trim() || defaultName;
 
-    // Create server-controlled sponsor wallet using Para
-    const { getParaService } = await import("@/lib/services/ParaService");
-    const paraService = getParaService();
+    // Dynamic import to avoid loading SDK modules for other handlers (GET, DELETE, PATCH)
+    const { getServerWalletService } = await import("@/lib/wallet/server");
+    const { ACTIVE_PROVIDER } = await import("@/lib/wallet/config");
 
-    const sponsorWallet = await paraService.createWallet(
+    // Get the active wallet service (Dynamic or Para based on NEXT_PUBLIC_WALLET_PROVIDER)
+    const walletService = await getServerWalletService();
+
+    if (!walletService.isInitialized()) {
+      console.error(`[Sponsor Wallets] ${ACTIVE_PROVIDER} wallet service not initialized`);
+      return NextResponse.json(
+        { error: `Wallet service (${ACTIVE_PROVIDER}) not properly configured. Check environment variables.` },
+        { status: 500 }
+      );
+    }
+
+    console.log(`[Sponsor Wallets] Creating ${network} wallet using ${ACTIVE_PROVIDER} provider`);
+
+    // Create server-controlled sponsor wallet using the active provider
+    const sponsorWallet = await walletService.createWallet(
       userWalletAddress,
-      network
+      network as "evm" | "solana"
     );
 
-    // Store wallet in database with Para wallet ID, address, and userShare
-    // Para manages keys securely - we store the userShare for server-side signing
+    // Store wallet in database
+    // - para_wallet_id stores the provider's wallet ID (works with any provider)
+    // - para_user_share stores key material (userShare for Para, keyMaterial for Dynamic)
+    // Note: Field names kept as para_* for backward compatibility
     const { data: wallet, error } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .insert({
         user_wallet_address: userWalletAddress.toLowerCase(),
         network,
         wallet_type: sponsorWallet.walletType, // EVM or SOLANA
-        para_wallet_id: sponsorWallet.walletId, // Para wallet ID for signing
-        para_user_share: sponsorWallet.userShare, // User share for server-side signing
+        para_wallet_id: sponsorWallet.walletId, // Provider wallet ID for signing
+        para_user_share: sponsorWallet.keyMaterial, // Key material for server-side signing
         sponsor_address: sponsorWallet.address, // EOA address (same across all EVM chains) or Solana address
         balance: "0",
         wallet_name: finalWalletName,
@@ -125,9 +147,10 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`✅ Sponsor wallet created successfully:`);
+    console.log(`   Provider: ${ACTIVE_PROVIDER}`);
     console.log(`   Name: ${finalWalletName}`);
     console.log(`   Address: ${sponsorWallet.address}`);
-    console.log(`   Para Wallet ID: ${sponsorWallet.walletId}`);
+    console.log(`   Wallet ID: ${sponsorWallet.walletId}`);
     console.log(`   Network: ${network} (works on all EVM chains)`);
     console.log(`   Public: ${isPublic}`);
 
@@ -138,7 +161,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error in POST /api/sponsor/wallets:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

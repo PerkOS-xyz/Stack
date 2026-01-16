@@ -30,11 +30,34 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Externalize Dynamic Labs packages to prevent bundling client-side code on server
+  // These packages have dependencies on @dynamic-labs that include React client components
+  serverExternalPackages: [
+    '@dynamic-labs-wallet/node',
+    '@dynamic-labs-wallet/node-evm',
+    '@dynamic-labs-wallet/node-svm',
+    '@dynamic-labs/sdk-api',
+    '@dynamic-labs/sdk-api-core',
+  ],
   // Custom webpack error handling
   webpack: (config, { isServer, dev }) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
 
-    // Stub Para SDK peer dependencies not needed for EVM-only usage
+    // Dynamic Labs packages are externalized via serverExternalPackages above
+    // This ensures they're loaded from node_modules at runtime, avoiding
+    // bundling of @dynamic-labs client-side dependencies on the server
+
+    // Ignore .node native binary files (return empty module)
+    config.module.rules.push({
+      test: /\.node$/,
+      type: 'asset/resource',
+      generator: {
+        emit: false,
+      },
+    });
+
+    // Stub Para SDK peer dependencies (not needed modules)
+    // Note: Dynamic Labs packages are handled via serverExternalPackages above
     config.resolve.alias = {
       ...config.resolve.alias,
       // Cosmos dependencies (not needed for EVM chains)
@@ -57,9 +80,9 @@ const nextConfig = {
       '@getpara/solana-wallet-connectors': false,
       // Note: @solana/web3.js and @getpara/solana-web3.js-v1-integration are enabled for server-side Solana wallet creation
       // Wagmi connector optional dependencies (not needed)
+      // Note: @metamask/sdk is ENABLED for Dynamic SDK MetaMask support
       '@base-org/account': false,
       '@gemini-wallet/core': false,
-      '@metamask/sdk': false,
       'porto': false,
       'porto/internal': false,
       '@safe-global/safe-apps-sdk': false,
@@ -74,9 +97,9 @@ const nextConfig = {
         net: false,
         tls: false,
         // Wagmi connector optional dependencies
+        // Note: @metamask/sdk is ENABLED for Dynamic SDK MetaMask support
         '@base-org/account': false,
         '@gemini-wallet/core': false,
-        '@metamask/sdk': false,
         'porto': false,
         'porto/internal': false,
         '@safe-global/safe-apps-sdk': false,
@@ -84,15 +107,17 @@ const nextConfig = {
       };
     }
 
-    // Ignore missing optional modules (wagmi connectors)
+    // Ignore missing optional modules (wagmi connectors, Dynamic Labs native modules)
+    // Note: @metamask/sdk warnings are NOT ignored - it's enabled for Dynamic SDK
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
       { module: /node_modules\/@wagmi\/connectors/ },
+      { module: /node_modules\/@dynamic-labs-wallet\/node/ },
       { message: /Can't resolve '@base-org\/account'/ },
       { message: /Can't resolve '@gemini-wallet\/core'/ },
-      { message: /Can't resolve '@metamask\/sdk'/ },
       { message: /Can't resolve 'porto'/ },
       { message: /Can't resolve '@safe-global'/ },
+      { message: /Can't resolve '@dynamic-labs-wallet\/node'/ },
     ];
 
     // Suppress build errors in production

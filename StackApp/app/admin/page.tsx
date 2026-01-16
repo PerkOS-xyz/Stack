@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export const dynamic = "force-dynamic";
-import { useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AddressDisplay } from "@/components/AddressDisplay";
@@ -119,11 +119,27 @@ interface CouponFormData {
   enabled: boolean;
 }
 
-type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets" | "coupons";
+interface PerformanceStats {
+  totalRequests: number;
+  slowQueries: number;
+  slowQueryPercentage: number;
+  averageResponseTime: number;
+  maxResponseTime: number;
+}
+
+interface SlowQuery {
+  id: string;
+  endpoint: string;
+  method: string;
+  duration: number;
+  statusCode: number;
+  timestamp: string;
+}
+
+type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets" | "coupons" | "performance";
 
 export default function AdminPage() {
-  const { data: wallet } = useWallet();
-  const address = wallet?.address;
+  const { address } = useWalletContext();
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -140,6 +156,11 @@ export default function AdminPage() {
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
 
+  // Performance tab data
+  const [performanceStats, setPerformanceStats] = useState<PerformanceStats | null>(null);
+  const [slowQueries, setSlowQueries] = useState<SlowQuery[]>([]);
+  const [performanceLoading, setPerformanceLoading] = useState(false);
+
   // Pagination
   const [usersPage, setUsersPage] = useState(0);
   const [agentsPage, setAgentsPage] = useState(0);
@@ -151,6 +172,10 @@ export default function AdminPage() {
   // Vendor delete state
   const [deletingVendorId, setDeletingVendorId] = useState<string | null>(null);
   const [vendorToDelete, setVendorToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // User delete state
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; walletAddress: string; displayName: string | null } | null>(null);
 
   // Cleanup state
   const [isCleaningUp, setIsCleaningUp] = useState(false);
@@ -234,6 +259,38 @@ export default function AdminPage() {
       fetchStats();
     }
   }, [address, isAdmin]);
+
+  // Fetch performance data when Performance tab is active
+  useEffect(() => {
+    async function fetchPerformanceData() {
+      if (!address || !isAdmin || activeTab !== "performance") return;
+
+      setPerformanceLoading(true);
+      try {
+        // Fetch stats and slow queries in parallel
+        const [statsRes, slowRes] = await Promise.all([
+          fetch(`/api/admin/performance?address=${address}&type=stats`),
+          fetch(`/api/admin/performance?address=${address}&type=slow`),
+        ]);
+
+        const statsData = await statsRes.json();
+        const slowData = await slowRes.json();
+
+        if (statsData.stats) {
+          setPerformanceStats(statsData.stats);
+        }
+        if (slowData.logs) {
+          setSlowQueries(slowData.logs);
+        }
+      } catch (error) {
+        console.error("Error fetching performance data:", error);
+      } finally {
+        setPerformanceLoading(false);
+      }
+    }
+
+    fetchPerformanceData();
+  }, [address, isAdmin, activeTab]);
 
   // Fetch data based on active tab
   useEffect(() => {
@@ -324,6 +381,47 @@ export default function AdminPage() {
       alert("Failed to delete vendor. Please try again.");
     } finally {
       setDeletingVendorId(null);
+    }
+  };
+
+  // Open delete user confirmation dialog
+  const handleDeleteUser = (userId: string, walletAddress: string, displayName: string | null) => {
+    setUserToDelete({ id: userId, walletAddress, displayName });
+  };
+
+  // Execute user deletion
+  const confirmDeleteUser = async () => {
+    if (!userToDelete || !address) return;
+
+    setDeletingUserId(userToDelete.id);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          userId: userToDelete.id,
+          walletAddress: userToDelete.walletAddress,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove user from local state
+        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+        // Update stats
+        if (stats) {
+          setStats({ ...stats, users: stats.users - 1 });
+        }
+        setUserToDelete(null);
+      } else {
+        alert(`Failed to delete user: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user. Please try again.");
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -558,6 +656,63 @@ export default function AdminPage() {
     }
   };
 
+  // Refresh performance data
+  const handleRefreshPerformance = async () => {
+    if (!address || !isAdmin) return;
+
+    setPerformanceLoading(true);
+    try {
+      const [statsRes, slowRes] = await Promise.all([
+        fetch(`/api/admin/performance?address=${address}&type=stats`),
+        fetch(`/api/admin/performance?address=${address}&type=slow`),
+      ]);
+
+      const statsData = await statsRes.json();
+      const slowData = await slowRes.json();
+
+      if (statsData.stats) {
+        setPerformanceStats(statsData.stats);
+      }
+      if (slowData.logs) {
+        setSlowQueries(slowData.logs);
+      }
+    } catch (error) {
+      console.error("Error refreshing performance data:", error);
+    } finally {
+      setPerformanceLoading(false);
+    }
+  };
+
+  // Clear performance logs
+  const handleClearLogs = async () => {
+    if (!address || !isAdmin) return;
+    if (!confirm("Are you sure you want to clear all performance logs?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/performance?address=${address}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Reset local state
+        setPerformanceStats({
+          totalRequests: 0,
+          slowQueries: 0,
+          slowQueryPercentage: 0,
+          averageResponseTime: 0,
+          maxResponseTime: 0,
+        });
+        setSlowQueries([]);
+      } else {
+        alert(data.error || "Failed to clear logs");
+      }
+    } catch (error) {
+      console.error("Error clearing logs:", error);
+      alert("Failed to clear logs. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#030308] text-white overflow-x-hidden flex flex-col">
@@ -642,6 +797,7 @@ export default function AdminPage() {
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: "overview", label: "Overview", icon: "📊" },
     { id: "users", label: "Users", icon: "👤" },
+    { id: "performance", label: "Performance", icon: "⚡" },
     { id: "agents", label: "Agents", icon: "🤖" },
     { id: "vendors", label: "Vendors", icon: "🏪" },
     { id: "transactions", label: "Transactions", icon: "💸" },
@@ -762,6 +918,7 @@ export default function AdminPage() {
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Type</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Verified</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Joined</th>
+                    <th className="text-left text-gray-400 text-sm px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -786,11 +943,20 @@ export default function AdminPage() {
                       <td className="px-4 py-3 text-gray-400 text-sm">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.wallet_address, user.display_name)}
+                          disabled={deletingUserId === user.id}
+                          className="px-3 py-1 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+                        >
+                          {deletingUserId === user.id ? "Deleting..." : "🗑️ Delete"}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                         No users found
                       </td>
                     </tr>
@@ -799,6 +965,155 @@ export default function AdminPage() {
               </table>
             </div>
             <Pagination page={usersPage} totalPages={usersTotalPages} onPageChange={setUsersPage} />
+          </div>
+        )}
+
+        {activeTab === "performance" && (
+          <div className="space-y-6">
+            {/* Header with actions */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-200">Performance Monitoring</h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleRefreshPerformance}
+                  disabled={performanceLoading}
+                  className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {performanceLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      🔄 Refresh
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleClearLogs}
+                  className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-all flex items-center gap-2"
+                >
+                  🗑️ Clear Logs
+                </button>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            {performanceLoading && !performanceStats ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+              </div>
+            ) : performanceStats ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">📊</div>
+                    <p className="text-2xl font-bold text-gray-200">
+                      {(performanceStats.totalRequests ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-400">Total Requests</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">🐢</div>
+                    <p className="text-2xl font-bold text-gray-200">
+                      {(performanceStats.slowQueries ?? 0).toLocaleString()}
+                      <span className="text-sm font-normal text-orange-400 ml-2">
+                        ({(performanceStats.slowQueryPercentage ?? 0).toFixed(1)}%)
+                      </span>
+                    </p>
+                    <p className="text-sm text-gray-400">Slow Queries</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">⏱️</div>
+                    <p className="text-2xl font-bold text-gray-200">
+                      {(performanceStats.averageResponseTime ?? 0).toFixed(0)}
+                      <span className="text-sm font-normal text-gray-400 ml-1">ms</span>
+                    </p>
+                    <p className="text-sm text-gray-400">Avg Response Time</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">🔥</div>
+                    <p className="text-2xl font-bold text-gray-200">
+                      {(performanceStats.maxResponseTime ?? 0).toFixed(0)}
+                      <span className="text-sm font-normal text-gray-400 ml-1">ms</span>
+                    </p>
+                    <p className="text-sm text-gray-400">Max Response Time</p>
+                  </div>
+                </div>
+
+                {/* Slow Queries Table */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-gray-200">Recent Slow Queries</h3>
+                  <div className="bg-slate-900/50 border border-blue-500/20 rounded-xl overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-slate-800/50">
+                        <tr>
+                          <th className="text-left text-gray-400 text-sm px-4 py-3">Endpoint</th>
+                          <th className="text-left text-gray-400 text-sm px-4 py-3">Method</th>
+                          <th className="text-left text-gray-400 text-sm px-4 py-3">Duration (ms)</th>
+                          <th className="text-left text-gray-400 text-sm px-4 py-3">Status Code</th>
+                          <th className="text-left text-gray-400 text-sm px-4 py-3">Timestamp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {slowQueries.map((query) => (
+                          <tr key={query.id} className="border-t border-blue-500/10 hover:bg-slate-800/30">
+                            <td className="px-4 py-3 font-mono text-sm text-gray-300 max-w-xs truncate">
+                              {query.endpoint}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs rounded-full font-mono ${
+                                query.method === "GET" ? "bg-green-500/20 text-green-400" :
+                                query.method === "POST" ? "bg-blue-500/20 text-blue-400" :
+                                query.method === "PUT" ? "bg-yellow-500/20 text-yellow-400" :
+                                query.method === "DELETE" ? "bg-red-500/20 text-red-400" :
+                                "bg-gray-500/20 text-gray-400"
+                              }`}>
+                                {query.method}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`font-mono text-sm ${
+                                query.duration > 5000 ? "text-red-400" :
+                                query.duration > 2000 ? "text-orange-400" :
+                                "text-yellow-400"
+                              }`}>
+                                {query.duration.toLocaleString()}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                query.statusCode >= 200 && query.statusCode < 300 ? "bg-green-500/20 text-green-400" :
+                                query.statusCode >= 400 && query.statusCode < 500 ? "bg-yellow-500/20 text-yellow-400" :
+                                query.statusCode >= 500 ? "bg-red-500/20 text-red-400" :
+                                "bg-gray-500/20 text-gray-400"
+                              }`}>
+                                {query.statusCode}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 text-sm">
+                              {new Date(query.timestamp).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                        {slowQueries.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                              No slow queries recorded
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                No performance data available
+              </div>
+            )}
           </div>
         )}
 
@@ -1500,6 +1815,19 @@ export default function AdminPage() {
         cancelText="Cancel"
         variant="danger"
         isLoading={deletingVendorId !== null}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={userToDelete !== null}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete user "${userToDelete?.displayName || userToDelete?.walletAddress}"?\n\nThis will permanently delete:\n• User profile\n• All sponsor wallets\n• All subscriptions\n• All vendors\n• All agent records\n\nThis action cannot be undone.`}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deletingUserId !== null}
       />
     </div>
   );

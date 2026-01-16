@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 export const dynamic = "force-dynamic";
-import { useWallet } from "@getpara/react-sdk";
+import { useWalletContext } from "@/lib/wallet/client";
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast, Toaster } from 'sonner';
@@ -29,10 +29,14 @@ interface NetworkConfig {
   chainId: number;
   explorer: string;
   isTestnet?: boolean;
+  isSolana?: boolean;
 }
 
 const networks: Record<string, NetworkConfig> = {
-  // Mainnets
+  // Solana Networks
+  'solana': { name: 'Main Solana', symbol: 'SOL', icon: '🟣', chainId: 101, explorer: 'https://explorer.solana.com', isSolana: true },
+  'solana-devnet': { name: 'Solana Devnet', symbol: 'SOL', icon: '🟣', chainId: 102, explorer: 'https://explorer.solana.com?cluster=devnet', isTestnet: true, isSolana: true },
+  // EVM Mainnets
   'avalanche': { name: 'Avalanche', symbol: 'AVAX', icon: '🔺', chainId: 43114, explorer: 'https://snowtrace.io' },
   'base': { name: 'Base', symbol: 'ETH', icon: '🔵', chainId: 8453, explorer: 'https://basescan.org' },
   'celo': { name: 'Celo', symbol: 'CELO', icon: '🟢', chainId: 42220, explorer: 'https://celoscan.io' },
@@ -41,7 +45,7 @@ const networks: Record<string, NetworkConfig> = {
   'arbitrum': { name: 'Arbitrum', symbol: 'ETH', icon: '🔷', chainId: 42161, explorer: 'https://arbiscan.io' },
   'optimism': { name: 'Optimism', symbol: 'ETH', icon: '🔴', chainId: 10, explorer: 'https://optimistic.etherscan.io' },
   'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 10142, explorer: 'https://monadexplorer.com' },
-  // Testnets
+  // EVM Testnets
   'avalanche-fuji': { name: 'Avalanche Fuji', symbol: 'AVAX', icon: '🔺', chainId: 43113, explorer: 'https://testnet.snowtrace.io', isTestnet: true },
   'base-sepolia': { name: 'Base Sepolia', symbol: 'ETH', icon: '🔵', chainId: 84532, explorer: 'https://sepolia.basescan.org', isTestnet: true },
   'celo-sepolia': { name: 'Celo Alfajores', symbol: 'CELO', icon: '🟢', chainId: 11142220, explorer: 'https://celo-sepolia.blockscout.com', isTestnet: true },
@@ -52,10 +56,16 @@ const networks: Record<string, NetworkConfig> = {
   'monad-testnet': { name: 'Monad Testnet', symbol: 'MON', icon: '🟡', chainId: 10143, explorer: 'https://testnet.monadexplorer.com', isTestnet: true },
 };
 
+// Helper to detect if an address is Solana (base58) or EVM (0x prefixed)
+const isSolanaAddress = (address: string): boolean => {
+  // EVM addresses start with 0x and are 42 characters
+  if (address.startsWith('0x') && address.length === 42) return false;
+  // Solana addresses are base58 encoded, typically 32-44 characters
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+};
+
 export default function WalletPage() {
-  const { data: connectedWallet } = useWallet();
-  const address = connectedWallet?.address;
-  const isConnected = !!connectedWallet;
+  const { address, isConnected } = useWalletContext();
 
   const [allWallets, setAllWallets] = useState<SponsorWallet[]>([]);
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
@@ -63,6 +73,7 @@ export default function WalletPage() {
   const [activeView, setActiveView] = useState<'main' | 'receive' | 'send'>('main');
   const [sendAddress, setSendAddress] = useState('');
   const [sendAmount, setSendAmount] = useState('');
+  const [useSendMax, setUseSendMax] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState('avalanche');
   const [sending, setSending] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -74,6 +85,31 @@ export default function WalletPage() {
 
   // Get currently selected wallet
   const sponsorWallet = allWallets.find(w => w.id === selectedWalletId) || null;
+
+  // Determine if current wallet is Solana or EVM
+  const isCurrentWalletSolana = sponsorWallet ? isSolanaAddress(sponsorWallet.sponsor_address) : false;
+
+  // Filter networks based on wallet type
+  const availableNetworks = Object.entries(networks).filter(([, config]) =>
+    isCurrentWalletSolana ? config.isSolana : !config.isSolana
+  );
+
+  // Auto-select appropriate network when wallet changes
+  useEffect(() => {
+    if (sponsorWallet) {
+      const isSolana = isSolanaAddress(sponsorWallet.sponsor_address);
+      const currentNetworkConfig = networks[selectedNetwork];
+
+      // If current network doesn't match wallet type, auto-select appropriate default
+      if (isSolana && !currentNetworkConfig?.isSolana) {
+        setSelectedNetwork('solana');
+        setNetworkBalances({});
+      } else if (!isSolana && currentNetworkConfig?.isSolana) {
+        setSelectedNetwork('avalanche');
+        setNetworkBalances({});
+      }
+    }
+  }, [sponsorWallet?.id]);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -113,22 +149,45 @@ export default function WalletPage() {
   const fetchNetworkBalance = async (network: string) => {
     if (!sponsorWallet) return;
 
+    const networkConfig = networks[network];
+    if (!networkConfig) return;
+
+    // Check if network type matches wallet type
+    const walletIsSolana = isSolanaAddress(sponsorWallet.sponsor_address);
+    if (walletIsSolana !== !!networkConfig.isSolana) {
+      console.warn(`[WalletPage] Network ${network} doesn't match wallet type (Solana: ${walletIsSolana})`);
+      return;
+    }
+
     setNetworkBalances(prev => ({
       ...prev,
       [network]: { ...prev[network], loading: true }
     }));
 
     try {
-      const response = await fetch(
-        `/api/sponsor/wallets/balance-by-network?address=${sponsorWallet.sponsor_address}&network=${network}`
-      );
+      // Use different API endpoint for Solana vs EVM
+      const apiUrl = networkConfig.isSolana
+        ? `/api/sponsor/wallets/solana-balance?address=${sponsorWallet.sponsor_address}&network=${network}`
+        : `/api/sponsor/wallets/balance-by-network?address=${sponsorWallet.sponsor_address}&network=${network}`;
+
+      const response = await fetch(apiUrl);
       if (response.ok) {
         const data = await response.json();
         setNetworkBalances(prev => ({
           ...prev,
           [network]: {
             balance: data.balance,
-            symbol: data.symbol,
+            symbol: data.symbol || networkConfig.symbol,
+            loading: false
+          }
+        }));
+      } else {
+        // Handle error - set balance to 0
+        setNetworkBalances(prev => ({
+          ...prev,
+          [network]: {
+            balance: '0',
+            symbol: networkConfig.symbol,
             loading: false
           }
         }));
@@ -137,7 +196,7 @@ export default function WalletPage() {
       console.error(`Failed to fetch balance for ${network}:`, error);
       setNetworkBalances(prev => ({
         ...prev,
-        [network]: { ...prev[network], loading: false }
+        [network]: { balance: '0', symbol: networkConfig.symbol, loading: false }
       }));
     }
   };
@@ -153,8 +212,11 @@ export default function WalletPage() {
     toast.success('Copied to clipboard');
   };
 
-  const formatBalanceCompact = (balanceWei: string) => {
-    const balance = Number(balanceWei) / 1e18;
+  // Format balance - EVM returns wei (divide by 1e18), Solana returns SOL (already native)
+  const formatBalanceCompact = (balanceWei: string, isAlreadyNative: boolean = false) => {
+    const balance = isAlreadyNative
+      ? Number(balanceWei)
+      : Number(balanceWei) / 1e18;
     if (balance === 0) return '0.00';
     if (balance < 0.01) return balance.toFixed(6);
     if (balance < 1) return balance.toFixed(4);
@@ -163,31 +225,53 @@ export default function WalletPage() {
   };
 
   const handleSend = async () => {
-    if (!sponsorWallet || !sendAddress || !sendAmount) {
+    if (!sponsorWallet || !sendAddress || (!sendAmount && !useSendMax)) {
       toast.error('Please enter recipient address and amount');
       return;
     }
 
-    if (!/^0x[a-fA-F0-9]{40}$/.test(sendAddress)) {
-      toast.error('Invalid wallet address');
-      return;
+    // Validate address format based on wallet type
+    const walletIsSolana = isSolanaAddress(sponsorWallet.sponsor_address);
+    const recipientIsSolana = isSolanaAddress(sendAddress);
+
+    if (walletIsSolana) {
+      // Solana wallet - must send to Solana address
+      if (!recipientIsSolana) {
+        toast.error('Please enter a valid Solana address');
+        return;
+      }
+    } else {
+      // EVM wallet - must send to EVM address
+      if (!/^0x[a-fA-F0-9]{40}$/.test(sendAddress)) {
+        toast.error('Invalid wallet address');
+        return;
+      }
     }
 
-    const amount = parseFloat(sendAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Invalid amount');
-      return;
+    // Skip amount validation if sending max
+    if (!useSendMax) {
+      const amount = parseFloat(sendAmount);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error('Invalid amount');
+        return;
+      }
     }
 
     setSending(true);
     try {
-      const response = await fetch('/api/sponsor/wallets/send', {
+      // Use appropriate API endpoint based on wallet type
+      const apiUrl = walletIsSolana
+        ? '/api/sponsor/wallets/solana-send'
+        : '/api/sponsor/wallets/send';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletId: sponsorWallet.id,
           toAddress: sendAddress,
-          amount: sendAmount,
+          amount: useSendMax ? 'max' : sendAmount,
+          sendMax: useSendMax,
           network: selectedNetwork,
         }),
       });
@@ -195,14 +279,24 @@ export default function WalletPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success('Transaction sent!');
+        toast.success(`Transaction sent! Amount: ${data.amount} ${data.symbol}`);
         setSendAddress('');
         setSendAmount('');
+        setUseSendMax(false);
         setActiveView('main');
         await loadWallet();
         fetchNetworkBalance(selectedNetwork);
       } else if (data.isLegacyWallet) {
         toast.error('This legacy wallet cannot sign transactions. Please create a new wallet.');
+      } else if (data.maxSendable) {
+        // Insufficient funds - offer to use max sendable amount
+        const useMax = window.confirm(
+          `Insufficient funds after gas fees.\n\nRequested: ${sendAmount}\nMax sendable: ${data.maxSendable}\n\nWould you like to send the maximum amount instead?`
+        );
+        if (useMax) {
+          setSendAmount(data.maxSendable);
+          toast.info(`Amount updated to ${data.maxSendable}. Click Send again to confirm.`);
+        }
       } else {
         toast.error(data.error || 'Transaction failed');
       }
@@ -520,11 +614,13 @@ export default function WalletPage() {
                       </svg>
                     </button>
 
-                    {/* Network Dropdown */}
+                    {/* Network Dropdown - filtered by wallet type */}
                     {showNetworkSelector && (
                       <div className="absolute top-full right-0 mt-2 w-64 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 z-50 max-h-80 overflow-y-auto backdrop-blur-xl">
-                        <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">Mainnets</div>
-                        {Object.entries(networks).filter(([, n]) => !n.isTestnet).map(([key, net]) => (
+                        <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">
+                          {isCurrentWalletSolana ? 'Solana Networks' : 'Mainnets'}
+                        </div>
+                        {availableNetworks.filter(([, n]) => !n.isTestnet).map(([key, net]) => (
                           <button
                             key={key}
                             onClick={() => {
@@ -542,25 +638,29 @@ export default function WalletPage() {
                             )}
                           </button>
                         ))}
-                        <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
-                        {Object.entries(networks).filter(([, n]) => n.isTestnet).map(([key, net]) => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setSelectedNetwork(key);
-                              setShowNetworkSelector(false);
-                            }}
-                            className={`w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-blue-500/10 transition-colors ${selectedNetwork === key ? 'bg-blue-500/10' : ''}`}
-                          >
-                            <span className="text-lg">{net.icon}</span>
-                            <span className="text-sm text-white flex-1 text-left">{net.name}</span>
-                            {selectedNetwork === key && (
-                              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </button>
-                        ))}
+                        {availableNetworks.some(([, n]) => n.isTestnet) && (
+                          <>
+                            <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                            {availableNetworks.filter(([, n]) => n.isTestnet).map(([key, net]) => (
+                              <button
+                                key={key}
+                                onClick={() => {
+                                  setSelectedNetwork(key);
+                                  setShowNetworkSelector(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-blue-500/10 transition-colors ${selectedNetwork === key ? 'bg-blue-500/10' : ''}`}
+                              >
+                                <span className="text-lg">{net.icon}</span>
+                                <span className="text-sm text-white flex-1 text-left">{net.name}</span>
+                                {selectedNetwork === key && (
+                                  <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </button>
+                            ))}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -576,7 +676,7 @@ export default function WalletPage() {
                   ) : (
                     <>
                       <h2 className="text-5xl font-bold bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent tracking-tight mb-1">
-                        {formatBalanceCompact(currentBalance.balance)}
+                        {formatBalanceCompact(currentBalance.balance, networks[selectedNetwork]?.isSolana || false)}
                       </h2>
                       <p className="text-lg text-cyan-400 font-medium">{currentBalance.symbol}</p>
                     </>
@@ -841,7 +941,10 @@ export default function WalletPage() {
 
                   {showNetworkSelector && (
                     <div className="mt-2 py-2 bg-slate-800/95 border border-blue-500/20 rounded-2xl shadow-2xl shadow-black/50 max-h-60 overflow-y-auto backdrop-blur-xl">
-                      {Object.entries(networks).map(([key, net]) => (
+                      <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium">
+                        {isCurrentWalletSolana ? 'Solana Networks' : 'Mainnets'}
+                      </div>
+                      {availableNetworks.filter(([, n]) => !n.isTestnet).map(([key, net]) => (
                         <button
                           key={key}
                           onClick={() => {
@@ -852,9 +955,6 @@ export default function WalletPage() {
                         >
                           <span className="text-lg">{net.icon}</span>
                           <span className="text-sm text-white flex-1 text-left">{net.name}</span>
-                          {net.isTestnet && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400">TEST</span>
-                          )}
                           {selectedNetwork === key && (
                             <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -862,6 +962,29 @@ export default function WalletPage() {
                           )}
                         </button>
                       ))}
+                      {availableNetworks.some(([, n]) => n.isTestnet) && (
+                        <>
+                          <div className="px-4 py-2 text-xs text-cyan-400 uppercase tracking-wider font-medium border-t border-blue-500/10 mt-2">Testnets</div>
+                          {availableNetworks.filter(([, n]) => n.isTestnet).map(([key, net]) => (
+                            <button
+                              key={key}
+                              onClick={() => {
+                                setSelectedNetwork(key);
+                                setShowNetworkSelector(false);
+                              }}
+                              className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-500/10 transition-colors ${selectedNetwork === key ? 'bg-blue-500/10' : ''}`}
+                            >
+                              <span className="text-lg">{net.icon}</span>
+                              <span className="text-sm text-white flex-1 text-left">{net.name}</span>
+                              {selectedNetwork === key && (
+                                <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -874,7 +997,7 @@ export default function WalletPage() {
                       {currentBalance.loading ? (
                         <span className="text-gray-500">Loading...</span>
                       ) : (
-                        `${formatBalanceCompact(currentBalance.balance)} ${currentBalance.symbol}`
+                        `${formatBalanceCompact(currentBalance.balance, networks[selectedNetwork]?.isSolana || false)} ${currentBalance.symbol}`
                       )}
                     </span>
                   </div>
@@ -888,7 +1011,7 @@ export default function WalletPage() {
                       type="text"
                       value={sendAddress}
                       onChange={(e) => setSendAddress(e.target.value)}
-                      placeholder="0x..."
+                      placeholder={isCurrentWalletSolana ? "Solana address..." : "0x..."}
                       className="flex-1 px-4 py-3.5 bg-slate-800/60 border border-blue-500/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors font-mono text-sm"
                     />
                     <button
@@ -934,21 +1057,41 @@ export default function WalletPage() {
                   <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Amount</label>
                   <div className="relative">
                     <input
-                      type="number"
-                      value={sendAmount}
-                      onChange={(e) => setSendAmount(e.target.value)}
+                      type={useSendMax ? "text" : "number"}
+                      value={useSendMax ? "MAX (entire balance minus gas)" : sendAmount}
+                      onChange={(e) => {
+                        setUseSendMax(false);
+                        setSendAmount(e.target.value);
+                      }}
+                      onFocus={() => {
+                        if (useSendMax) {
+                          setUseSendMax(false);
+                          setSendAmount('');
+                        }
+                      }}
                       placeholder="0.00"
                       step="0.0001"
                       min="0"
-                      className="w-full px-4 py-3.5 pr-24 bg-slate-800/60 border border-blue-500/20 rounded-xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                      readOnly={useSendMax}
+                      className={`w-full px-4 py-3.5 pr-24 bg-slate-800/60 border rounded-xl text-lg placeholder-gray-500 focus:outline-none transition-colors ${
+                        useSendMax
+                          ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/10'
+                          : 'border-blue-500/20 text-white focus:border-cyan-500/50'
+                      }`}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
                       <button
                         onClick={() => {
-                          const maxAmount = (Number(currentBalance.balance) / 1e18 - 0.001).toFixed(6);
-                          setSendAmount(parseFloat(maxAmount) > 0 ? maxAmount : '0');
+                          setUseSendMax(!useSendMax);
+                          if (!useSendMax) {
+                            setSendAmount('');
+                          }
                         }}
-                        className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors"
+                        className={`text-xs font-semibold px-2 py-1 rounded transition-colors ${
+                          useSendMax
+                            ? 'text-white bg-cyan-500 hover:bg-cyan-600'
+                            : 'text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20'
+                        }`}
                       >
                         MAX
                       </button>
@@ -960,7 +1103,7 @@ export default function WalletPage() {
                 {/* Send Button */}
                 <button
                   onClick={handleSend}
-                  disabled={sending || !sendAddress || !sendAmount}
+                  disabled={sending || !sendAddress || (!sendAmount && !useSendMax)}
                   className="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-2xl transition-all shadow-lg shadow-blue-500/25 disabled:shadow-none flex items-center justify-center space-x-2"
                 >
                   {sending ? (
@@ -973,7 +1116,7 @@ export default function WalletPage() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                       </svg>
-                      <span>Send {sendAmount ? `${sendAmount} ${currentBalance.symbol}` : 'Transaction'}</span>
+                      <span>Send {useSendMax ? `Max ${currentBalance.symbol}` : sendAmount ? `${sendAmount} ${currentBalance.symbol}` : 'Transaction'}</span>
                     </>
                   )}
                 </button>

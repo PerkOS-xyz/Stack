@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { chains, getNativeTokenSymbol, getRpcUrl } from "@/lib/utils/chains";
+import { logApiPerformance } from "@/lib/utils/withApiPerformance";
 
 export const runtime = 'nodejs';
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
  * Query params: address, network
  */
 export async function GET(req: NextRequest) {
+  const startTime = Date.now();
   try {
     const { searchParams } = new URL(req.url);
     const address = searchParams.get("address");
@@ -70,6 +72,7 @@ export async function GET(req: NextRequest) {
 
     const balanceFormatted = (Number(balance) / 1e18).toFixed(6);
 
+    logApiPerformance("/api/sponsor/wallets/balance-by-network", "GET", startTime, 200, { network });
     return NextResponse.json({
       success: true,
       network,
@@ -80,6 +83,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error in GET /api/sponsor/wallets/balance-by-network:", error);
+    logApiPerformance("/api/sponsor/wallets/balance-by-network", "GET", startTime, 500);
     return NextResponse.json(
       { error: "Failed to fetch balance" },
       { status: 500 }
