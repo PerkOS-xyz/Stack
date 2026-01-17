@@ -9,7 +9,8 @@ import { QRCodeSVG } from 'qrcode.react';
 
 interface Contributor {
   id: string;
-  walletAddress: string;
+  walletAddress: string; // Sponsor wallet address (for donations) or user wallet if no sponsor
+  userWalletAddress: string; // Original user wallet address
   displayAddress: string;
   accountType: 'personal' | 'community' | 'organization' | 'vendor';
   displayName: string | null;
@@ -17,6 +18,7 @@ interface Contributor {
   website: string | null;
   avatarUrl: string | null;
   isVerified: boolean;
+  hasSponsorWallet: boolean; // Whether the contributor has a public sponsor wallet
   socials: {
     twitter: string | null;
     github: string | null;
@@ -613,6 +615,18 @@ export default function ContributorsPage() {
                   </svg>
                   <span>Copy Address</span>
                 </button>
+
+                {/* Sponsor Wallet Badge */}
+                {selectedContributor.hasSponsorWallet && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">Official Sponsor Wallet</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Info Notice */}
                 <div className="mt-4 p-3 bg-slate-700/30 border border-amber-500/20 rounded-xl">

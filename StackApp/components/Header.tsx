@@ -410,9 +410,11 @@ export function Header() {
                     {/* User Wallet - opens wallet provider's user profile/dashboard */}
                     <button
                       onClick={() => {
+                        console.log("[Header] User Wallet clicked, openUserProfile:", typeof openUserProfile);
                         if (openUserProfile) {
                           openUserProfile();
                         } else {
+                          console.log("[Header] openUserProfile not available, falling back to openModal");
                           openModal();
                         }
                         setUserMenuOpen(false);
@@ -551,9 +553,11 @@ export function Header() {
                   {/* User Wallet - opens wallet provider's user profile/dashboard */}
                   <button
                     onClick={() => {
+                      console.log("[Header Mobile] User Wallet clicked, openUserProfile:", typeof openUserProfile);
                       if (openUserProfile) {
                         openUserProfile();
                       } else {
+                        console.log("[Header Mobile] openUserProfile not available, falling back to openModal");
                         openModal();
                       }
                       setMobileMenuOpen(false);
