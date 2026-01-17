@@ -317,12 +317,20 @@ export default function DashboardPage() {
     }
   };
 
-  const loadMultiNetworkBalances = async (sponsorAddress: string, walletType: string = "EVM") => {
+  const loadMultiNetworkBalances = async (sponsorAddress: string, walletType: string = "EVM", forceRefresh: boolean = false) => {
     if (!sponsorAddress) return;
 
     setLoadingMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: true }));
     try {
-      const response = await fetch(`/api/sponsor/wallets/balance-all-networks?address=${sponsorAddress}&walletType=${walletType}`);
+      // Add forceRefresh parameter when manually refreshing to bypass cache
+      const params = new URLSearchParams({
+        address: sponsorAddress,
+        walletType,
+      });
+      if (forceRefresh) {
+        params.set("forceRefresh", "true");
+      }
+      const response = await fetch(`/api/sponsor/wallets/balance-all-networks?${params}`);
       if (response.ok) {
         const data = await response.json();
         setMultiNetworkBalances(prev => ({ ...prev, [sponsorAddress]: data }));
@@ -1052,7 +1060,8 @@ export default function DashboardPage() {
                           }}
                           isLoading={loadingMultiNetworkBalances[wallet.sponsor_address] || false}
                           onRefresh={() => {
-                            loadMultiNetworkBalances(wallet.sponsor_address, wallet.wallet_type || "EVM");
+                            // Pass forceRefresh=true to bypass cache when manually refreshing
+                            loadMultiNetworkBalances(wallet.sponsor_address, wallet.wallet_type || "EVM", true);
                             refreshBalance(wallet.id);
                           }}
                         />
