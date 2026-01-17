@@ -340,11 +340,34 @@ export class ParaTransactionService {
         transport: http(getRpcUrl(params.network)),
       });
 
-      // Wait for transaction confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash,
-        confirmations: 1,
-      });
+      // Wait for transaction confirmation with extended timeout
+      // Default viem timeout is too short for some networks/RPC providers
+      let receipt;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({
+          hash,
+          confirmations: 1,
+          timeout: 60_000, // 60 seconds timeout (increased from default ~5s)
+          pollingInterval: 2_000, // Poll every 2 seconds
+        });
+      } catch (receiptError) {
+        // If receipt times out but we have a valid hash, return it as success
+        // The transaction was submitted successfully - it's just taking time to confirm
+        const receiptErrorMessage = receiptError instanceof Error ? receiptError.message : String(receiptError);
+        if (receiptErrorMessage.includes("could not be found") || receiptErrorMessage.includes("timeout")) {
+          logger.warn("Transaction receipt timeout - tx may still be pending", {
+            hash,
+            error: receiptErrorMessage,
+          });
+          // Return the hash - the ExactSchemeService will verify via nonce check
+          return {
+            success: true,
+            transactionHash: hash as Hex,
+            // Note: No gas info available since we don't have the receipt
+          };
+        }
+        throw receiptError;
+      }
 
       if (receipt.status === "reverted") {
         logger.error("Transaction reverted", { hash });

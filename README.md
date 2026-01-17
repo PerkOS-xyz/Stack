@@ -12,9 +12,10 @@
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Discovery-purple)](https://eips.ethereum.org/EIPS/eip-8004)
 [![Networks](https://img.shields.io/badge/Networks-16-green)](#supported-networks)
 [![Gas Control](https://img.shields.io/badge/Gas_Control-Advanced-orange)](#-advanced-gas-sponsorship-control)
+[![MPC Wallets](https://img.shields.io/badge/MPC-Server_Wallets-teal)](#9-server-side-wallets-new)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-[Why PerkOS?](#-why-perkos-stack-beats-competitors) | [Gas Control](#-advanced-gas-sponsorship-control) | [Quick Start](#-quick-start) | [API Reference](#-api-reference)
+[Why PerkOS?](#-why-perkos-stack-beats-competitors) | [Gas Control](#-advanced-gas-sponsorship-control) | [Subscriptions](#7-subscription-system-new) | [Quick Start](#-quick-start) | [API Reference](#-api-reference)
 
 </div>
 
@@ -386,6 +387,10 @@ flowchart LR
 - **Multi-Chain** - 16 EVM networks with native Circle USDC support
 - **Analytics** - Real-time dashboards and transaction monitoring
 - **Gas Sponsorship** - Gasless transactions with granular control
+- **Server Wallets** - MPC-based wallets via Dynamic and Para SDK
+- **Subscriptions** - 5-tier subscription system with coupon support
+- **Contributors** - Public contributor directory with donation support
+- **Admin Dashboard** - Complete user and membership management
 
 ---
 
@@ -520,6 +525,64 @@ const price = await pricingService.calculatePriceForEndpoint(
 // Returns: { amount: "10000", asset: "0x...", network: "base-sepolia" }
 ```
 
+### 7. Subscription System (NEW)
+
+**5-tier subscription system** with automatic limit enforcement:
+
+| Tier         | Monthly Price | Transactions/Mo | Rate Limit  | Sponsor Wallets |
+| ------------ | ------------- | --------------- | ----------- | --------------- |
+| **Free**     | $0            | 1,000           | 10/min      | 1               |
+| **Starter**  | $29           | 50,000          | 60/min      | 5               |
+| **Pro**      | $99           | 500,000         | 300/min     | 25              |
+| **Scale**    | $499          | 5,000,000       | 1,000/min   | 100             |
+| **Enterprise** | Custom      | Unlimited       | 5,000+/min  | Unlimited       |
+
+**Features by Tier:**
+- Webhook notifications (Starter+)
+- Batch settlement (Starter+)
+- Advanced analytics (Pro+)
+- Priority support (Pro+)
+- Custom branding (Scale+)
+- Custom SLA (Enterprise)
+
+### 8. Contributors Directory (NEW)
+
+Public-facing **contributor directory** with donation support:
+
+- Profile visibility controls (public/private)
+- Account types: Personal, Community, Organization, Vendor
+- Sponsor wallet integration for donations
+- Social links (Twitter, GitHub, Discord, Farcaster, etc.)
+- QR code generation for easy donations
+- Multi-network support for receiving funds
+
+### 9. Server-Side Wallets (NEW)
+
+**MPC-based server wallets** for secure key management:
+
+| Provider    | Type        | Features                                      |
+| ----------- | ----------- | --------------------------------------------- |
+| **Dynamic** | MPC 2-of-2  | EVM + Solana, programmatic wallet creation    |
+| **Para**    | Client SDK  | Multi-chain, social login, on-ramp support    |
+
+```typescript
+// Create server-side sponsor wallet (Dynamic MPC)
+const wallet = await dynamicService.createServerSideWallet({
+  chainType: "evm", // or "solana"
+  network: "base",
+});
+// Returns: { walletId, address, chainType }
+```
+
+### 10. Admin Dashboard (NEW)
+
+Complete **admin management interface**:
+
+- **Users Tab**: View all users with User ID, wallet addresses, account types
+- **Memberships Tab**: Subscription management, invoices, revenue stats
+- **Agents Tab**: Agent reputation and verification
+- **Analytics Tab**: Transaction volumes, network stats, trends
+
 ---
 
 ## Quick Start
@@ -639,6 +702,42 @@ curl http://localhost:3402/api/.well-known/agent-card.json
 | `GET`  | `/api/dashboard/stats` | Aggregated statistics |
 | `GET`  | `/api/transactions`    | Transaction history   |
 | `GET`  | `/api/agents`          | Registered agents     |
+
+### Subscription Endpoints
+
+| Method  | Endpoint                  | Description                  |
+| ------- | ------------------------- | ---------------------------- |
+| `GET`   | `/api/subscription`       | Get user subscription status |
+| `POST`  | `/api/subscription`       | Create/update subscription   |
+| `POST`  | `/api/subscription/pay`   | Process subscription payment |
+| `GET`   | `/api/profile/invoices`   | Get user invoices            |
+
+### Profile Endpoints
+
+| Method  | Endpoint                    | Description                    |
+| ------- | --------------------------- | ------------------------------ |
+| `GET`   | `/api/profile`              | Get user profile               |
+| `POST`  | `/api/profile`              | Create/update profile          |
+| `PATCH` | `/api/profile`              | Update profile settings        |
+| `GET`   | `/api/contributors`         | List public contributors       |
+
+### Admin Endpoints
+
+| Method  | Endpoint                      | Description                |
+| ------- | ----------------------------- | -------------------------- |
+| `GET`   | `/api/admin/users`            | List all users             |
+| `GET`   | `/api/admin/subscriptions`    | List all subscriptions     |
+| `DELETE`| `/api/admin/subscriptions`    | Cleanup duplicate entries  |
+| `GET`   | `/api/admin/invoices`         | List all invoices + stats  |
+| `PATCH` | `/api/admin/invoices`         | Update invoice status      |
+
+### Server Wallet Endpoints
+
+| Method  | Endpoint                           | Description                     |
+| ------- | ---------------------------------- | ------------------------------- |
+| `POST`  | `/api/sponsor/wallets/server`      | Create server-side wallet       |
+| `GET`   | `/api/sponsor/wallets/server`      | Get server wallet details       |
+| `POST`  | `/api/sponsor/wallets/server/sign` | Sign transaction with MPC       |
 
 ---
 
@@ -805,7 +904,7 @@ sequenceDiagram
 
 ## Database Schema
 
-PerkOS Stack uses **Supabase (PostgreSQL)** with 15 tables organized by function:
+PerkOS Stack uses **Supabase (PostgreSQL)** or **Firebase Firestore** with 20+ tables organized by function:
 
 ### Core x402 Tables
 
@@ -835,11 +934,13 @@ PerkOS Stack uses **Supabase (PostgreSQL)** with 15 tables organized by function
 
 ### User Management
 
-| Table                  | Purpose           |
-| ---------------------- | ----------------- |
-| `perkos_user_profiles` | User accounts     |
-| `perkos_agents`        | Agent reputation  |
-| `perkos_reviews`       | Community ratings |
+| Table                   | Purpose                        |
+| ----------------------- | ------------------------------ |
+| `perkos_user_profiles`  | User accounts & visibility     |
+| `perkos_agents`         | Agent reputation               |
+| `perkos_reviews`        | Community ratings              |
+| `perkos_subscriptions`  | User subscription status       |
+| `perkos_invoices`       | Subscription payment invoices  |
 
 ### Dynamic Pricing Tables (NEW)
 
@@ -857,18 +958,23 @@ See [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md) for complete sche
 
 ## Technology Stack
 
-| Layer          | Technology                       |
-| -------------- | -------------------------------- |
-| **Framework**  | Next.js 15, React 19, TypeScript |
-| **Database**   | Supabase (PostgreSQL)            |
-| **Blockchain** | Viem 2.40+, Thirdweb 5.114+      |
-| **Contracts**  | Hardhat, OpenZeppelin UUPS       |
-| **Styling**    | Tailwind CSS, Radix UI           |
-| **Wallet**     | Para SDK (`@getpara/react-sdk`)  |
+| Layer          | Technology                                          |
+| -------------- | --------------------------------------------------- |
+| **Framework**  | Next.js 15, React 19, TypeScript                    |
+| **Database**   | Supabase (PostgreSQL) / Firebase Firestore          |
+| **Blockchain** | Viem 2.40+, Thirdweb 5.114+                         |
+| **Contracts**  | Foundry, OpenZeppelin UUPS                          |
+| **Styling**    | Tailwind CSS, Radix UI                              |
+| **Client Wallet** | Para SDK (`@getpara/react-sdk`)                  |
+| **Server Wallet** | Dynamic SDK (MPC), Thirdweb Engine               |
 
-### Para Wallet Integration
+### Wallet Integration
 
-PerkOS Stack integrates **Para SDK** for seamless wallet management and user onboarding:
+PerkOS Stack supports **multiple wallet providers** for different use cases:
+
+#### Para SDK (Client-Side)
+
+For user-facing wallet interactions:
 
 | Feature                 | Description                              |
 | ----------------------- | ---------------------------------------- |
@@ -877,6 +983,18 @@ PerkOS Stack integrates **Para SDK** for seamless wallet management and user onb
 | **Social Login**        | Google, Twitter, Discord OAuth           |
 | **On-Ramp**             | Fiat-to-crypto purchase integration      |
 | **Recovery**            | Secret recovery phrase enabled           |
+
+#### Dynamic SDK (Server-Side MPC)
+
+For programmatic sponsor wallet creation:
+
+| Feature                 | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| **MPC Wallets**         | 2-of-2 threshold signature scheme              |
+| **Chain Support**       | EVM networks + Solana                          |
+| **Server-Side**         | No user interaction required                   |
+| **Wallet ID**           | Returns `walletId` for EVM, uses address for Solana |
+| **Programmable**        | Create wallets on-demand via API               |
 
 **User Menu Options:**
 
@@ -924,14 +1042,14 @@ PROXY_ADDRESS=0x... npm run upgrade:base
 
 ## Documentation
 
-| Document                                                     | Description                   |
-| ------------------------------------------------------------ | ----------------------------- |
-| [StackApp/README.md](StackApp/README.md)                     | Detailed API documentation    |
-| [Docs/SUPABASE_SETUP.md](Docs/SUPABASE_SETUP.md)             | Database setup guide          |
-| [Docs/DEPLOYMENT_CHECKLIST.md](Docs/DEPLOYMENT_CHECKLIST.md) | Production checklist          |
-| [Docs/X402_DEFERRED_SCHEME.md](Docs/X402_DEFERRED_SCHEME.md) | Deferred payments guide       |
-| [Docs/MULTI_CHAIN_GUIDE.md](Docs/MULTI_CHAIN_GUIDE.md)       | Network configuration         |
-| [Docs/DYNAMIC_PRICING_SPEC.md](Docs/DYNAMIC_PRICING_SPEC.md) | Dynamic pricing specification |
+| Document                                                         | Description                   |
+| ---------------------------------------------------------------- | ----------------------------- |
+| [CLAUDE.md](CLAUDE.md)                                           | Full technical documentation  |
+| [Documents/FIREBASE_SETUP.md](Documents/FIREBASE_SETUP.md)       | Database setup guide          |
+| [Documents/DEPLOYMENT_CHECKLIST.md](Documents/DEPLOYMENT_CHECKLIST.md) | Production checklist    |
+| [Documents/X402_DEFERRED_SCHEME.md](Documents/X402_DEFERRED_SCHEME.md) | Deferred payments guide  |
+| [Documents/MULTI_CHAIN_GUIDE.md](Documents/MULTI_CHAIN_GUIDE.md) | Network configuration         |
+| [StackApp/DATABASE_TABLES.md](StackApp/DATABASE_TABLES.md)       | Database schema reference     |
 
 ---
 
