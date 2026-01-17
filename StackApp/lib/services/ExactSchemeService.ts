@@ -354,6 +354,35 @@ export class ExactSchemeService {
               txHash,
               nonce: authorization.nonce,
             });
+
+            // Log the recovered transaction to database for analytics
+            const loggingService = getTransactionLoggingService();
+            let recoveredVendorDomain: string | undefined;
+            let recoveredVendorEndpoint: string | undefined;
+            try {
+              const resourceUrlStr = getResourceUrl(requirements);
+              const resourceUrl = new URL(resourceUrlStr);
+              recoveredVendorDomain = resourceUrl.hostname;
+              recoveredVendorEndpoint = resourceUrl.pathname;
+            } catch {
+              // Invalid URL, leave vendor info undefined
+            }
+
+            await loggingService.logTransaction({
+              transactionHash: txHash,
+              payerAddress: authorization.from,
+              recipientAddress: authorization.to,
+              sponsorAddress: sponsorWallet.sponsor_address,
+              amountWei: authorization.value,
+              assetAddress: requirements.asset,
+              assetSymbol: "USDC",
+              network: this.network,
+              scheme: "exact",
+              status: "success",
+              vendorDomain: recoveredVendorDomain,
+              vendorEndpoint: recoveredVendorEndpoint,
+            });
+
             return {
               success: true,
               payer: authorization.from,
@@ -366,6 +395,35 @@ export class ExactSchemeService {
             logger.warn("Nonce used on-chain but could not find transaction hash - treating as success", {
               nonce: authorization.nonce,
             });
+
+            // Still log the transaction (without hash) for analytics - better to have partial data
+            const loggingService = getTransactionLoggingService();
+            let recoveredVendorDomain: string | undefined;
+            let recoveredVendorEndpoint: string | undefined;
+            try {
+              const resourceUrlStr = getResourceUrl(requirements);
+              const resourceUrl = new URL(resourceUrlStr);
+              recoveredVendorDomain = resourceUrl.hostname;
+              recoveredVendorEndpoint = resourceUrl.pathname;
+            } catch {
+              // Invalid URL, leave vendor info undefined
+            }
+
+            await loggingService.logTransaction({
+              transactionHash: `recovered-${authorization.nonce}`, // Use nonce as placeholder since we don't have the hash
+              payerAddress: authorization.from,
+              recipientAddress: authorization.to,
+              sponsorAddress: sponsorWallet.sponsor_address,
+              amountWei: authorization.value,
+              assetAddress: requirements.asset,
+              assetSymbol: "USDC",
+              network: this.network,
+              scheme: "exact",
+              status: "success",
+              vendorDomain: recoveredVendorDomain,
+              vendorEndpoint: recoveredVendorEndpoint,
+            });
+
             return {
               success: true,  // Payment succeeded (nonce is used on-chain!)
               payer: authorization.from,
