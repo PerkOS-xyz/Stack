@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { getChainIcon } from "@/components/chain-icons";
 
 interface Transaction {
   hash: string;
@@ -170,15 +171,6 @@ export default function TransactionsPage() {
       }
     }
     return pages;
-  };
-
-  const networkIcons: Record<string, string> = {
-    avalanche: "🔺",
-    "avalanche-fuji": "🔺",
-    celo: "🌿",
-    "celo-sepolia": "🌿",
-    base: "🔵",
-    "base-sepolia": "🔵",
   };
 
   const blockExplorers: Record<string, string> = {
@@ -464,10 +456,20 @@ export default function TransactionsPage() {
 
                           {/* Network */}
                           <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{networkIcons[tx.network] || "🌐"}</span>
-                              <span className="text-sm text-gray-300 capitalize">{tx.network}</span>
-                            </div>
+                            {(() => {
+                              const chainData = getChainIcon(tx.network);
+                              const IconComponent = chainData?.Icon;
+                              return (
+                                <div className="flex items-center gap-2">
+                                  {IconComponent ? (
+                                    <IconComponent className="w-5 h-5" />
+                                  ) : (
+                                    <span className="text-lg">🌐</span>
+                                  )}
+                                  <span className="text-sm text-gray-300 capitalize">{tx.network}</span>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* Date & Time */}
