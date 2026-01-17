@@ -323,8 +323,9 @@ export class ExactSchemeService {
           nonce: authorization.nonce,
         });
 
-        // Wait a moment for chain state to sync
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait longer for chain state to sync - the tx may still be confirming
+        // Avalanche has 2s block time, so 5s should be 2-3 blocks
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // Re-check nonce state on-chain
         const isNonceActuallyUsed = await this.checkNonceState(
@@ -433,11 +434,12 @@ export class ExactSchemeService {
           }
         } else {
           // Nonce is NOT used on-chain - this might be a transient error, retry
+          // Wait a bit longer to give any pending tx time to be mined
           logger.info("Nonce not used on-chain, retrying transaction...", {
             nonce: authorization.nonce,
           });
 
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
 
           // Retry via Para server wallet
           result = await paraTxService.executeTransferWithAuthorization({

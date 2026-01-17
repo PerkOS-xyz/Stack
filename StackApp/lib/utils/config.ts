@@ -1,4 +1,37 @@
 import type { Address } from "../types/x402";
+import type { Hex } from "viem";
+
+/**
+ * Normalize a private key to the correct format for viem
+ * - Removes whitespace/quotes
+ * - Ensures 0x prefix
+ * - Validates length (64 hex characters)
+ */
+function normalizePrivateKey(key: string | undefined): Hex | undefined {
+  if (!key) return undefined;
+
+  // Remove whitespace, quotes, and line breaks
+  let normalized = key.trim().replace(/['"]/g, '').replace(/\r?\n/g, '');
+
+  // Add 0x prefix if missing
+  if (!normalized.startsWith('0x')) {
+    normalized = `0x${normalized}`;
+  }
+
+  // Validate length (should be 66 chars: 0x + 64 hex chars)
+  if (normalized.length !== 66) {
+    console.error(`Invalid private key length: expected 66 chars (0x + 64 hex), got ${normalized.length}`);
+    return undefined;
+  }
+
+  // Validate it's valid hex
+  if (!/^0x[0-9a-fA-F]{64}$/.test(normalized)) {
+    console.error('Invalid private key format: not valid hexadecimal');
+    return undefined;
+  }
+
+  return normalized as Hex;
+}
 
 // Supported networks
 export type SupportedNetwork =
@@ -35,7 +68,7 @@ export const config = {
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
   },
 
-  privateKey: process.env.PRIVATE_KEY as Address | undefined,
+  privateKey: normalizePrivateKey(process.env.PRIVATE_KEY),
 
   // x402 Payment Tokens (USDC addresses by network)
   paymentTokens: {
