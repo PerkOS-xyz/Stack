@@ -24,6 +24,7 @@ import { getWalletConfig } from "../../config";
 // Dynamic SDK Imports
 import {
   DynamicContextProvider,
+  DynamicUserProfile,
   useDynamicContext,
   useUserWallets,
   type Wallet,
@@ -117,7 +118,14 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
     chainId,
     openModal: () => setShowAuthFlow(true),
     closeModal: () => setShowAuthFlow(false),
-    openUserProfile: () => setShowDynamicUserProfile(true),
+    openUserProfile: () => {
+      console.log("[DynamicWalletBridge] openUserProfile called, setShowDynamicUserProfile:", typeof setShowDynamicUserProfile);
+      if (setShowDynamicUserProfile) {
+        setShowDynamicUserProfile(true);
+      } else {
+        console.warn("[DynamicWalletBridge] setShowDynamicUserProfile is not available");
+      }
+    },
     disconnect: async () => {
       try {
         await handleLogOut();
@@ -150,6 +158,8 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
   return (
     <WalletContextProvider value={contextValue}>
       {children}
+      {/* DynamicUserProfile renders as a modal when setShowDynamicUserProfile(true) is called */}
+      <DynamicUserProfile />
     </WalletContextProvider>
   );
 }
