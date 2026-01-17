@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
     // Try to order by created_at, but also fetch without ordering if that fails
     const { data: recentTxs } = await firebaseAdmin
       .from("perkos_x402_transactions")
-      .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at")
+      .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at, payer_address, recipient_address, vendor_domain, vendor_endpoint, status")
       .eq("status", "success")
       .limit(9);
 
@@ -177,8 +177,10 @@ export async function GET(req: NextRequest) {
 
     const recentTransactions = sortedTxs.map((tx) => {
       let timeStr = "Recently";
+      let datetimeStr = "Unknown";
       if (tx.created_at) {
-        const timeDiff = Date.now() - new Date(tx.created_at).getTime();
+        const txDate = new Date(tx.created_at);
+        const timeDiff = Date.now() - txDate.getTime();
         const minutesAgo = Math.floor(timeDiff / (1000 * 60));
         timeStr =
           minutesAgo < 60
@@ -186,13 +188,22 @@ export async function GET(req: NextRequest) {
             : minutesAgo < 1440
             ? `${Math.floor(minutesAgo / 60)}h ago`
             : `${Math.floor(minutesAgo / 1440)}d ago`;
+        datetimeStr = txDate.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
       }
 
       // Format amount from USD value
       const amountUsd = tx.amount_usd || 0;
-      const formattedAmount = amountUsd >= 1000
-        ? `$${(amountUsd / 1000).toFixed(1)}K`
-        : `$${amountUsd.toFixed(2)}`;
+      const tokenSymbol = tx.asset_symbol || "USDC";
+      const formattedAmount = `${amountUsd.toFixed(3)} ${tokenSymbol}`;
+
+      // Truncate addresses
+      const truncateAddr = (addr: string) =>
+        addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
 
       return {
         hash: `${tx.transaction_hash.slice(0, 6)}...${tx.transaction_hash.slice(-4)}`,
@@ -202,6 +213,15 @@ export async function GET(req: NextRequest) {
         scheme: tx.scheme,
         time: timeStr,
         timestamp: tx.created_at ? new Date(tx.created_at).getTime() : Date.now(),
+        // New fields
+        from: truncateAddr(tx.payer_address),
+        fullFrom: tx.payer_address || "",
+        to: truncateAddr(tx.recipient_address),
+        fullTo: tx.recipient_address || "",
+        vendorDomain: tx.vendor_domain || null,
+        vendorEndpoint: tx.vendor_endpoint || null,
+        status: tx.status || "success",
+        datetime: datetimeStr,
       };
     });
 

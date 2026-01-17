@@ -56,9 +56,9 @@ export function PolygonIcon({ className = "w-10 h-10" }: { className?: string })
 
 export function CeloIcon({ className = "w-10 h-10" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 950 950" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path fill="#FCFF52" d="M375 850c151.88 0 275-123.12 275-275S526.88 300 375 300 100 423.12 100 575s123.12 275 275 275Zm0-100c-96.65 0-175-78.35-175-175s78.35-175 175-175 175 78.35 175 175-78.35 175-175 175Z"/>
-      <path fill="#FCFF52" d="M575 650c151.88 0 275-123.12 275-275S726.88 100 575 100 300 223.12 300 375s123.12 275 275 275Zm0-100c-96.65 0-175-78.35-175-175s78.35-175 175-175 175 78.35 175 175-78.35 175-175 175Z"/>
+    <svg className={className} viewBox="0 0 2500 2500" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="1250" cy="1250" r="1250" fill="#FCFF52" fillRule="evenodd" clipRule="evenodd"/>
+      <path fill="#000000" fillRule="evenodd" clipRule="evenodd" d="M1949.3,546.2H550.7v1407.7h1398.7v-491.4h-232.1c-80,179.3-260.1,304.1-466.2,304.1c-284.1,0-514.2-233.6-514.2-517.5c0-284,230.1-515.6,514.2-515.6c210.1,0,390.2,128.9,470.2,312.1h228.1V546.2z"/>
     </svg>
   );
 }
@@ -72,6 +72,15 @@ export function AvalancheIcon({ className = "w-10 h-10" }: { className?: string 
   );
 }
 
+export function MonadIcon({ className = "w-10 h-10" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="50" fill="#836EF9"/>
+      <path d="M30 65V35L50 50L70 35V65L50 50L30 65Z" fill="white"/>
+    </svg>
+  );
+}
+
 // Chain data with icons
 export const CHAIN_DATA = [
   { name: "Polygon", Icon: PolygonIcon, color: "#8247E5" },
@@ -81,4 +90,30 @@ export const CHAIN_DATA = [
   { name: "Base", Icon: BaseIcon, color: "#0052FF" },
   { name: "Optimism", Icon: OptimismIcon, color: "#FF0420" },
   { name: "Arbitrum", Icon: ArbitrumIcon, color: "#213147" },
+  { name: "Monad", Icon: MonadIcon, color: "#836EF9" },
 ] as const;
+
+// Network name to icon mapping (handles both mainnet and testnet variants)
+const NETWORK_ICON_MAP: Record<string, typeof CHAIN_DATA[number]> = {
+  polygon: CHAIN_DATA[0],
+  "polygon-amoy": CHAIN_DATA[0],
+  celo: CHAIN_DATA[1],
+  "celo-sepolia": CHAIN_DATA[1],
+  avalanche: CHAIN_DATA[2],
+  "avalanche-fuji": CHAIN_DATA[2],
+  ethereum: CHAIN_DATA[3],
+  sepolia: CHAIN_DATA[3],
+  base: CHAIN_DATA[4],
+  "base-sepolia": CHAIN_DATA[4],
+  optimism: CHAIN_DATA[5],
+  "optimism-sepolia": CHAIN_DATA[5],
+  arbitrum: CHAIN_DATA[6],
+  "arbitrum-sepolia": CHAIN_DATA[6],
+  monad: CHAIN_DATA[7],
+  "monad-testnet": CHAIN_DATA[7],
+};
+
+// Helper to get chain icon component by network name
+export function getChainIcon(network: string): typeof CHAIN_DATA[number] | null {
+  return NETWORK_ICON_MAP[network.toLowerCase()] || null;
+}

@@ -2,7 +2,7 @@
 
 import { config } from "@/lib/utils/config";
 import { SUPPORTED_NETWORKS } from "@/lib/utils/chains";
-import { CHAIN_DATA } from "@/components/chain-icons";
+import { CHAIN_DATA, getChainIcon } from "@/components/chain-icons";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +31,15 @@ interface RecentTransaction {
   scheme: string;
   time: string;
   timestamp: number;
+  // Additional fields for detailed view
+  from: string;
+  fullFrom: string;
+  to: string;
+  fullTo: string;
+  vendorDomain: string | null;
+  vendorEndpoint: string | null;
+  status: string;
+  datetime: string;
 }
 
 interface DashboardStats {
@@ -541,13 +550,22 @@ export default function Home() {
                   No network data available
                 </div>
               ) : (
-                activeNetworks.map((network) => (
+                activeNetworks.map((network) => {
+                  const chainData = getChainIcon(network.network);
+                  const IconComponent = chainData?.Icon;
+                  return (
                   <div
                     key={network.network}
                     className="group bg-white/[0.02] border border-white/10 hover:border-pink-500/30 rounded-xl p-5 transition-all duration-300 hover:bg-white/[0.04]"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="text-3xl">{network.icon}</span>
+                      {IconComponent ? (
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                          <IconComponent className="w-8 h-8" />
+                        </div>
+                      ) : (
+                        <span className="text-3xl">{network.icon}</span>
+                      )}
                       <div>
                         <div className="font-semibold text-white">{network.name}</div>
                         <div className="text-xs font-mono text-gray-500">{network.network}</div>
@@ -564,7 +582,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>
@@ -634,13 +652,21 @@ export default function Home() {
               {/* Network cards */}
               {activeNetworks.slice(0, 2).map((network) => {
                 const networkChart = networkCharts[network.network] || [];
+                const chainData = getChainIcon(network.network);
+                const IconComponent = chainData?.Icon;
                 return (
                   <div
                     key={network.network}
                     className="bg-white/[0.02] border border-white/10 rounded-2xl p-6"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="text-2xl">{network.icon}</span>
+                      {IconComponent ? (
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                          <IconComponent className="w-6 h-6" />
+                        </div>
+                      ) : (
+                        <span className="text-2xl">{network.icon}</span>
+                      )}
                       <div>
                         <div className="font-semibold text-white">{network.name}</div>
                         <div className="text-xs font-mono text-gray-500">{network.network}</div>
@@ -700,64 +726,124 @@ export default function Home() {
                   <p className="text-sm">No transactions yet</p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {recentTransactions.map((tx) => {
-                    const networkIcon = networks.mainnet.find((n) => n.network === tx.network)?.icon ||
-                      networks.testnet.find((n) => n.network === tx.network)?.icon ||
-                      "🌐";
-                    const explorerUrl = getExplorerUrl(tx.network, tx.fullHash);
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Transaction</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Amount</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">From / To</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Vendor</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Network</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Time</th>
+                        <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {recentTransactions.map((tx) => {
+                        const chainData = getChainIcon(tx.network);
+                        const TxIconComponent = chainData?.Icon;
+                        const explorerUrl = getExplorerUrl(tx.network, tx.fullHash);
 
-                    return (
-                      <a
-                        key={tx.fullHash}
-                        href={explorerUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group block p-5 bg-white/[0.02] border border-white/10 rounded-xl hover:border-pink-500/30 hover:bg-white/[0.04] transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{networkIcon}</span>
-                            <span className="text-xs text-gray-500 capitalize font-mono">{tx.network}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
-                              success
-                            </span>
-                            <svg className="w-4 h-4 text-gray-600 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </div>
-                        </div>
+                        return (
+                          <tr
+                            key={tx.fullHash}
+                            className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                            onClick={() => window.open(explorerUrl, '_blank')}
+                          >
+                            {/* Transaction Hash & Scheme */}
+                            <td className="px-3 py-3">
+                              <div className="flex flex-col gap-1">
+                                <code className="text-sm text-pink-400 font-mono group-hover:text-pink-300">{tx.hash}</code>
+                                <span className={`inline-flex w-fit px-2 py-0.5 rounded-md text-xs font-medium ${
+                                  tx.scheme === "exact"
+                                    ? "bg-pink-500/20 text-pink-400"
+                                    : "bg-violet-500/20 text-violet-400"
+                                }`}>
+                                  {tx.scheme}
+                                </span>
+                              </div>
+                            </td>
 
-                        <div className="mb-4">
-                          <div className="text-xs text-gray-600 mb-1">Hash</div>
-                          <code className="text-sm text-pink-400 font-mono">{tx.hash}</code>
-                        </div>
+                            {/* Amount */}
+                            <td className="px-3 py-3">
+                              <span className="text-sm font-semibold text-emerald-400">{tx.amount}</span>
+                            </td>
 
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <div className="text-xs text-gray-600 mb-1">Amount</div>
-                            <div className="text-lg font-bold text-emerald-400">{tx.amount}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-gray-600 mb-1">Time</div>
-                            <div className="text-sm text-gray-300">{tx.time}</div>
-                          </div>
-                        </div>
+                            {/* From / To */}
+                            <td className="px-3 py-3">
+                              <div className="flex flex-col gap-0.5 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-600">From:</span>
+                                  <code className="text-gray-400 font-mono">{tx.from || "-"}</code>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-600">To:</span>
+                                  <code className="text-gray-400 font-mono">{tx.to || "-"}</code>
+                                </div>
+                              </div>
+                            </td>
 
-                        <div className="pt-4 border-t border-white/5">
-                          <span className={`px-3 py-1 rounded-md text-xs font-mono uppercase ${
-                            tx.scheme === "exact"
-                              ? "bg-pink-500/20 text-pink-400"
-                              : "bg-violet-500/20 text-violet-400"
-                          }`}>
-                            {tx.scheme}
-                          </span>
-                        </div>
-                      </a>
-                    );
-                  })}
+                            {/* Vendor */}
+                            <td className="px-3 py-3">
+                              {tx.vendorDomain || tx.vendorEndpoint ? (
+                                <div className="flex flex-col gap-0.5">
+                                  {tx.vendorDomain && (
+                                    <span className="text-xs text-cyan-400 font-medium">{tx.vendorDomain}</span>
+                                  )}
+                                  {tx.vendorEndpoint && (
+                                    <code className="text-xs text-gray-500 font-mono truncate max-w-[120px]" title={tx.vendorEndpoint}>
+                                      {tx.vendorEndpoint}
+                                    </code>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-gray-600 text-xs">-</span>
+                              )}
+                            </td>
+
+                            {/* Network */}
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-2">
+                                {TxIconComponent ? (
+                                  <TxIconComponent className="w-5 h-5" />
+                                ) : (
+                                  <span className="text-base">🌐</span>
+                                )}
+                                <span className="text-xs text-gray-400 capitalize">{tx.network}</span>
+                              </div>
+                            </td>
+
+                            {/* Time */}
+                            <td className="px-3 py-3">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs text-gray-400">{tx.datetime}</span>
+                                <span className="text-xs text-gray-600">{tx.time}</span>
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  tx.status === "success"
+                                    ? "bg-emerald-500/20 text-emerald-400"
+                                    : tx.status === "pending"
+                                    ? "bg-amber-500/20 text-amber-400"
+                                    : "bg-red-500/20 text-red-400"
+                                }`}>
+                                  {tx.status}
+                                </span>
+                                <svg className="w-4 h-4 text-gray-600 group-hover:text-pink-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
