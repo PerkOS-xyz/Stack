@@ -31,6 +31,37 @@ interface User {
   created_at: string;
 }
 
+// Helper to detect wallet type from address
+function getWalletType(address: string): { type: "evm" | "solana" | "unknown"; label: string; icon: string } {
+  if (!address) return { type: "unknown", label: "Unknown", icon: "❓" };
+
+  // EVM addresses start with 0x and are 42 characters
+  if (address.startsWith("0x") && address.length === 42) {
+    return { type: "evm", label: "EVM", icon: "💎" };
+  }
+
+  // Solana addresses are base58 encoded (alphanumeric, no 0x prefix, typically 32-44 chars)
+  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
+    return { type: "solana", label: "Solana", icon: "☀️" };
+  }
+
+  return { type: "unknown", label: "Unknown", icon: "❓" };
+}
+
+// Helper to format date safely
+function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return "-";
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 interface Agent {
   id: string;
   wallet_address: string;
@@ -106,6 +137,47 @@ interface Coupon {
   updated_at: string;
 }
 
+interface Subscription {
+  id: string;
+  user_wallet_address: string;
+  tier: string;
+  status: "active" | "cancelled" | "expired" | "trial";
+  started_at: string;
+  expires_at: string | null;
+  trial_ends_at: string | null;
+  cancelled_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Invoice {
+  id: string;
+  user_wallet: string;
+  subscription_id: string | null;
+  subscription_tier: string;
+  billing_cycle: "monthly" | "yearly";
+  original_amount: number;
+  discount_amount: number;
+  final_amount: number;
+  coupon_code: string | null;
+  coupon_id: string | null;
+  network: string;
+  transaction_hash: string | null;
+  payment_status: "pending" | "completed" | "failed";
+  created_at: string;
+}
+
+interface InvoiceStats {
+  totalInvoices: number;
+  completedCount: number;
+  pendingCount: number;
+  failedCount: number;
+  totalRevenue: number;
+  pendingRevenue: number;
+}
+
 interface CouponFormData {
   code: string;
   description: string;
@@ -137,7 +209,7 @@ interface SlowQuery {
   timestamp: string;
 }
 
-type TabType = "overview" | "users" | "agents" | "vendors" | "transactions" | "wallets" | "coupons" | "performance";
+type TabType = "overview" | "users" | "memberships" | "agents" | "vendors" | "transactions" | "wallets" | "coupons" | "performance";
 
 export default function AdminPage() {
   const { address } = useWalletContext();
@@ -156,6 +228,9 @@ export default function AdminPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoiceStats, setInvoiceStats] = useState<InvoiceStats | null>(null);
 
   // Performance tab data
   const [performanceStats, setPerformanceStats] = useState<PerformanceStats | null>(null);
@@ -169,6 +244,8 @@ export default function AdminPage() {
   const [transactionsPage, setTransactionsPage] = useState(0);
   const [walletsPage, setWalletsPage] = useState(0);
   const [couponsPage, setCouponsPage] = useState(0);
+  const [subscriptionsPage, setSubscriptionsPage] = useState(0);
+  const [invoicesPage, setInvoicesPage] = useState(0);
 
   // Vendor delete state
   const [deletingVendorId, setDeletingVendorId] = useState<string | null>(null);
@@ -191,6 +268,8 @@ export default function AdminPage() {
   const [transactionsTotalPages, setTransactionsTotalPages] = useState(0);
   const [walletsTotalPages, setWalletsTotalPages] = useState(0);
   const [couponsTotalPages, setCouponsTotalPages] = useState(0);
+  const [subscriptionsTotalPages, setSubscriptionsTotalPages] = useState(0);
+  const [invoicesTotalPages, setInvoicesTotalPages] = useState(0);
 
   // Coupon management state
   const [showCouponForm, setShowCouponForm] = useState(false);
@@ -344,6 +423,21 @@ export default function AdminPage() {
             setCoupons(couponsData.coupons || []);
             setCouponsTotalPages(couponsData.totalPages || 0);
             break;
+
+          case "memberships":
+            // Fetch subscriptions
+            const subsRes = await fetch(`/api/admin/subscriptions?admin=${address}`);
+            const subsData = await subsRes.json();
+            setSubscriptions(subsData.subscriptions || []);
+            setSubscriptionsTotalPages(Math.ceil((subsData.total || 0) / 20));
+
+            // Fetch invoices
+            const invoicesRes = await fetch(`/api/admin/invoices?address=${address}&page=${invoicesPage}`);
+            const invoicesData = await invoicesRes.json();
+            setInvoices(invoicesData.invoices || []);
+            setInvoicesTotalPages(invoicesData.totalPages || 0);
+            setInvoiceStats(invoicesData.stats || null);
+            break;
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -351,7 +445,7 @@ export default function AdminPage() {
     };
 
     fetchData();
-  }, [address, isAdmin, activeTab, usersPage, agentsPage, vendorsPage, transactionsPage, walletsPage, couponsPage]);
+  }, [address, isAdmin, activeTab, usersPage, agentsPage, vendorsPage, transactionsPage, walletsPage, couponsPage, subscriptionsPage, invoicesPage]);
 
   // Open delete confirmation dialog
   const handleDeleteVendor = (vendorId: string, vendorName: string) => {
@@ -836,6 +930,7 @@ export default function AdminPage() {
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: "overview", label: "Overview", icon: "📊" },
     { id: "users", label: "Users", icon: "👤" },
+    { id: "memberships", label: "Memberships", icon: "💳" },
     { id: "performance", label: "Performance", icon: "⚡" },
     { id: "agents", label: "Agents", icon: "🤖" },
     { id: "vendors", label: "Vendors", icon: "🏪" },
@@ -952,9 +1047,11 @@ export default function AdminPage() {
               <table className="w-full">
                 <thead className="bg-slate-800/50">
                   <tr>
+                    <th className="text-left text-gray-400 text-sm px-4 py-3">User ID</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Wallet</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Name</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Type</th>
+                    <th className="text-left text-gray-400 text-sm px-4 py-3">Chain</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Verified</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Public</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Joined</th>
@@ -965,6 +1062,11 @@ export default function AdminPage() {
                   {users.map((user) => (
                     <tr key={user.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
                       <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-gray-500" title={user.id}>
+                          {user.id.slice(0, 8)}...
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
                         <AddressDisplay address={user.wallet_address as Address} skipEns />
                       </td>
                       <td className="px-4 py-3 text-gray-300">{user.display_name || "-"}</td>
@@ -972,6 +1074,25 @@ export default function AdminPage() {
                         <span className="px-2 py-1 text-xs rounded-full bg-pink-500/20 text-pink-400">
                           {user.account_type}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const walletType = getWalletType(user.wallet_address);
+                          return (
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                walletType.type === "evm"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : walletType.type === "solana"
+                                  ? "bg-purple-500/20 text-purple-400"
+                                  : "bg-gray-500/20 text-gray-400"
+                              }`}
+                              title={walletType.type === "solana" ? "Social login (Solana embedded wallet)" : "External wallet"}
+                            >
+                              {walletType.icon} {walletType.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         {user.is_verified ? (
@@ -1003,7 +1124,7 @@ export default function AdminPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-sm">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {formatDate(user.created_at)}
                       </td>
                       <td className="px-4 py-3">
                         <button
@@ -1018,7 +1139,7 @@ export default function AdminPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                         No users found
                       </td>
                     </tr>
@@ -1027,6 +1148,194 @@ export default function AdminPage() {
               </table>
             </div>
             <Pagination page={usersPage} totalPages={usersTotalPages} onPageChange={setUsersPage} />
+          </div>
+        )}
+
+        {activeTab === "memberships" && (
+          <div className="space-y-6">
+            {/* Invoice Stats Cards */}
+            {invoiceStats && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="bg-gradient-to-br from-pink-500/20 to-pink-600/10 border border-pink-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-200">{invoiceStats.totalInvoices}</p>
+                  <p className="text-sm text-gray-400">Total Invoices</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-green-400">{invoiceStats.completedCount}</p>
+                  <p className="text-sm text-gray-400">Completed</p>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-yellow-400">{invoiceStats.pendingCount}</p>
+                  <p className="text-sm text-gray-400">Pending</p>
+                </div>
+                <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-red-400">{invoiceStats.failedCount}</p>
+                  <p className="text-sm text-gray-400">Failed</p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-emerald-400">${invoiceStats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-sm text-gray-400">Total Revenue</p>
+                </div>
+                <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-amber-400">${invoiceStats.pendingRevenue.toFixed(2)}</p>
+                  <p className="text-sm text-gray-400">Pending Revenue</p>
+                </div>
+              </div>
+            )}
+
+            {/* Subscriptions Section */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-gray-200">All Subscriptions ({subscriptions.length})</h2>
+              <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-slate-800/50">
+                    <tr>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">User</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Tier</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Status</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Started</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Expires</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscriptions.slice(subscriptionsPage * 10, (subscriptionsPage + 1) * 10).map((sub) => (
+                      <tr key={sub.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
+                        <td className="px-4 py-3">
+                          <AddressDisplay address={sub.user_wallet_address as Address} skipEns />
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 text-xs rounded-full capitalize ${
+                            sub.tier === "enterprise" ? "bg-purple-500/20 text-purple-400" :
+                            sub.tier === "scale" ? "bg-orange-500/20 text-orange-400" :
+                            sub.tier === "pro" ? "bg-pink-500/20 text-pink-400" :
+                            sub.tier === "starter" ? "bg-blue-500/20 text-blue-400" :
+                            "bg-gray-500/20 text-gray-400"
+                          }`}>
+                            {sub.tier}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            sub.status === "active" ? "bg-green-500/20 text-green-400" :
+                            sub.status === "trial" ? "bg-yellow-500/20 text-yellow-400" :
+                            sub.status === "cancelled" ? "bg-red-500/20 text-red-400" :
+                            "bg-gray-500/20 text-gray-400"
+                          }`}>
+                            {sub.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">
+                          {formatDate(sub.started_at)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">
+                          {sub.expires_at ? formatDate(sub.expires_at) : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">
+                          {formatDate(sub.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                    {subscriptions.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          No subscriptions found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                page={subscriptionsPage}
+                totalPages={Math.ceil(subscriptions.length / 10)}
+                onPageChange={setSubscriptionsPage}
+              />
+            </div>
+
+            {/* Invoices Section */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-gray-200">Payment History ({invoices.length})</h2>
+              <div className="bg-slate-900/50 border border-pink-500/20 rounded-xl overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-slate-800/50">
+                    <tr>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">User</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Tier</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Cycle</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Original</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Discount</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Final</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Status</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Network</th>
+                      <th className="text-left text-gray-400 text-sm px-4 py-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id} className="border-t border-pink-500/10 hover:bg-slate-800/30">
+                        <td className="px-4 py-3">
+                          <AddressDisplay address={invoice.user_wallet as Address} skipEns />
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 text-xs rounded-full capitalize ${
+                            invoice.subscription_tier === "enterprise" ? "bg-purple-500/20 text-purple-400" :
+                            invoice.subscription_tier === "scale" ? "bg-orange-500/20 text-orange-400" :
+                            invoice.subscription_tier === "pro" ? "bg-pink-500/20 text-pink-400" :
+                            invoice.subscription_tier === "starter" ? "bg-blue-500/20 text-blue-400" :
+                            "bg-gray-500/20 text-gray-400"
+                          }`}>
+                            {invoice.subscription_tier}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-300 capitalize text-sm">
+                          {invoice.billing_cycle}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">
+                          ${invoice.original_amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {invoice.discount_amount > 0 ? (
+                            <span className="text-green-400">-${invoice.discount_amount.toFixed(2)}</span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                          {invoice.coupon_code && (
+                            <span className="ml-1 text-xs text-purple-400">({invoice.coupon_code})</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-200 font-semibold text-sm">
+                          ${invoice.final_amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            invoice.payment_status === "completed" ? "bg-green-500/20 text-green-400" :
+                            invoice.payment_status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
+                            "bg-red-500/20 text-red-400"
+                          }`}>
+                            {invoice.payment_status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm capitalize">
+                          {invoice.network}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">
+                          {formatDate(invoice.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                    {invoices.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                          No invoices found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination page={invoicesPage} totalPages={invoicesTotalPages} onPageChange={setInvoicesPage} />
+            </div>
           </div>
         )}
 
