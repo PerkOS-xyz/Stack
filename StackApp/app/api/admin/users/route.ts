@@ -189,3 +189,62 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/admin/users
+ * Update user visibility (is_public) (admin only)
+ * Body: { address: string, userId: string, is_public: boolean }
+ */
+export async function PATCH(req: NextRequest) {
+  const startTime = Date.now();
+  try {
+    const body = await req.json();
+    const { address, userId, is_public } = body;
+
+    if (!address || !userId || typeof is_public !== "boolean") {
+      return NextResponse.json(
+        { error: "Address, userId, and is_public parameters required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isAdminWallet(address)) {
+      return NextResponse.json(
+        { error: "Unauthorized: Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    // Update user visibility
+    const { data, error } = await firebaseAdmin
+      .from("perkos_user_profiles")
+      .update({ is_public })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating user visibility:", error);
+      return NextResponse.json(
+        { error: "Failed to update user visibility" },
+        { status: 500 }
+      );
+    }
+
+    console.log(`[Admin] User visibility updated: ${userId} -> is_public: ${is_public}`);
+
+    logApiPerformance("/api/admin/users", "PATCH", startTime, 200);
+    return NextResponse.json({
+      success: true,
+      message: `User visibility updated to ${is_public ? "public" : "private"}`,
+      user: data,
+    });
+  } catch (error) {
+    console.error("Error in PATCH /api/admin/users:", error);
+    logApiPerformance("/api/admin/users", "PATCH", startTime, 500);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
