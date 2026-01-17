@@ -157,23 +157,18 @@ export async function GET(req: NextRequest) {
       }];
     }
 
-    // Fetch recent transactions (last 9 for landing page card display)
-    // Try to order by created_at, but also fetch without ordering if that fails
-    const { data: recentTxs } = await firebaseAdmin
+    // Fetch recent transactions (last 10 for landing page display)
+    // Match the approach from /api/x402/transactions - order by created_at, no status filter in query
+    const { data: recentTxsRaw } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("transaction_hash, network, amount_usd, asset_symbol, scheme, created_at, payer_address, recipient_address, vendor_domain, vendor_endpoint, status")
-      .eq("status", "success")
-      .limit(9);
+      .order("created_at", { ascending: false })
+      .limit(20);
 
-    // Sort transactions - those with created_at first (newest), then others
-    const sortedTxs = (recentTxs || []).sort((a, b) => {
-      if (a.created_at && b.created_at) {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      if (a.created_at) return -1;
-      if (b.created_at) return 1;
-      return 0;
-    });
+    // Filter for successful transactions and take only 10
+    const sortedTxs = (recentTxsRaw || [])
+      .filter((tx) => tx.status === "success")
+      .slice(0, 10);
 
     const recentTransactions = sortedTxs.map((tx) => {
       let timeStr = "Recently";
