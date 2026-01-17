@@ -23,7 +23,7 @@ Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across mul
 PerkOS-Stack/
 ├── CLAUDE.md                     # This file - Main project documentation
 ├── Documents/                    # Detailed guides and documentation
-│   ├── SUPABASE_SETUP.md        # Database setup guide
+│   ├── FIREBASE_SETUP.md        # Database setup guide
 │   ├── DEPLOYMENT_CHECKLIST.md  # Production deployment
 │   ├── X402_DEFERRED_SCHEME.md  # Deferred payments guide
 │   ├── MULTI_CHAIN_GUIDE.md     # Multi-chain configuration
@@ -85,8 +85,8 @@ PerkOS-Stack/
     │   │   ├── EventIndexer.ts          # Blockchain event indexing
     │   │   ├── ThirdwebService.ts       # Thirdweb SDK integration
     │   │   └── TurnkeyService.ts        # Turnkey wallet management
-    │   ├── db/                   # Database layer (Supabase)
-    │   │   └── supabase.ts       # Supabase client
+    │   ├── db/                   # Database layer (Firebase)
+    │   │   └── firebase.ts       # Firebase Firestore client
     │   ├── utils/                # Utilities
     │   │   ├── chains.ts         # Multi-chain config (16 networks)
     │   │   ├── config.ts         # Application configuration
@@ -137,7 +137,7 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 ### Technology Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Database**: Supabase (PostgreSQL) with 5 core tables (perkos\_\* prefix)
+- **Database**: Firebase Firestore with 5 core collections (perkos\_\* prefix)
 - **Smart Contracts**: Foundry, Solidity 0.8.20+, OpenZeppelin Upgradeable
 - **Blockchain**: Viem 2.40+, Thirdweb 5.114+, multi-chain RPC providers
 - **Wallet Integration**: Para SDK (@getpara/react-sdk), Thirdweb SDK, Turnkey wallet service
@@ -198,7 +198,7 @@ The **MiddlewareApp** is the main middleware server that:
 - Manages 6 blockchain networks (3 mainnet + 3 testnet)
 - Implements dual payment schemes (exact + deferred)
 - Provides ERC-8004 compliant agent discovery
-- Indexes blockchain events to Supabase database
+- Indexes blockchain events to Firebase Firestore database
 
 ### Core Services
 
@@ -226,7 +226,7 @@ The **MiddlewareApp** is the main middleware server that:
 #### 4. EventIndexer
 
 - Monitors blockchain events across all networks
-- Indexes transaction data to Supabase
+- Indexes transaction data to Firebase Firestore
 - Updates agent reputation metrics
 - Aggregates network statistics
 
@@ -1108,7 +1108,7 @@ We welcome contributions from the community! Please see [CONTRIBUTING.md](CONTRI
 All detailed documentation is located in the `/Documents` folder:
 
 - **[UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_GUIDE.md)** - ⭐ Upgradeable contract deployment and upgrade guide
-- **[SUPABASE_SETUP.md](Documents/SUPABASE_SETUP.md)** - Complete Supabase database setup guide
+- **[FIREBASE_SETUP.md](Documents/FIREBASE_SETUP.md)** - Complete Firebase database setup guide
 - **[DEPLOYMENT_CHECKLIST.md](Documents/DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
 - **[X402_DEFERRED_SCHEME.md](Documents/X402_DEFERRED_SCHEME.md)** - Deferred payment implementation guide
 - **[MULTI_CHAIN_GUIDE.md](Documents/MULTI_CHAIN_GUIDE.md)** - Multi-chain configuration and deployment

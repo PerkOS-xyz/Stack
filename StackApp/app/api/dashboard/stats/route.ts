@@ -30,7 +30,7 @@ const NETWORK_CONFIG = {
 
 /**
  * GET /api/dashboard/stats
- * Returns dashboard statistics for the landing page from Supabase
+ * Returns dashboard statistics for the landing page from Firebase Firestore
  */
 export async function GET(req: NextRequest) {
   try {
