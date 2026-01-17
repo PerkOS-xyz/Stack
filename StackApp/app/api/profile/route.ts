@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       kickHandle,
       companyName,
       companyRegistrationNumber,
-      isPublic = true,
+      isPublic = false,
     } = body;
 
     // Validate required fields

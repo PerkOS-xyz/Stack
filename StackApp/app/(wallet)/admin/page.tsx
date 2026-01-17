@@ -27,6 +27,7 @@ interface User {
   display_name: string | null;
   avatar_url: string | null;
   is_verified: boolean;
+  is_public: boolean;
   created_at: string;
 }
 
@@ -176,6 +177,9 @@ export default function AdminPage() {
   // User delete state
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<{ id: string; walletAddress: string; displayName: string | null } | null>(null);
+
+  // User visibility toggle state
+  const [togglingVisibilityUserId, setTogglingVisibilityUserId] = useState<string | null>(null);
 
   // Cleanup state
   const [isCleaningUp, setIsCleaningUp] = useState(false);
@@ -422,6 +426,41 @@ export default function AdminPage() {
       alert("Failed to delete user. Please try again.");
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  // Toggle user visibility (show/hide from public Contributors page)
+  const handleToggleUserVisibility = async (user: User) => {
+    if (!address) return;
+
+    setTogglingVisibilityUserId(user.id);
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          userId: user.id,
+          is_public: !user.is_public,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Update user in local state
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, is_public: !u.is_public } : u
+          )
+        );
+      } else {
+        alert(`Failed to update visibility: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error toggling user visibility:", error);
+      alert("Failed to update visibility. Please try again.");
+    } finally {
+      setTogglingVisibilityUserId(null);
     }
   };
 
@@ -917,6 +956,7 @@ export default function AdminPage() {
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Name</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Type</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Verified</th>
+                    <th className="text-left text-gray-400 text-sm px-4 py-3">Public</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Joined</th>
                     <th className="text-left text-gray-400 text-sm px-4 py-3">Actions</th>
                   </tr>
@@ -940,6 +980,28 @@ export default function AdminPage() {
                           <span className="text-gray-500">-</span>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleToggleUserVisibility(user)}
+                          disabled={togglingVisibilityUserId === user.id}
+                          className={`px-3 py-1 text-xs rounded-lg transition-all border disabled:opacity-50 disabled:cursor-not-allowed ${
+                            user.is_public
+                              ? "bg-green-500/20 text-green-400 hover:bg-green-500/30 border-green-500/30"
+                              : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 border-gray-500/30"
+                          }`}
+                          title={user.is_public ? "Click to hide from Contributors page" : "Click to show on Contributors page"}
+                        >
+                          {togglingVisibilityUserId === user.id ? (
+                            <span className="flex items-center gap-1">
+                              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            </span>
+                          ) : user.is_public ? (
+                            "👁️ Visible"
+                          ) : (
+                            "🙈 Hidden"
+                          )}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-gray-400 text-sm">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
@@ -956,7 +1018,7 @@ export default function AdminPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                         No users found
                       </td>
                     </tr>
