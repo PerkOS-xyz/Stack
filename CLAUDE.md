@@ -23,7 +23,7 @@ Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across mul
 PerkOS-Stack/
 ├── CLAUDE.md                     # This file - Main project documentation
 ├── Documents/                    # Detailed guides and documentation
-│   ├── SUPABASE_SETUP.md        # Database setup guide
+│   ├── FIREBASE_SETUP.md        # Database setup guide
 │   ├── DEPLOYMENT_CHECKLIST.md  # Production deployment
 │   ├── X402_DEFERRED_SCHEME.md  # Deferred payments guide
 │   ├── MULTI_CHAIN_GUIDE.md     # Multi-chain configuration
