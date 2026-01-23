@@ -79,6 +79,8 @@ const blockExplorers: Record<string, string> = {
   "optimism-sepolia": "https://sepolia-optimism.etherscan.io/tx/",
   monad: "https://explorer.monad.xyz/tx/",
   "monad-testnet": "https://testnet.explorer.monad.xyz/tx/",
+  unichain: "https://uniscan.xyz/tx/",
+  "unichain-sepolia": "https://sepolia.uniscan.xyz/tx/",
 };
 
 const getExplorerUrl = (network: string, hash: string): string => {
