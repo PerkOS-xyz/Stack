@@ -15,6 +15,7 @@ const NETWORK_CONFIG = {
     { name: "Optimism", network: "optimism", icon: "🔴", chainId: CHAIN_IDS.OPTIMISM },
     { name: "Celo", network: "celo", icon: "🟡", chainId: CHAIN_IDS.CELO },
     { name: "Monad", network: "monad", icon: "🟢", chainId: CHAIN_IDS.MONAD },
+    { name: "Unichain", network: "unichain", icon: "🦄", chainId: CHAIN_IDS.UNICHAIN },
   ],
   testnet: [
     { name: "Avalanche Fuji", network: "avalanche-fuji", icon: "🔺", chainId: CHAIN_IDS.AVALANCHE_FUJI },
@@ -25,6 +26,7 @@ const NETWORK_CONFIG = {
     { name: "OP Sepolia", network: "optimism-sepolia", icon: "🔴", chainId: CHAIN_IDS.OPTIMISM_SEPOLIA },
     { name: "Celo Sepolia", network: "celo-sepolia", icon: "🟡", chainId: CHAIN_IDS.CELO_SEPOLIA },
     { name: "Monad Testnet", network: "monad-testnet", icon: "🟢", chainId: CHAIN_IDS.MONAD_TESTNET },
+    { name: "Unichain Sepolia", network: "unichain-sepolia", icon: "🦄", chainId: CHAIN_IDS.UNICHAIN_SEPOLIA },
   ],
 };
 
