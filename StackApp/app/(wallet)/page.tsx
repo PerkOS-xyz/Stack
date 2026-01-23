@@ -10,6 +10,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
+import { ContributorSlider } from "@/components/ContributorSlider";
 import { useWalletContext } from "@/lib/wallet/client";
 import Link from "next/link";
 
@@ -435,6 +436,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* === CONTRIBUTORS SLIDER === */}
+        <ContributorSlider />
 
         {/* === SERVICES SECTION === */}
         <section id="services" className="relative py-24 px-4">
