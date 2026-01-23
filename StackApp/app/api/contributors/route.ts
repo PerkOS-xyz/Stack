@@ -75,45 +75,64 @@ export async function GET(req: NextRequest) {
       // Use sponsor wallet address if available, otherwise fall back to user wallet
       const donationAddress = sponsorWalletsMap[userWalletLower] || profile.wallet_address;
 
-      // Build socials array with type and url
-      const socials: Array<{ type: string; url: string }> = [];
+      // Build socials array with type and url (for external API use)
+      const socialLinks: Array<{ type: string; url: string }> = [];
       if (profile.twitter_handle) {
-        socials.push({ type: "twitter", url: `https://twitter.com/${profile.twitter_handle}` });
+        socialLinks.push({ type: "twitter", url: `https://twitter.com/${profile.twitter_handle}` });
       }
       if (profile.github_handle) {
-        socials.push({ type: "github", url: `https://github.com/${profile.github_handle}` });
+        socialLinks.push({ type: "github", url: `https://github.com/${profile.github_handle}` });
       }
       if (profile.discord_handle) {
-        socials.push({ type: "discord", url: profile.discord_handle }); // Discord handles aren't URLs
+        socialLinks.push({ type: "discord", url: profile.discord_handle }); // Discord handles aren't URLs
       }
       if (profile.farcaster_handle) {
-        socials.push({ type: "farcaster", url: `https://warpcast.com/${profile.farcaster_handle}` });
+        socialLinks.push({ type: "farcaster", url: `https://warpcast.com/${profile.farcaster_handle}` });
       }
       if (profile.telegram_handle) {
-        socials.push({ type: "telegram", url: `https://t.me/${profile.telegram_handle}` });
+        socialLinks.push({ type: "telegram", url: `https://t.me/${profile.telegram_handle}` });
       }
       if (profile.instagram_handle) {
-        socials.push({ type: "instagram", url: `https://instagram.com/${profile.instagram_handle}` });
+        socialLinks.push({ type: "instagram", url: `https://instagram.com/${profile.instagram_handle}` });
       }
       if (profile.tiktok_handle) {
-        socials.push({ type: "tiktok", url: `https://tiktok.com/@${profile.tiktok_handle}` });
+        socialLinks.push({ type: "tiktok", url: `https://tiktok.com/@${profile.tiktok_handle}` });
       }
       if (profile.twitch_handle) {
-        socials.push({ type: "twitch", url: `https://twitch.tv/${profile.twitch_handle}` });
+        socialLinks.push({ type: "twitch", url: `https://twitch.tv/${profile.twitch_handle}` });
       }
       if (profile.kick_handle) {
-        socials.push({ type: "kick", url: `https://kick.com/${profile.kick_handle}` });
+        socialLinks.push({ type: "kick", url: `https://kick.com/${profile.kick_handle}` });
       }
+
+      // Build socials object (for frontend backward compatibility)
+      const socials = {
+        twitter: profile.twitter_handle || null,
+        github: profile.github_handle || null,
+        discord: profile.discord_handle || null,
+        farcaster: profile.farcaster_handle || null,
+        telegram: profile.telegram_handle || null,
+        instagram: profile.instagram_handle || null,
+        tiktok: profile.tiktok_handle || null,
+        twitch: profile.twitch_handle || null,
+        kick: profile.kick_handle || null,
+      };
 
       return {
         id: profile.id,
+        // External API format
         name: profile.display_name,
         type: profile.account_type,
-        description: profile.description,
         link: profile.website,
+        socialLinks, // Array format for external use
+        // Frontend-compatible format
+        displayName: profile.display_name,
+        accountType: profile.account_type,
+        website: profile.website,
+        socials, // Object format for frontend
+        // Common fields
+        description: profile.description,
         avatarUrl: profile.avatar_url,
-        socials,
-        // Additional fields for backward compatibility
         walletAddress: donationAddress,
         userWalletAddress: profile.wallet_address,
         displayAddress: formatAddress(donationAddress),

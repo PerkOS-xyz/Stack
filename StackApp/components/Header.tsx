@@ -206,7 +206,7 @@ export function Header() {
 
   // Format wallet address for display (first 5 + ... + last 5)
   const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 7)}...${addr.slice(-5)}`;
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
   // Get display name: ENS name or formatted address

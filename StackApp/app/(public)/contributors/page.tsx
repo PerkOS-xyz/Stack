@@ -136,7 +136,7 @@ export default function ContributorsPage() {
 
   const getSocialLinks = (socials: Contributor['socials']) => {
     const links = [];
-    if (socials.twitter) links.push({ platform: 'x', handle: socials.twitter, url: `https://x.com/${socials.twitter}` });
+    if (socials.twitter) links.push({ platform: 'twitter', handle: socials.twitter, url: `https://x.com/${socials.twitter}` });
     if (socials.github) links.push({ platform: 'github', handle: socials.github, url: `https://github.com/${socials.github}` });
     if (socials.farcaster) links.push({ platform: 'farcaster', handle: socials.farcaster, url: `https://farcaster.xyz/${socials.farcaster}` });
     if (socials.telegram) links.push({ platform: 'telegram', handle: socials.telegram, url: `https://t.me/${socials.telegram}` });
