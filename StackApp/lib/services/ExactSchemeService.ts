@@ -113,14 +113,23 @@ export class ExactSchemeService {
         };
       }
 
-      // 4. Check token balance
-      const hasBalance = await this.checkBalance(
+      // 4. Check token balance (with retry for rate limits)
+      const balanceResult = await this.checkBalance(
         authorization.from,
         authorization.value,
         requirements.asset
       );
 
-      if (!hasBalance) {
+      if (balanceResult.error) {
+        // RPC error - return the specific error message
+        return {
+          isValid: false,
+          invalidReason: balanceResult.error,
+          payer: null,
+        };
+      }
+
+      if (!balanceResult.hasBalance) {
         return {
           isValid: false,
           invalidReason: "Insufficient balance",
@@ -639,81 +648,159 @@ export class ExactSchemeService {
     }
   }
 
+  /**
+   * Check balance with retry logic for transient RPC errors (rate limits, timeouts)
+   * Returns { hasBalance, error } to distinguish between low balance and RPC failures
+   */
   private async checkBalance(
     address: Address,
     amount: string,
     tokenAddress: Address
-  ): Promise<boolean> {
-    try {
-      const balance = await this.publicClient.readContract({
-        address: tokenAddress,
-        abi: [
-          {
-            name: "balanceOf",
-            type: "function",
-            stateMutability: "view",
-            inputs: [{ name: "account", type: "address" }],
-            outputs: [{ name: "", type: "uint256" }],
-          },
-        ],
-        functionName: "balanceOf",
-        args: [address],
-      });
+  ): Promise<{ hasBalance: boolean; error?: string }> {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second base delay
 
-      return balance >= BigInt(amount);
-    } catch (error) {
-      logger.error("Error checking balance", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return false;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const balance = await this.publicClient.readContract({
+          address: tokenAddress,
+          abi: [
+            {
+              name: "balanceOf",
+              type: "function",
+              stateMutability: "view",
+              inputs: [{ name: "account", type: "address" }],
+              outputs: [{ name: "", type: "uint256" }],
+            },
+          ],
+          functionName: "balanceOf",
+          args: [address],
+        });
+
+        const hasEnough = balance >= BigInt(amount);
+        logger.info("Balance check result", {
+          address,
+          balance: balance.toString(),
+          required: amount,
+          hasEnough,
+        });
+
+        return { hasBalance: hasEnough };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isRateLimited = errorMessage.includes("429") ||
+                             errorMessage.includes("rate limit") ||
+                             errorMessage.includes("too many requests");
+        const isTimeout = errorMessage.includes("timeout") ||
+                         errorMessage.includes("ETIMEDOUT");
+
+        logger.warn("Balance check failed", {
+          attempt: attempt + 1,
+          maxRetries,
+          isRateLimited,
+          isTimeout,
+          error: errorMessage.substring(0, 200), // Truncate for logging
+        });
+
+        // Only retry on transient errors (rate limits, timeouts)
+        if ((isRateLimited || isTimeout) && attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+          logger.info(`Retrying balance check in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Return error for non-retryable failures or max retries exceeded
+        return {
+          hasBalance: false,
+          error: isRateLimited
+            ? "RPC rate limit exceeded - please try again in a moment"
+            : `RPC error: ${errorMessage.substring(0, 100)}`
+        };
+      }
     }
+
+    return { hasBalance: false, error: "Max retries exceeded checking balance" };
   }
 
   /**
    * Check if a nonce has already been used or canceled on-chain
    * EIP-3009 FiatTokenV2 tracks authorization state per (authorizer, nonce)
+   * Includes retry logic for transient RPC errors (rate limits, timeouts)
    */
   private async checkNonceState(
     authorizer: Address,
     nonce: `0x${string}`,
     tokenAddress: Address
   ): Promise<boolean> {
-    try {
-      const isUsed = await this.publicClient.readContract({
-        address: tokenAddress,
-        abi: [
-          {
-            name: "authorizationState",
-            type: "function",
-            stateMutability: "view",
-            inputs: [
-              { name: "authorizer", type: "address" },
-              { name: "nonce", type: "bytes32" },
-            ],
-            outputs: [{ name: "", type: "bool" }],
-          },
-        ],
-        functionName: "authorizationState",
-        args: [authorizer, nonce],
-      });
+    const maxRetries = 3;
+    const baseDelay = 1000;
 
-      logger.info("Nonce state check", {
-        authorizer,
-        nonce,
-        isUsed,
-      });
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const isUsed = await this.publicClient.readContract({
+          address: tokenAddress,
+          abi: [
+            {
+              name: "authorizationState",
+              type: "function",
+              stateMutability: "view",
+              inputs: [
+                { name: "authorizer", type: "address" },
+                { name: "nonce", type: "bytes32" },
+              ],
+              outputs: [{ name: "", type: "bool" }],
+            },
+          ],
+          functionName: "authorizationState",
+          args: [authorizer, nonce],
+        });
 
-      return isUsed as boolean;
-    } catch (error) {
-      // If the check fails, log warning but don't block the payment
-      // (some tokens may not implement authorizationState)
-      logger.warn("Error checking nonce state (token may not support EIP-3009)", {
-        error: error instanceof Error ? error.message : String(error),
-        authorizer,
-        nonce,
-      });
-      return false;
+        logger.info("Nonce state check", {
+          authorizer,
+          nonce,
+          isUsed,
+        });
+
+        return isUsed as boolean;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isRateLimited = errorMessage.includes("429") ||
+                             errorMessage.includes("rate limit") ||
+                             errorMessage.includes("too many requests");
+        const isTimeout = errorMessage.includes("timeout") ||
+                         errorMessage.includes("ETIMEDOUT");
+
+        logger.warn("Nonce state check failed", {
+          attempt: attempt + 1,
+          maxRetries,
+          isRateLimited,
+          isTimeout,
+          error: errorMessage.substring(0, 200),
+          authorizer,
+          nonce,
+        });
+
+        // Retry on transient errors
+        if ((isRateLimited || isTimeout) && attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt);
+          logger.info(`Retrying nonce check in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If the check fails after retries, log warning but don't block the payment
+        // (some tokens may not implement authorizationState, or RPC may be down)
+        logger.warn("Error checking nonce state after retries (token may not support EIP-3009)", {
+          error: errorMessage,
+          authorizer,
+          nonce,
+        });
+        return false;
+      }
     }
+
+    return false;
   }
 
   private parseSignature(signature: Hex): { v: number; r: Hex; s: Hex } {
