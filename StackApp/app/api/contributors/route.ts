@@ -75,31 +75,50 @@ export async function GET(req: NextRequest) {
       // Use sponsor wallet address if available, otherwise fall back to user wallet
       const donationAddress = sponsorWalletsMap[userWalletLower] || profile.wallet_address;
 
+      // Build socials array with type and url
+      const socials: Array<{ type: string; url: string }> = [];
+      if (profile.twitter_handle) {
+        socials.push({ type: "twitter", url: `https://twitter.com/${profile.twitter_handle}` });
+      }
+      if (profile.github_handle) {
+        socials.push({ type: "github", url: `https://github.com/${profile.github_handle}` });
+      }
+      if (profile.discord_handle) {
+        socials.push({ type: "discord", url: profile.discord_handle }); // Discord handles aren't URLs
+      }
+      if (profile.farcaster_handle) {
+        socials.push({ type: "farcaster", url: `https://warpcast.com/${profile.farcaster_handle}` });
+      }
+      if (profile.telegram_handle) {
+        socials.push({ type: "telegram", url: `https://t.me/${profile.telegram_handle}` });
+      }
+      if (profile.instagram_handle) {
+        socials.push({ type: "instagram", url: `https://instagram.com/${profile.instagram_handle}` });
+      }
+      if (profile.tiktok_handle) {
+        socials.push({ type: "tiktok", url: `https://tiktok.com/@${profile.tiktok_handle}` });
+      }
+      if (profile.twitch_handle) {
+        socials.push({ type: "twitch", url: `https://twitch.tv/${profile.twitch_handle}` });
+      }
+      if (profile.kick_handle) {
+        socials.push({ type: "kick", url: `https://kick.com/${profile.kick_handle}` });
+      }
+
       return {
         id: profile.id,
-        walletAddress: donationAddress, // This is now the sponsor wallet (for donations)
-        userWalletAddress: profile.wallet_address, // Keep the original user wallet for reference
-        displayAddress: formatAddress(donationAddress),
-        accountType: profile.account_type,
-        displayName: profile.display_name,
+        name: profile.display_name,
+        type: profile.account_type,
         description: profile.description,
-        website: profile.website,
+        link: profile.website,
         avatarUrl: profile.avatar_url,
+        socials,
+        // Additional fields for backward compatibility
+        walletAddress: donationAddress,
+        userWalletAddress: profile.wallet_address,
+        displayAddress: formatAddress(donationAddress),
         isVerified: profile.is_verified,
         hasSponsorWallet: !!sponsorWalletsMap[userWalletLower],
-        // Social links
-        socials: {
-          twitter: profile.twitter_handle,
-          github: profile.github_handle,
-          discord: profile.discord_handle,
-          farcaster: profile.farcaster_handle,
-          telegram: profile.telegram_handle,
-          instagram: profile.instagram_handle,
-          tiktok: profile.tiktok_handle,
-          twitch: profile.twitch_handle,
-          kick: profile.kick_handle,
-        },
-        // Vendor info (if applicable)
         companyName: profile.company_name,
         createdAt: profile.created_at,
       };
