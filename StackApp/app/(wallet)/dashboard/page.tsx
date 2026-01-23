@@ -56,7 +56,7 @@ const WALLET_TYPE_CONFIG: Record<string, {
     color: 'text-pink-400',
     bgColor: 'bg-pink-500/20',
     borderColor: 'border-pink-500/30',
-    networks: 'Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets',
+    networks: 'Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad, Unichain & testnets',
   },
   solana: {
     label: 'Solana',
@@ -775,7 +775,7 @@ export default function DashboardPage() {
               )}
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              <span className="text-blue-400">⟠ EVM</span> works on all networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets
+              <span className="text-blue-400">⟠ EVM</span> works on all networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad, Unichain & testnets
             </p>
             <p className="text-xs text-gray-500 mt-1 text-center">
               <span className="text-purple-400/60">◎ Solana</span> coming soon
@@ -1116,7 +1116,7 @@ export default function DashboardPage() {
           </ol>
           <div className="mt-4 pt-4 border-t border-pink-500/20">
             <p className="text-xs text-gray-400">
-              <strong className="text-pink-400">Supported EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad (+ all testnets)
+              <strong className="text-pink-400">Supported EVM Networks:</strong> Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad, Unichain (+ all testnets)
             </p>
             <p className="text-xs text-gray-500 mt-1">
               <strong className="text-purple-400/60">Solana:</strong> Coming soon
@@ -1263,7 +1263,7 @@ export default function DashboardPage() {
                       <div className="text-sm text-gray-300">
                         <p className="font-medium mb-1 text-blue-400">EVM Multi-Chain Wallet</p>
                         <p className="text-gray-400">
-                          One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad & testnets.
+                          One address works across all EVM networks: Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism, Celo, Monad, Unichain & testnets.
                         </p>
                       </div>
                     </div>

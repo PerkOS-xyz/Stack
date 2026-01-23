@@ -42,7 +42,8 @@ export type SupportedNetwork =
   | "polygon" | "polygon-amoy"
   | "monad" | "monad-testnet"
   | "arbitrum" | "arbitrum-sepolia"
-  | "optimism" | "optimism-sepolia";
+  | "optimism" | "optimism-sepolia"
+  | "unichain" | "unichain-sepolia";
 
 export const config = {
   // Blockchain
@@ -66,6 +67,8 @@ export const config = {
     "arbitrum-sepolia": process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
     optimism: process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL || "https://mainnet.optimism.io",
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
+    unichain: process.env.NEXT_PUBLIC_UNICHAIN_RPC_URL || "https://mainnet.unichain.org",
+    "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_RPC_URL || "https://sepolia.unichain.org",
   },
 
   privateKey: normalizePrivateKey(process.env.PRIVATE_KEY),
@@ -88,6 +91,8 @@ export const config = {
     "arbitrum-sepolia": (process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_PAYMENT_TOKEN || "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d") as Address,
     optimism: (process.env.NEXT_PUBLIC_OPTIMISM_PAYMENT_TOKEN || "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85") as Address,
     "optimism-sepolia": (process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_PAYMENT_TOKEN || "0x5fd84259d66Cd46123540766Be93DFE6D43130D7") as Address,
+    unichain: (process.env.NEXT_PUBLIC_UNICHAIN_PAYMENT_TOKEN || "0x078D782b760474a361dDA0AF3839290b0EF57AD6") as Address,
+    "unichain-sepolia": (process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
   },
 
   // Payment Receiver
@@ -112,6 +117,8 @@ export const config = {
     "arbitrum-sepolia": process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
     optimism: process.env.NEXT_PUBLIC_OPTIMISM_ESCROW_ADDRESS as Address | undefined,
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
+    unichain: process.env.NEXT_PUBLIC_UNICHAIN_ESCROW_ADDRESS as Address | undefined,
+    "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
   },
 
   // Facilitator Info
@@ -200,6 +207,16 @@ export const config = {
       identity: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
       reputation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
       validation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
+    },
+    unichain: {
+      identity: process.env.NEXT_PUBLIC_UNICHAIN_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_UNICHAIN_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_UNICHAIN_VALIDATION_REGISTRY as Address | undefined,
+    },
+    "unichain-sepolia": {
+      identity: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
+      reputation: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
+      validation: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
     },
   },
 } as const;

@@ -75,6 +75,14 @@ const NETWORK_CONFIG: Record<string, {
     bgGradient: 'from-fuchsia-500/10 to-fuchsia-600/5',
     stablecoins: ['USDC', 'AUSD'],
   },
+  'unichain': {
+    name: 'Unichain',
+    icon: '🦄',
+    color: 'text-pink-400',
+    borderColor: 'border-pink-500/30',
+    bgGradient: 'from-pink-500/10 to-pink-600/5',
+    stablecoins: ['USDC'],
+  },
   // Testnets
   'avalanche-fuji': {
     name: 'Avalanche Fuji',
@@ -138,6 +146,14 @@ const NETWORK_CONFIG: Record<string, {
     color: 'text-fuchsia-400',
     borderColor: 'border-yellow-500/30',
     bgGradient: 'from-fuchsia-500/10 to-yellow-600/5',
+    stablecoins: ['USDC'],
+  },
+  'unichain-sepolia': {
+    name: 'Unichain Sepolia',
+    icon: '🦄',
+    color: 'text-pink-400',
+    borderColor: 'border-yellow-500/30',
+    bgGradient: 'from-pink-500/10 to-yellow-600/5',
     stablecoins: ['USDC'],
   },
 };

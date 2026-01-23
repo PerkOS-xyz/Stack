@@ -71,6 +71,13 @@ const NETWORK_METADATA: Record<
     color: "#00FF00",
     icon: "🟢",
   },
+  unichain: {
+    name: "Unichain",
+    chainId: CHAIN_IDS.UNICHAIN,
+    symbol: "ETH",
+    color: "#F50DB4",
+    icon: "🦄",
+  },
   // Testnet networks
   "avalanche-fuji": {
     name: "Avalanche Fuji",
@@ -128,11 +135,18 @@ const NETWORK_METADATA: Record<
     color: "#00FF00",
     icon: "🟢",
   },
+  "unichain-sepolia": {
+    name: "Unichain Sepolia",
+    chainId: CHAIN_IDS.UNICHAIN_SEPOLIA,
+    symbol: "ETH",
+    color: "#F50DB4",
+    icon: "🦄",
+  },
 };
 
 // Lists of network keys for filtering
-const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad"];
-const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "celo-sepolia", "monad-testnet"];
+const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad", "unichain"];
+const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "celo-sepolia", "monad-testnet", "unichain-sepolia"];
 
 interface NetworkAggregation {
   network: string;
