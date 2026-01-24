@@ -328,7 +328,7 @@ export default function Home() {
           </div>
 
           {/* Supported Networks Carousel */}
-          <div className={`w-full mt-16 transition-all duration-700 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`max-w-6xl mx-auto px-4 mt-16 transition-all duration-700 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <div className="text-center mb-6">
               <h3 className="text-lg font-bold text-white mb-1">Supported Networks</h3>
               <p className="text-sm text-gray-500">Multi-chain by default</p>
@@ -372,6 +372,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* === CONTRIBUTORS SLIDER === */}
+        <ContributorSlider />
 
         {/* === STATS SECTION === */}
         <section className="relative py-24 px-4">
@@ -438,9 +441,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* === CONTRIBUTORS SLIDER === */}
-        <ContributorSlider />
 
         {/* === SERVICES SECTION === */}
         <section id="services" className="relative py-24 px-4">
