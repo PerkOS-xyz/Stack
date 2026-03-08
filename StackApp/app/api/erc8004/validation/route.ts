@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
     const identityRegistry = await client.readContract({
       address: registries.validation as Address,
       abi: VALIDATION_ABI,
-      functionName: "identityRegistry",
+      functionName: "getIdentityRegistry",
     }) as Address;
 
     return NextResponse.json({
