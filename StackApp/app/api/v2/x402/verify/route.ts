@@ -5,6 +5,8 @@ import {
   generateRequestId,
   getVerifyHeaders,
 } from "@/lib/utils/x402-headers";
+import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
+import type { SupportedNetwork } from "@/lib/utils/config";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,17 @@ export async function POST(request: NextRequest) {
     // Extract network and scheme for headers
     const network = body.paymentPayload?.network || "unknown";
     const scheme = body.paymentPayload?.scheme || "exact";
+
+    // Optional ERC-8004 identity verification
+    const agentId = request.headers.get("X-Agent-Id");
+    if (agentId && network !== "unknown") {
+      const identity = await verifyAgentIdentity(agentId, network as SupportedNetwork);
+      console.log(`   🆔 ERC-8004 Identity Check: agent=${agentId} exists=${identity.exists}`);
+      if (identity.exists) {
+        console.log(`   🆔 Agent Owner: ${identity.owner}`);
+      }
+      // Identity check is informational — does not block verification
+    }
 
     // Log request details
     console.log("📥 Verify Request Details:");
