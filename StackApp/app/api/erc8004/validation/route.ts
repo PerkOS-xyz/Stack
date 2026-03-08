@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address, type Hex } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
-import { chains } from "@/lib/utils/chains";
-import { VALIDATION_REGISTRY_ABI, isPositiveResponse } from "@/lib/contracts/erc8004";
+import { getChainByNetwork } from "@/lib/utils/chains";
+// Inline ABI matching official ValidationRegistryUpgradeable
+const VALIDATION_ABI = [
+  { name: "validationRequest", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validatorAddress", type: "address" }, { name: "agentId", type: "uint256" }, { name: "requestURI", type: "string" }, { name: "requestHash", type: "bytes32" }], outputs: [] },
+  { name: "validationResponse", type: "function", stateMutability: "nonpayable", inputs: [{ name: "requestHash", type: "bytes32" }, { name: "response", type: "uint8" }, { name: "responseURI", type: "string" }, { name: "responseHash", type: "bytes32" }, { name: "tag", type: "string" }], outputs: [] },
+  { name: "getValidationStatus", type: "function", stateMutability: "view", inputs: [{ name: "requestHash", type: "bytes32" }], outputs: [{ name: "validatorAddress", type: "address" }, { name: "agentId", type: "uint256" }, { name: "response", type: "uint8" }, { name: "responseHash", type: "bytes32" }, { name: "tag", type: "string" }, { name: "lastUpdate", type: "uint256" }] },
+  { name: "getSummary", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "validatorAddresses", type: "address[]" }, { name: "tag", type: "string" }], outputs: [{ name: "count", type: "uint64" }, { name: "averageResponse", type: "uint8" }] },
+  { name: "getAgentValidations", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ name: "", type: "bytes32[]" }] },
+  { name: "getValidatorRequests", type: "function", stateMutability: "view", inputs: [{ name: "validatorAddress", type: "address" }], outputs: [{ name: "", type: "bytes32[]" }] },
+  { name: "getIdentityRegistry", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "getVersion", type: "function", stateMutability: "pure", inputs: [], outputs: [{ name: "", type: "string" }] },
+] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +51,7 @@ export async function GET(req: NextRequest) {
     }
 
     const registries = getErc8004Registries(network);
-    const chain = chains[network];
+    const chain = getChainByNetwork(network);
 
     if (!chain || !registries.validation) {
       return NextResponse.json(
@@ -60,7 +70,7 @@ export async function GET(req: NextRequest) {
       const [validator, validationAgentId, response, responseHash, responseTag, lastUpdate] =
         await client.readContract({
           address: registries.validation as Address,
-          abi: VALIDATION_REGISTRY_ABI,
+          abi: VALIDATION_ABI,
           functionName: "getValidationStatus",
           args: [requestHash as Hex],
         }) as [Address, bigint, number, Hex, string, bigint];
@@ -83,7 +93,7 @@ export async function GET(req: NextRequest) {
     if (validatorAddress) {
       const requestHashes = await client.readContract({
         address: registries.validation as Address,
-        abi: VALIDATION_REGISTRY_ABI,
+        abi: VALIDATION_ABI,
         functionName: "getValidatorRequests",
         args: [validatorAddress as Address],
       }) as Hex[];
@@ -101,7 +111,7 @@ export async function GET(req: NextRequest) {
     if (agentId) {
       const requestHashes = await client.readContract({
         address: registries.validation as Address,
-        abi: VALIDATION_REGISTRY_ABI,
+        abi: VALIDATION_ABI,
         functionName: "getAgentValidations",
         args: [BigInt(agentId)],
       }) as Hex[];
@@ -110,7 +120,7 @@ export async function GET(req: NextRequest) {
       const validatorAddresses: Address[] = [];
       const [count, averageResponse] = await client.readContract({
         address: registries.validation as Address,
-        abi: VALIDATION_REGISTRY_ABI,
+        abi: VALIDATION_ABI,
         functionName: "getSummary",
         args: [BigInt(agentId), validatorAddresses, tag],
       }) as [bigint, number];
@@ -133,7 +143,7 @@ export async function GET(req: NextRequest) {
     // Registry info
     const identityRegistry = await client.readContract({
       address: registries.validation as Address,
-      abi: VALIDATION_REGISTRY_ABI,
+      abi: VALIDATION_ABI,
       functionName: "identityRegistry",
     }) as Address;
 

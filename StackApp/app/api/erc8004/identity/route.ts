@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
-import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
-import { chains } from "@/lib/utils/chains";
-import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
+import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
+import { getChainByNetwork } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
 
+// Minimal ABI matching the official IdentityRegistryUpgradeable contract
+const IDENTITY_ABI = [
+  { name: "name", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { name: "symbol", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { name: "tokenURI", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "string" }] },
+  { name: "ownerOf", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
+  { name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "getAgentWallet", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ type: "address" }] },
+  { name: "getMetadata", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "metadataKey", type: "string" }], outputs: [{ type: "bytes" }] },
+  { name: "getVersion", type: "function", stateMutability: "pure", inputs: [], outputs: [{ type: "string" }] },
+  { name: "isAuthorizedOrOwner", type: "function", stateMutability: "view", inputs: [{ name: "spender", type: "address" }, { name: "agentId", type: "uint256" }], outputs: [{ type: "bool" }] },
+] as const;
+
 /**
  * GET /api/erc8004/identity
- * Get agent info from Identity Registry (EIP-8004 v2)
+ * Get agent info from Identity Registry (official ERC-8004 contracts)
  *
  * Query params:
  * - network: Network name (required)
  * - agentId: Agent ID to lookup (optional — returns registry info if not provided)
- * - owner: Filter by owner address (optional)
+ * - owner: Get agent count for owner address (optional)
  * - action: "getWallet" to get agent wallet (optional, requires agentId)
  */
 export async function GET(req: NextRequest) {
@@ -39,11 +51,11 @@ export async function GET(req: NextRequest) {
     }
 
     const registries = getErc8004Registries(network);
-    const chain = chains[network];
+    const chain = getChainByNetwork(network);
 
     if (!chain || !registries.identity) {
       return NextResponse.json(
-        { error: "Invalid network configuration" },
+        { error: `Chain config not found for ${network}` },
         { status: 500 }
       );
     }
@@ -57,7 +69,7 @@ export async function GET(req: NextRequest) {
     if (action === "getWallet" && agentId) {
       const wallet = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_REGISTRY_ABI,
+        abi: IDENTITY_ABI,
         functionName: "getAgentWallet",
         args: [BigInt(agentId)],
       });
@@ -74,14 +86,14 @@ export async function GET(req: NextRequest) {
     if (agentId) {
       const tokenURI = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_REGISTRY_ABI,
+        abi: IDENTITY_ABI,
         functionName: "tokenURI",
         args: [BigInt(agentId)],
       });
 
       const ownerAddress = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_REGISTRY_ABI,
+        abi: IDENTITY_ABI,
         functionName: "ownerOf",
         args: [BigInt(agentId)],
       });
@@ -90,12 +102,12 @@ export async function GET(req: NextRequest) {
       try {
         wallet = await client.readContract({
           address: registries.identity as Address,
-          abi: IDENTITY_REGISTRY_ABI,
+          abi: IDENTITY_ABI,
           functionName: "getAgentWallet",
           args: [BigInt(agentId)],
         });
       } catch {
-        // getAgentWallet may not exist on older deployments
+        // agentWallet may be unset
       }
 
       return NextResponse.json({
@@ -108,42 +120,52 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get agents by owner
+    // Get agent count for owner
     if (owner) {
-      const agentIds = await client.readContract({
+      const balance = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_REGISTRY_ABI,
-        functionName: "getAgentsByOwner",
+        abi: IDENTITY_ABI,
+        functionName: "balanceOf",
         args: [owner as Address],
       });
 
       return NextResponse.json({
         owner,
-        agentIds: (agentIds as bigint[]).map(id => id.toString()),
-        count: (agentIds as bigint[]).length,
+        agentCount: (balance as bigint).toString(),
         network,
         registryAddress: registries.identity,
       });
     }
 
-    // Return registry info
-    const totalAgents = await client.readContract({
+    // Return registry info (no totalAgents in official contract — use ERC-721 standard)
+    let version = "unknown";
+    try {
+      version = await client.readContract({
+        address: registries.identity as Address,
+        abi: IDENTITY_ABI,
+        functionName: "getVersion",
+      }) as string;
+    } catch { /* may not exist */ }
+
+    const name = await client.readContract({
       address: registries.identity as Address,
-      abi: IDENTITY_REGISTRY_ABI,
-      functionName: "totalAgents",
+      abi: IDENTITY_ABI,
+      functionName: "name",
     });
 
-    const nextAgentId = await client.readContract({
+    const symbol = await client.readContract({
       address: registries.identity as Address,
-      abi: IDENTITY_REGISTRY_ABI,
-      functionName: "nextAgentId",
+      abi: IDENTITY_ABI,
+      functionName: "symbol",
     });
 
     return NextResponse.json({
       network,
       registryAddress: registries.identity,
-      totalAgents: (totalAgents as bigint).toString(),
-      nextAgentId: (nextAgentId as bigint).toString(),
+      name,
+      symbol,
+      version,
+      spec: "ERC-8004",
     });
   } catch (error) {
     console.error("Error in GET /api/erc8004/identity:", error);
