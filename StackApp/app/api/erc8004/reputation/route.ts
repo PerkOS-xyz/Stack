@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
-import { chains } from "@/lib/utils/chains";
-import { REPUTATION_REGISTRY_ABI, formatValue, isPositiveResponse } from "@/lib/contracts/erc8004";
+import { getChainByNetwork } from "@/lib/utils/chains";
+// Inline ABI matching official ReputationRegistryUpgradeable
+const REPUTATION_ABI = [
+  { name: "giveFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "endpoint", type: "string" }, { name: "feedbackURI", type: "string" }, { name: "feedbackHash", type: "bytes32" }], outputs: [] },
+  { name: "revokeFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "feedbackIndex", type: "uint64" }], outputs: [] },
+  { name: "appendResponse", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }, { name: "responseURI", type: "string" }, { name: "responseHash", type: "bytes32" }], outputs: [] },
+  { name: "readFeedback", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }], outputs: [{ name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "isRevoked", type: "bool" }] },
+  { name: "getSummary", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddresses", type: "address[]" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }], outputs: [{ name: "count", type: "uint64" }, { name: "summaryValue", type: "int128" }, { name: "summaryValueDecimals", type: "uint8" }] },
+  { name: "readAllFeedback", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddresses", type: "address[]" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "includeRevoked", type: "bool" }], outputs: [{ name: "clients", type: "address[]" }, { name: "feedbackIndexes", type: "uint64[]" }, { name: "values", type: "int128[]" }, { name: "valueDecimalsArr", type: "uint8[]" }, { name: "tag1s", type: "string[]" }, { name: "tag2s", type: "string[]" }, { name: "revokedStatuses", type: "bool[]" }] },
+  { name: "getClients", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ name: "", type: "address[]" }] },
+  { name: "getLastIndex", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }], outputs: [{ name: "", type: "uint64" }] },
+  { name: "getResponseCount", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }, { name: "responders", type: "address[]" }], outputs: [{ name: "count", type: "uint64" }] },
+  { name: "getIdentityRegistry", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "getVersion", type: "function", stateMutability: "pure", inputs: [], outputs: [{ name: "", type: "string" }] },
+] as const;
+
+function formatValue(value: bigint, decimals: number): string {
+  if (decimals === 0) return value.toString();
+  const str = value.toString().padStart(decimals + 1, '0');
+  return str.slice(0, -decimals) + '.' + str.slice(-decimals);
+}
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +64,7 @@ export async function GET(req: NextRequest) {
     }
 
     const registries = getErc8004Registries(network);
-    const chain = chains[network];
+    const chain = getChainByNetwork(network);
 
     if (!chain || !registries.reputation) {
       return NextResponse.json(
@@ -63,7 +82,7 @@ export async function GET(req: NextRequest) {
     if (clientAddress && feedbackIndex !== null && feedbackIndex !== undefined) {
       const [value, valueDecimals, feedbackTag1, feedbackTag2, isRevoked] = await client.readContract({
         address: registries.reputation as Address,
-        abi: REPUTATION_REGISTRY_ABI,
+        abi: REPUTATION_ABI,
         functionName: "readFeedback",
         args: [BigInt(agentId), clientAddress as Address, BigInt(feedbackIndex)],
       }) as [bigint, number, string, string, boolean];
@@ -90,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     const [count, summaryValue, summaryValueDecimals] = await client.readContract({
       address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
+      abi: REPUTATION_ABI,
       functionName: "getSummary",
       args: [BigInt(agentId), clientAddresses, tag1, tag2],
     }) as [bigint, bigint, number];
@@ -98,7 +117,7 @@ export async function GET(req: NextRequest) {
     // Get all clients
     const clients = await client.readContract({
       address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
+      abi: REPUTATION_ABI,
       functionName: "getClients",
       args: [BigInt(agentId)],
     }) as Address[];
@@ -114,7 +133,7 @@ export async function GET(req: NextRequest) {
       revoked
     ] = await client.readContract({
       address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
+      abi: REPUTATION_ABI,
       functionName: "readAllFeedback",
       args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
     }) as [Address[], bigint[], bigint[], number[], string[], string[], boolean[]];
