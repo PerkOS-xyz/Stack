@@ -8,12 +8,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/erc8004/identity
- * Get agent info from Identity Registry
+ * Get agent info from Identity Registry (EIP-8004 v2)
  *
  * Query params:
  * - network: Network name (required)
- * - agentId: Agent ID to lookup (optional - returns all agents if not provided)
+ * - agentId: Agent ID to lookup (optional — returns registry info if not provided)
  * - owner: Filter by owner address (optional)
+ * - action: "getWallet" to get agent wallet (optional, requires agentId)
  */
 export async function GET(req: NextRequest) {
   try {
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     const network = searchParams.get("network") as SupportedNetwork;
     const agentId = searchParams.get("agentId");
     const owner = searchParams.get("owner");
+    const action = searchParams.get("action");
 
     if (!network) {
       return NextResponse.json(
@@ -51,7 +53,24 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // If agentId provided, get specific agent
+    // Get agent wallet
+    if (action === "getWallet" && agentId) {
+      const wallet = await client.readContract({
+        address: registries.identity as Address,
+        abi: IDENTITY_REGISTRY_ABI,
+        functionName: "getAgentWallet",
+        args: [BigInt(agentId)],
+      });
+
+      return NextResponse.json({
+        agentId,
+        wallet,
+        network,
+        registryAddress: registries.identity,
+      });
+    }
+
+    // Get specific agent
     if (agentId) {
       const tokenURI = await client.readContract({
         address: registries.identity as Address,
@@ -67,16 +86,29 @@ export async function GET(req: NextRequest) {
         args: [BigInt(agentId)],
       });
 
+      let wallet: unknown = null;
+      try {
+        wallet = await client.readContract({
+          address: registries.identity as Address,
+          abi: IDENTITY_REGISTRY_ABI,
+          functionName: "getAgentWallet",
+          args: [BigInt(agentId)],
+        });
+      } catch {
+        // getAgentWallet may not exist on older deployments
+      }
+
       return NextResponse.json({
         agentId,
         tokenURI,
         owner: ownerAddress,
+        wallet,
         network,
         registryAddress: registries.identity,
       });
     }
 
-    // If owner provided, get agents by owner
+    // Get agents by owner
     if (owner) {
       const agentIds = await client.readContract({
         address: registries.identity as Address,
@@ -124,17 +156,28 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/erc8004/identity
- * Register a new agent (returns unsigned transaction for user to sign)
+ * Agent identity operations (returns unsigned transactions)
+ *
+ * Actions:
+ * - register: Register a new agent
+ * - setURI: Update agent URI
+ * - setWallet: Set agent wallet (EIP-712 signature required)
+ * - unsetWallet: Remove agent wallet
  *
  * Body:
  * - network: Network name (required)
- * - tokenURI: URI pointing to agent registration file (optional)
- * - metadata: Array of {key, value} pairs (optional)
+ * - action: Operation to perform (default: "register")
+ * - agentId: Agent ID (required for setURI, setWallet, unsetWallet)
+ * - tokenURI/newURI: URI for registration/update
+ * - metadata: Array of {metadataKey, metadataValue} pairs (optional, register only)
+ * - newWallet: New wallet address (setWallet only)
+ * - deadline: Signature deadline (setWallet only)
+ * - signature: EIP-712/ERC-1271 signature (setWallet only)
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { network, tokenURI, metadata } = body;
+    const { network, action = "register" } = body;
 
     if (!network) {
       return NextResponse.json(
@@ -152,29 +195,105 @@ export async function POST(req: NextRequest) {
 
     const registries = getErc8004Registries(network as SupportedNetwork);
 
-    // Build transaction data for registration
-    // User will sign this transaction themselves
-    const registrationData = {
-      to: registries.identity,
-      network,
-      function: tokenURI
-        ? (metadata?.length > 0 ? "register(string,tuple[])" : "register(string)")
-        : "register()",
-      args: tokenURI
-        ? (metadata?.length > 0 ? [tokenURI, metadata] : [tokenURI])
-        : [],
-      description: "Register as an agent in the ERC-8004 Identity Registry",
-    };
+    // Register new agent
+    if (action === "register") {
+      const { tokenURI, metadata } = body;
+      const registrationData = {
+        to: registries.identity,
+        network,
+        function: tokenURI
+          ? (metadata?.length > 0 ? "register(string,tuple[])" : "register(string)")
+          : "register()",
+        args: tokenURI
+          ? (metadata?.length > 0 ? [tokenURI, metadata] : [tokenURI])
+          : [],
+        description: "Register as an agent in the ERC-8004 Identity Registry",
+      };
 
-    return NextResponse.json({
-      success: true,
-      transaction: registrationData,
-      message: "Sign and submit this transaction to register as an agent",
-    });
+      return NextResponse.json({
+        success: true,
+        transaction: registrationData,
+        message: "Sign and submit this transaction to register as an agent",
+      });
+    }
+
+    // Set agent URI
+    if (action === "setURI") {
+      const { agentId, newURI } = body;
+      if (!agentId || !newURI) {
+        return NextResponse.json(
+          { error: "agentId and newURI required for setURI" },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          to: registries.identity,
+          network,
+          function: "setAgentURI(uint256,string)",
+          args: [agentId, newURI],
+          description: `Update URI for agent ${agentId}`,
+        },
+        message: "Sign and submit this transaction to update agent URI",
+      });
+    }
+
+    // Set agent wallet (EIP-712 signature verified)
+    if (action === "setWallet") {
+      const { agentId, newWallet, deadline, signature } = body;
+      if (!agentId || !newWallet || !deadline || !signature) {
+        return NextResponse.json(
+          { error: "agentId, newWallet, deadline, and signature required for setWallet" },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          to: registries.identity,
+          network,
+          function: "setAgentWallet(uint256,address,uint256,bytes)",
+          args: [agentId, newWallet, deadline, signature],
+          description: `Set wallet for agent ${agentId} to ${newWallet}`,
+        },
+        message: "Sign and submit this transaction to set agent wallet",
+      });
+    }
+
+    // Unset agent wallet
+    if (action === "unsetWallet") {
+      const { agentId } = body;
+      if (!agentId) {
+        return NextResponse.json(
+          { error: "agentId required for unsetWallet" },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          to: registries.identity,
+          network,
+          function: "unsetAgentWallet(uint256)",
+          args: [agentId],
+          description: `Remove wallet for agent ${agentId}`,
+        },
+        message: "Sign and submit this transaction to remove agent wallet",
+      });
+    }
+
+    return NextResponse.json(
+      { error: `Unknown action: ${action}. Valid: register, setURI, setWallet, unsetWallet` },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("Error in POST /api/erc8004/identity:", error);
     return NextResponse.json(
-      { error: "Failed to prepare registration transaction" },
+      { error: "Failed to prepare identity transaction" },
       { status: 500 }
     );
   }
