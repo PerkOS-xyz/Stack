@@ -6,6 +6,8 @@ import {
   getSettleHeaders,
   createV2Receipt,
 } from "@/lib/utils/x402-headers";
+import { verifyAgentIdentity, buildReputationFeedbackTx } from "@/lib/services/AgentIdentityService";
+import type { SupportedNetwork } from "@/lib/utils/config";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +109,29 @@ export async function POST(request: NextRequest) {
     }
     console.log("💰".repeat(35) + "\n");
 
+    // Optional ERC-8004 identity check and auto reputation feedback
+    const agentId = request.headers.get("X-Agent-Id");
+    let reputationTx = null;
+    if (result.success && agentId && network !== "unknown") {
+      const identity = await verifyAgentIdentity(agentId, network as SupportedNetwork);
+      console.log(`   🆔 ERC-8004 Identity: agent=${agentId} exists=${identity.exists}`);
+      if (identity.exists) {
+        reputationTx = buildReputationFeedbackTx({
+          network: network as SupportedNetwork,
+          agentId,
+          value: 1,
+          valueDecimals: 0,
+          tag1: "x402",
+          tag2: "settlement",
+          endpoint: typeof body.paymentRequirements?.resource === "string"
+            ? body.paymentRequirements.resource : "",
+        });
+        if (reputationTx) {
+          console.log(`   ⭐ Reputation feedback tx prepared for agent ${agentId}`);
+        }
+      }
+    }
+
     // Build V2 response headers
     const headers = getSettleHeaders({
       requestId,
@@ -129,10 +154,11 @@ export async function POST(request: NextRequest) {
       asset: paymentAsset,
     });
 
-    // Enhanced V2 response with receipt
+    // Enhanced V2 response with receipt and optional reputation tx
     const v2Response = {
       ...result,
       receipt,
+      ...(reputationTx ? { reputationFeedback: reputationTx } : {}),
     };
 
     if (!result.success) {

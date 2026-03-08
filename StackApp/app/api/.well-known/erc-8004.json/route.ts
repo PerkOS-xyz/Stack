@@ -100,6 +100,14 @@ export async function GET() {
     wallet: config.paymentReceiver,
     discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
     agentCard: `${config.facilitatorUrl}/api/.well-known/agent-card.json`,
+    // x402 service endpoints
+    x402Verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
+    x402Settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
+    x402Config: `${config.facilitatorUrl}/api/v2/x402/config`,
+    x402Supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
+    x402Health: `${config.facilitatorUrl}/api/v2/x402/health`,
+    // Unified onboarding
+    agentOnboard: `${config.facilitatorUrl}/api/v2/agents/onboard`,
   };
 
   // Build supportedTrust array
