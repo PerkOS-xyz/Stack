@@ -499,6 +499,66 @@ export default function Home() {
           </div>
         </section>
 
+        {/* === ERC-8004 SECTION === */}
+        <section className="relative py-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-2xl mb-16">
+              <div className="text-xs font-mono text-purple-400 uppercase tracking-[0.3em] mb-4">ERC-8004 v2.0.0</div>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+                On-Chain Agent
+                <span className="block text-gray-500">Trust Infrastructure</span>
+              </h2>
+              <p className="text-gray-400 leading-relaxed">
+                Official ERC-8004 contracts deployed with CREATE2 deterministic addresses — same address on every chain.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Identity */}
+              <div className="group relative bg-gradient-to-br from-purple-500/5 to-transparent border border-purple-500/20 hover:border-purple-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-purple-500/10">
+                <div className="text-5xl mb-6 text-purple-400 font-light">🪪</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Agent Identity</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  ERC-721 agent registration on 25+ chains. Register, lookup, and manage wallets with a single on-chain identity.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">ERC-721 NFTs</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">25+ Chains</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">CREATE2</span>
+                </div>
+              </div>
+
+              {/* Reputation */}
+              <div className="group relative bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/20 hover:border-amber-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-amber-500/10">
+                <div className="text-5xl mb-6 text-amber-400 font-light">⭐</div>
+                <h3 className="text-2xl font-bold text-white mb-3">On-Chain Reputation</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Submit feedback with precise scoring, tags, and categories. Support for revocation and append responses.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Feedback Scores</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Tags</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Revocable</span>
+                </div>
+              </div>
+
+              {/* Validation */}
+              <div className="group relative bg-gradient-to-br from-cyan-500/5 to-transparent border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-cyan-500/10">
+                <div className="text-5xl mb-6 text-cyan-400 font-light">✅</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Validation Registry</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Request-response model for independent third-party verification. Build trust through validated credentials.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Verification</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Third-Party</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">On-Chain</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* === SUBSCRIPTION PLANS === */}
         <SubscriptionPlans />
 
