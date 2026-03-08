@@ -1,12 +1,10 @@
 /**
- * ERC-8004 Contract ABIs - Re-exported from @perkos/contracts-erc8004
+ * ERC-8004 Contract ABIs & Types — v2 Spec Compliant
  *
- * This file re-exports all ERC-8004 registry ABIs and utilities from the @perkos/contracts-erc8004 package
- * for backward compatibility with existing imports.
- *
- * Updated for EIP-8004 compliance (v2.0.0):
- * - Reputation: score 0-100, tag1/tag2 filtering
- * - Validation: request-response model (replaces stake-based attestations)
+ * Updated for EIP-8004 v2:
+ * - Reputation: int128 value + uint8 valueDecimals (signed, decimal-aware)
+ * - Validation: simplified, no ValidationStatus enum, progressive responses
+ * - Identity: MetadataEntry uses metadataKey/metadataValue, wallet functions
  */
 
 export {
@@ -20,22 +18,34 @@ export {
   decodeMetadataValue,
 } from "@perkos/contracts-erc8004";
 
-// ============ Local Type Definitions ============
+// ============ Identity Types ============
 
 /**
- * Metadata entry for Identity Registry
+ * Metadata entry for Identity Registry (v2: renamed fields)
  */
 export interface MetadataEntry {
+  metadataKey: string;
+  metadataValue: `0x${string}`;
+}
+
+/**
+ * @deprecated Use MetadataEntry with metadataKey/metadataValue
+ */
+export interface MetadataEntryLegacy {
   key: string;
   value: `0x${string}`;
 }
 
+// ============ Reputation Types (v2: int128 + valueDecimals) ============
+
 /**
- * Feedback entry from Reputation Registry (EIP-8004: score 0-100)
+ * Feedback entry from Reputation Registry
+ * v2: score replaced with int128 value + uint8 valueDecimals
  */
 export interface Feedback {
   client: `0x${string}`;
-  score: number;
+  value: bigint;           // int128 — can be negative
+  valueDecimals: number;   // uint8 (0-18)
   tag1: string;
   tag2: string;
   endpoint: string;
@@ -43,32 +53,30 @@ export interface Feedback {
   feedbackHash: `0x${string}`;
   timestamp: bigint;
   revoked: boolean;
-  response: string;
 }
 
 /**
- * Reputation summary from Reputation Registry
+ * Reputation summary from Reputation Registry (v2)
  */
 export interface ReputationSummary {
-  totalFeedback: bigint;
-  averageScore: number;
-  positiveCount: bigint;
-  negativeCount: bigint;
+  count: bigint;
+  summaryValue: bigint;         // int128
+  summaryValueDecimals: number; // uint8
 }
 
 /**
- * Validation status enum (EIP-8004 request-response model)
+ * Response entry for feedback
  */
-export enum ValidationStatus {
-  None = 0,
-  Pending = 1,
-  Approved = 2,
-  Rejected = 3,
-  Cancelled = 4,
+export interface FeedbackResponse {
+  responder: `0x${string}`;
+  responseURI: string;
+  responseHash: `0x${string}`;
 }
 
+// ============ Validation Types (v2: simplified) ============
+
 /**
- * Validation request from Validation Registry
+ * Validation request from Validation Registry (v2: no enum)
  */
 export interface ValidationRequest {
   agentId: bigint;
@@ -77,53 +85,42 @@ export interface ValidationRequest {
   requestURI: string;
   requestDataHash: `0x${string}`;
   requestedAt: bigint;
-  status: ValidationStatus;
-  response: number;
+  response: number;          // uint8 (0-100)
+  responseHash: `0x${string}`;
   responseURI: string;
   responseDataHash: `0x${string}`;
   tag: string;
-  respondedAt: bigint;
+  lastUpdate: bigint;
 }
 
 /**
- * Validation summary from Validation Registry
+ * Validation summary from Validation Registry (v2: simplified)
  */
 export interface ValidationSummary {
-  totalRequests: bigint;
-  approvedCount: bigint;
-  rejectedCount: bigint;
-  pendingCount: bigint;
-  averageResponse: number;
+  count: bigint;
+  averageResponse: number; // uint8 (0-100)
 }
 
 // ============ Utility Functions ============
 
 /**
- * Check if a validation is approved (response > 50)
- * EIP-8004 compliant approval threshold
+ * Format a value with decimals for display
+ * e.g. formatValue(9977n, 2) => "99.77"
  */
-export function isValidationApproved(status: ValidationStatus): boolean {
-  return status === ValidationStatus.Approved;
+export function formatValue(value: bigint, valueDecimals: number): string {
+  if (valueDecimals === 0) return value.toString();
+  const str = value.toString();
+  const isNegative = value < 0n;
+  const abs = isNegative ? str.slice(1) : str;
+  const padded = abs.padStart(valueDecimals + 1, "0");
+  const intPart = padded.slice(0, padded.length - valueDecimals);
+  const decPart = padded.slice(padded.length - valueDecimals);
+  return `${isNegative ? "-" : ""}${intPart}.${decPart}`;
 }
 
 /**
- * Get human-readable validation status string
+ * Check if a validation response is considered positive (> 50)
  */
-export function getValidationStatusString(status: ValidationStatus): string {
-  const statusMap: Record<ValidationStatus, string> = {
-    [ValidationStatus.None]: "None",
-    [ValidationStatus.Pending]: "Pending",
-    [ValidationStatus.Approved]: "Approved",
-    [ValidationStatus.Rejected]: "Rejected",
-    [ValidationStatus.Cancelled]: "Cancelled",
-  };
-  return statusMap[status] || "Unknown";
-}
-
-/**
- * Check if a score is considered approved (> 50)
- * EIP-8004 compliant: scores 0-100, threshold at 50
- */
-export function isScoreApproved(score: number): boolean {
-  return score > 50;
+export function isPositiveResponse(response: number): boolean {
+  return response > 50;
 }

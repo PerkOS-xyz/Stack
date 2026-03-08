@@ -45,10 +45,10 @@ interface IIdentityRegistry {
 
     // ============ Structs ============
 
-    /// @notice Struct for metadata entries during registration
+    /// @notice Struct for metadata entries during registration (v2: renamed fields)
     struct MetadataEntry {
-        string key;
-        string value;
+        string metadataKey;
+        string metadataValue;
     }
 
     // ============ Registration Functions ============

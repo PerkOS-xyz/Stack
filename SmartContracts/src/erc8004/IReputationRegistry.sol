@@ -3,24 +3,25 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IReputationRegistry
- * @notice ERC-8004 Reputation Registry Interface
- * @dev Standardized feedback collection with on-chain composability
- *      and off-chain aggregation capabilities
- *
- * Key Features:
- * - Score range: 0-100 (mandatory)
- * - Optional tag1, tag2 for categorization
- * - Optional feedbackURI/feedbackHash for off-chain evidence
- * - Filtering by reviewer addresses and tags
+ * @notice ERC-8004 Reputation Registry Interface (v2)
+ * @dev v2 changes:
+ *      - score (uint8 0-100) replaced with int128 value + uint8 valueDecimals
+ *      - Allows negative values, decimal precision (0-18 decimals)
+ *      - Example: uptime 99.77% = (9977, 2), negative sentiment = (-50, 0)
+ *      - appendResponse callable by anyone (not just agent owner)
+ *      - readAllFeedback includes feedbackIndexes in return
+ *      - getSummary returns (count, summaryValue, summaryValueDecimals)
+ *      - Added getResponseCount
  */
 interface IReputationRegistry {
-    // ============ Events (EIP-8004 Compliant) ============
+    // ============ Events ============
 
     /// @notice Emitted when feedback is given to an agent
     event NewFeedback(
         uint256 indexed agentId,
         address indexed clientAddress,
-        uint8 score,
+        int128 value,
+        uint8 valueDecimals,
         string indexed tag1,
         string tag2,
         string endpoint,
@@ -44,44 +45,54 @@ interface IReputationRegistry {
         string responseURI
     );
 
-    // ============ Structs (EIP-8004 Compliant) ============
+    // ============ Structs ============
 
-    /// @notice Feedback entry structure per EIP-8004
+    /// @notice Feedback entry structure (v2: int128 value + valueDecimals)
     struct Feedback {
         address client;
-        uint8 score;              // 0-100 scale (EIP-8004 compliant)
-        string tag1;              // Optional categorization tag
-        string tag2;              // Optional categorization tag
-        string endpoint;          // Optional endpoint reference
-        string feedbackURI;       // Optional URI to detailed feedback
-        bytes32 feedbackHash;     // Optional hash of off-chain feedback
+        int128 value;             // Signed value (can be negative)
+        uint8 valueDecimals;      // 0-18 decimal places
+        string tag1;
+        string tag2;
+        string endpoint;
+        string feedbackURI;
+        bytes32 feedbackHash;
         uint256 timestamp;
         bool isRevoked;
-        string responseURI;       // Agent's response URI
-        bytes32 responseHash;     // Hash of response content
     }
 
-    /// @notice Aggregated reputation summary
+    /// @notice Response entry for a feedback
+    struct Response {
+        address responder;
+        string responseURI;
+        bytes32 responseHash;
+        uint256 timestamp;
+    }
+
+    /// @notice Aggregated reputation summary (v2)
     struct ReputationSummary {
         uint64 count;
-        uint8 averageScore;       // 0-100
+        int128 summaryValue;
+        uint8 summaryValueDecimals;
     }
 
-    // ============ Feedback Functions (EIP-8004 Compliant) ============
+    // ============ Feedback Functions ============
 
     /**
-     * @notice Give feedback to an agent with full parameters
+     * @notice Give feedback with full parameters (v2: int128 value + valueDecimals)
      * @param agentId The agent's ID in the Identity Registry
-     * @param score Score from 0 to 100 (0 = worst, 100 = best)
-     * @param tag1 Optional categorization tag (e.g., "quality", "speed")
+     * @param value Feedback value (int128 — can be negative)
+     * @param valueDecimals Number of decimal places (0-18)
+     * @param tag1 Optional categorization tag
      * @param tag2 Optional second categorization tag
-     * @param endpoint Optional endpoint that was used
+     * @param endpoint Optional endpoint reference
      * @param feedbackURI Optional URI to detailed feedback JSON
      * @param feedbackHash Optional hash of off-chain feedback content
      */
     function giveFeedback(
         uint256 agentId,
-        uint8 score,
+        int128 value,
+        uint8 valueDecimals,
         string calldata tag1,
         string calldata tag2,
         string calldata endpoint,
@@ -90,13 +101,15 @@ interface IReputationRegistry {
     ) external;
 
     /**
-     * @notice Simple feedback with just score (convenience method)
+     * @notice Simple feedback with just value (convenience method)
      * @param agentId The agent's ID
-     * @param score Score from 0 to 100
+     * @param value Feedback value (int128)
+     * @param valueDecimals Number of decimal places (0-18)
      */
     function giveFeedback(
         uint256 agentId,
-        uint8 score
+        int128 value,
+        uint8 valueDecimals
     ) external;
 
     /**
@@ -107,12 +120,12 @@ interface IReputationRegistry {
     function revokeFeedback(uint256 agentId, uint64 feedbackIndex) external;
 
     /**
-     * @notice Append agent response to feedback
+     * @notice Append response to feedback (callable by anyone per v2 spec)
      * @param agentId The agent's ID
      * @param clientAddress The client who gave the feedback
      * @param feedbackIndex The feedback index
      * @param responseURI URI to response content
-     * @param responseHash Hash of response content (optional, can be bytes32(0))
+     * @param responseHash Hash of response content (optional)
      */
     function appendResponse(
         uint256 agentId,
@@ -122,30 +135,29 @@ interface IReputationRegistry {
         bytes32 responseHash
     ) external;
 
-    // ============ Query Functions (EIP-8004 Compliant) ============
+    // ============ Query Functions ============
 
     /**
-     * @notice Get reputation summary with filtering
+     * @notice Get reputation summary with filtering (v2)
      * @param agentId The agent's ID
      * @param clientAddresses Filter by specific clients (empty = all)
      * @param tag1 Filter by tag1 (empty = all)
      * @param tag2 Filter by tag2 (empty = all)
      * @return count Number of matching feedbacks
-     * @return averageScore Average score of matching feedbacks
+     * @return summaryValue Aggregated value
+     * @return summaryValueDecimals Decimals of the summary value
      */
     function getSummary(
         uint256 agentId,
         address[] calldata clientAddresses,
         string calldata tag1,
         string calldata tag2
-    ) external view returns (uint64 count, uint8 averageScore);
+    ) external view returns (uint64 count, int128 summaryValue, uint8 summaryValueDecimals);
 
     /**
-     * @notice Read specific feedback entry
-     * @param agentId The agent's ID
-     * @param clientAddress The client who gave feedback
-     * @param index The feedback index for this client
-     * @return score The score given
+     * @notice Read specific feedback entry (v2)
+     * @return value The feedback value (int128)
+     * @return valueDecimals Decimal places
      * @return tag1 First tag
      * @return tag2 Second tag
      * @return isRevoked Whether feedback was revoked
@@ -155,24 +167,15 @@ interface IReputationRegistry {
         address clientAddress,
         uint64 index
     ) external view returns (
-        uint8 score,
+        int128 value,
+        uint8 valueDecimals,
         string memory tag1,
         string memory tag2,
         bool isRevoked
     );
 
     /**
-     * @notice Read all feedback with filtering
-     * @param agentId The agent's ID
-     * @param clientAddresses Filter by clients (empty = all)
-     * @param tag1 Filter by tag1 (empty = all)
-     * @param tag2 Filter by tag2 (empty = all)
-     * @param includeRevoked Whether to include revoked feedback
-     * @return clients Array of client addresses
-     * @return scores Array of scores
-     * @return tag1s Array of tag1 values
-     * @return tag2s Array of tag2 values
-     * @return revoked Array of revoked flags
+     * @notice Read all feedback with filtering (v2: includes feedbackIndexes)
      */
     function readAllFeedback(
         uint256 agentId,
@@ -182,7 +185,9 @@ interface IReputationRegistry {
         bool includeRevoked
     ) external view returns (
         address[] memory clients,
-        uint8[] memory scores,
+        uint64[] memory feedbackIndexes,
+        int128[] memory values,
+        uint8[] memory valueDecimals,
         string[] memory tag1s,
         string[] memory tag2s,
         bool[] memory revoked
@@ -190,16 +195,11 @@ interface IReputationRegistry {
 
     /**
      * @notice Get all clients who have given feedback to an agent
-     * @param agentId The agent's ID
-     * @return clients Array of client addresses
      */
     function getClients(uint256 agentId) external view returns (address[] memory clients);
 
     /**
      * @notice Get the last feedback index for a specific client
-     * @param agentId The agent's ID
-     * @param clientAddress The client address
-     * @return lastIndex The last index (or 0 if no feedback)
      */
     function getLastIndex(
         uint256 agentId,
@@ -207,8 +207,22 @@ interface IReputationRegistry {
     ) external view returns (uint64 lastIndex);
 
     /**
+     * @notice Get response count for a specific feedback entry
+     * @param agentId The agent's ID
+     * @param clientAddress The client who gave feedback
+     * @param feedbackIndex The feedback index
+     * @param responders Filter by responder addresses (empty = all)
+     * @return count Number of responses
+     */
+    function getResponseCount(
+        uint256 agentId,
+        address clientAddress,
+        uint64 feedbackIndex,
+        address[] calldata responders
+    ) external view returns (uint64 count);
+
+    /**
      * @notice Get the Identity Registry address
-     * @return registry The Identity Registry contract address
      */
     function identityRegistry() external view returns (address registry);
 }
