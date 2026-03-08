@@ -7,20 +7,22 @@ import { CHAIN_IDS } from "@/lib/utils/chains";
 export const dynamic = "force-dynamic";
 
 /**
- * ERC-8004: Agent Registration File
+ * ERC-8004: Agent Registration File (v2)
  * Standard endpoint: /.well-known/erc-8004.json
  *
- * Provides agent registration data per ERC-8004 specification.
- * This file is pointed to by the Identity Registry tokenURI.
+ * v2 changes:
+ * - "endpoints" renamed to "services"
+ * - Added "x402Support" and "active" top-level fields
+ * - agentRegistry format: {namespace}:{chainId}:{identityRegistry}
+ * - Reputation uses int128 value + valueDecimals (not uint8 score)
  *
  * @see https://eips.ethereum.org/EIPS/eip-8004
- * @see https://8004.org/spec
  */
 export async function GET() {
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
 
-  // Fetch live reputation stats from database
+  // Fetch live reputation stats
   let reputationStats = {
     totalTransactions: 0,
     successfulTransactions: 0,
@@ -31,7 +33,6 @@ export async function GET() {
   };
 
   try {
-    // Get transaction stats
     const { count: totalTx } = await firebaseAdmin
       .from("perkos_x402_transactions")
       .select("*", { count: "exact", head: true });
@@ -49,7 +50,6 @@ export async function GET() {
     const totalVolumeUsd =
       volumeData?.reduce((sum, tx) => sum + (tx.amount_usd || 0), 0) || 0;
 
-    // Get average rating from reviews if available
     const { data: reviewData } = await firebaseAdmin
       .from("perkos_reviews")
       .select("rating");
@@ -70,16 +70,13 @@ export async function GET() {
     console.error("Failed to fetch reputation stats:", error);
   }
 
-  // Build registrations array (ERC-8004 format)
-  // Each network where we have deployed registries gets an entry
+  // Build registrations array with agentRegistry format
   const registrations: Array<{
-    chainId: string;  // CAIP-2 format
-    registryAddress: string;
+    agentRegistry: string;  // {namespace}:{chainId}:{identityRegistry}
     agentId: string | null;
     tokenURI: string;
   }> = [];
 
-  // Check each network for deployed registries
   for (const kind of supportedKinds) {
     const network = kind.network as SupportedNetwork;
     const chainId = getChainId(network);
@@ -87,33 +84,25 @@ export async function GET() {
     if (chainId && hasErc8004Registries(network)) {
       const registryInfo = getErc8004Registries(network);
       registrations.push({
-        chainId: `eip155:${chainId}`,  // CAIP-2 format
-        registryAddress: registryInfo.identity || "",
-        agentId: null,  // Will be set when agent registers on-chain
+        agentRegistry: `eip155:${chainId}:${registryInfo.identity}`,
+        agentId: null,
         tokenURI: `${config.facilitatorUrl}/api/.well-known/erc-8004.json`,
       });
     }
   }
 
-  // Build endpoints object per ERC-8004 spec
-  const endpoints = {
-    // Primary communication endpoints
-    a2a: `${config.facilitatorUrl}/api/v2/x402`,  // Agent-to-Agent messaging
-    mcp: null as string | null,  // Model Context Protocol endpoint
-
-    // Identity endpoints
-    ens: null as string | null,  // ENS name (e.g., "perkos.eth")
-    did: null as string | null,  // Decentralized Identifier
-
-    // Payment endpoint
+  // Build services object (v2: renamed from "endpoints")
+  const services = {
+    a2a: `${config.facilitatorUrl}/api/v2/x402`,
+    mcp: null as string | null,
+    ens: null as string | null,
+    did: null as string | null,
     wallet: config.paymentReceiver,
-
-    // Discovery endpoints
     discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
     agentCard: `${config.facilitatorUrl}/api/.well-known/agent-card.json`,
   };
 
-  // Build supportedTrust array per ERC-8004 spec
+  // Build supportedTrust array
   const supportedTrust: Array<{
     type: string;
     description: string;
@@ -122,7 +111,7 @@ export async function GET() {
   }> = [
     {
       type: "reputation",
-      description: "On-chain feedback via Reputation Registry (EIP-8004 compliant: score 0-100, tag1/tag2 filtering)",
+      description: "On-chain feedback via Reputation Registry (EIP-8004 v2: int128 value + valueDecimals)",
       enabled: true,
       config: {
         reputationRegistries: Object.fromEntries(
@@ -135,25 +124,28 @@ export async function GET() {
               return [`eip155:${chainId}`, registries.reputation];
             })
         ),
-        scoreRange: { min: 0, max: 100 },
-        approvalThreshold: 50,
+        valueFormat: "int128 + uint8 valueDecimals (signed, 0-18 decimals)",
         features: [
-          "score-0-100",
+          "signed-value-decimals",
           "tag1-tag2-filtering",
           "feedback-uri-hash",
-          "agent-response",
+          "response-append",
           "revocation",
+          "response-count",
         ],
       },
     },
     {
       type: "validation",
-      description: "Request-response validation model via Validation Registry (EIP-8004 compliant)",
+      description: "Request-response validation (EIP-8004 v2: progressive, no enum)",
       enabled: true,
       config: {
         validationRegistries: Object.fromEntries(
           supportedKinds
-            .filter(k => hasErc8004Registries(k.network as SupportedNetwork))
+            .filter(k => {
+              const registries = getErc8004Registries(k.network as SupportedNetwork);
+              return !!registries.validation;
+            })
             .map(k => {
               const network = k.network as SupportedNetwork;
               const chainId = getChainId(network);
@@ -162,21 +154,12 @@ export async function GET() {
             })
         ),
         model: "request-response",
-        scoreRange: { min: 0, max: 100 },
-        approvalThreshold: 50,
+        responseRange: { min: 0, max: 100 },
         features: [
-          "request-response-model",
-          "validator-address-targeting",
-          "tag-based-categorization",
+          "progressive-validation",
+          "validator-targeting",
+          "tag-categorization",
           "request-hash-tracking",
-          "request-cancellation",
-        ],
-        exampleTags: [
-          "security",
-          "compliance",
-          "performance",
-          "api-quality",
-          "uptime",
         ],
       },
     },
@@ -187,83 +170,63 @@ export async function GET() {
     },
   ];
 
-  // ERC-8004 Agent Registration File format
+  // ERC-8004 v2 Agent Registration File
   const agentRegistration = {
-    // === Required ERC-8004 Fields ===
-
-    // Agent type classification
-    type: "service",  // Options: service, autonomous, hybrid
-
-    // Human-readable name
+    // === v2 Required Fields ===
+    type: "service",
     name: config.facilitatorName,
-
-    // Agent description
     description: config.facilitatorDescription,
+    active: true,
+    x402Support: true,
 
-    // Communication endpoints
-    endpoints,
+    // v2: "services" (renamed from "endpoints")
+    services,
 
-    // On-chain registrations (one per chain where registered)
+    // On-chain registrations
     registrations,
 
-    // Supported trust mechanisms
+    // Trust mechanisms
     supportedTrust,
 
     // === Extended Metadata ===
-
-    // Visual identity
     image: `${config.facilitatorUrl}/logo.png`,
     icon: `${config.facilitatorUrl}/icon.png`,
-
-    // Agent identifier (wallet address)
     agentId: config.paymentReceiver,
-
-    // Primary URL
     url: config.facilitatorUrl,
 
-    // Capabilities (x402 specific)
     capabilities: [
-      "x402-v2",                    // x402 V2 protocol
-      "x402-payment-exact",          // EIP-3009 exact payments
+      "x402-v2",
+      "x402-payment-exact",
       ...(config.deferredEnabled ? ["x402-payment-deferred"] : []),
-      "erc-8004-discovery",          // Agent discovery
-      "erc-8004-reputation",         // Reputation registry
-      "erc-8004-validation",         // Validation registry
-      "multi-chain-support",         // Multiple networks
-      "bazaar-indexable",            // Bazaar discovery
-      "gasless-transactions",        // Sponsored gas
+      "erc-8004-discovery",
+      "erc-8004-reputation",
+      "erc-8004-validation",
+      "multi-chain-support",
+      "bazaar-indexable",
+      "gasless-transactions",
     ],
 
-    // Payment methods with CAIP-2 chain IDs
     paymentMethods: supportedKinds.map((kind) => ({
       scheme: kind.scheme,
       network: kind.network,
       asset: config.paymentTokens[kind.network as SupportedNetwork],
-      chainId: `eip155:${getChainId(kind.network)}`,  // CAIP-2 format
+      chainId: `eip155:${getChainId(kind.network)}`,
     })),
 
-    // Networks summary
     networks: {
-      mainnet: supportedKinds
-        .filter((k) => !isTestnet(k.network))
-        .map((k) => k.network),
-      testnet: supportedKinds
-        .filter((k) => isTestnet(k.network))
-        .map((k) => k.network),
+      mainnet: supportedKinds.filter((k) => !isTestnet(k.network)).map((k) => k.network),
+      testnet: supportedKinds.filter((k) => isTestnet(k.network)).map((k) => k.network),
       total: supportedKinds.length,
     },
 
-    // Live reputation data
     reputation: reputationStats,
 
-    // Protocol versions
     protocolVersion: {
-      erc8004: "1.0.0",
+      erc8004: "2.0.0",
       x402: "2.0.0",
     },
 
-    // Metadata
-    version: "2.0.0",
+    version: "3.0.0",
     spec: "ERC-8004",
     created: new Date().toISOString(),
   };
@@ -271,8 +234,8 @@ export async function GET() {
   return NextResponse.json(agentRegistration, {
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=300",  // 5 minute cache
-      "X-ERC8004-Version": "1.0.0",
+      "Cache-Control": "public, max-age=300",
+      "X-ERC8004-Version": "2.0.0",
       "X-x402-Version": "2.0.0",
     },
   });
@@ -305,6 +268,7 @@ function isTestnet(network: string): boolean {
     network.includes("fuji") ||
     network.includes("sepolia") ||
     network.includes("amoy") ||
-    network.includes("testnet")
+    network.includes("testnet") ||
+    network.includes("chiado")
   );
 }
