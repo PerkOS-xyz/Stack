@@ -104,23 +104,29 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get summary
-    const clientAddresses = clientAddress ? [clientAddress as Address] : [];
-
-    const [count, summaryValue, summaryValueDecimals] = await client.readContract({
-      address: registries.reputation as Address,
-      abi: REPUTATION_ABI,
-      functionName: "getSummary",
-      args: [BigInt(agentId), clientAddresses, tag1, tag2],
-    }) as [bigint, bigint, number];
-
-    // Get all clients
+    // Get all clients first (needed for getSummary — spec requires non-empty clientAddresses)
     const clients = await client.readContract({
       address: registries.reputation as Address,
       abi: REPUTATION_ABI,
       functionName: "getClients",
       args: [BigInt(agentId)],
     }) as Address[];
+
+    // Build clientAddresses filter
+    const clientAddresses = clientAddress
+      ? [clientAddress as Address]
+      : clients.length > 0 ? clients : [];
+
+    // Get summary (requires non-empty clientAddresses per spec)
+    let count = 0n, summaryValue = 0n, summaryValueDecimals = 0;
+    if (clientAddresses.length > 0) {
+      [count, summaryValue, summaryValueDecimals] = await client.readContract({
+        address: registries.reputation as Address,
+        abi: REPUTATION_ABI,
+        functionName: "getSummary",
+        args: [BigInt(agentId), clientAddresses, tag1, tag2],
+      }) as [bigint, bigint, number];
+    }
 
     // Get all feedback with filtering
     const [
