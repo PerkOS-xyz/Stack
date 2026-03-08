@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
         responseHash,
         tag: responseTag,
         lastUpdate: lastUpdate.toString(),
-        isPositive: isPositiveResponse(response),
+        isPositive: response > 50,
         network,
         registryAddress: registries.validation,
       });
@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
         summary: {
           count: count.toString(),
           averageResponse,
-          isPositive: isPositiveResponse(averageResponse),
+          isPositive: averageResponse > 50,
         },
         requestHashes,
         totalRequests: requestHashes.length,
@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
         note: "Progressive validation: this function can be called multiple times to update the response",
         responseInfo: {
           response,
-          isPositive: isPositiveResponse(response),
+          isPositive: response > 50,
           tag,
         },
       });
