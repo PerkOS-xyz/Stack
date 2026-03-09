@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
+    if (error || !wallet) {
       return NextResponse.json(
         { error: "Failed to store wallet" },
         { status: 500 }

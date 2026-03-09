@@ -22,7 +22,7 @@ const nextConfig = {
   },
   // Enforce strict type checking and linting during builds
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: false,

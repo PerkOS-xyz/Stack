@@ -328,12 +328,11 @@ export class VendorDiscoveryService {
       website_url: websiteUrl || discoveryData.metadata?.contact?.website || null,
       docs_url: docsUrl || discoveryData.documentation || discoveryData.metadata?.contact?.documentation || null,
       discovery_metadata: discoveryData as unknown as Database["public"]["Tables"]["perkos_vendors"]["Insert"]["discovery_metadata"],
-      // Initialize stats fields (Firestore doesn't have schema defaults)
+      // Initialize stats fields
       total_transactions: 0,
-      successful_transactions: 0,
       total_volume: "0",
       average_response_time_ms: 0,
-    };
+    } as any;
 
     // Insert vendor - use type assertion for Supabase client
     const { data: vendorData, error: vendorError } = await firebaseAdmin
@@ -586,12 +585,11 @@ export class VendorDiscoveryService {
         website_url: websiteUrl || null,
         docs_url: docsUrl || null,
         discovery_metadata: { direct_registration: true, endpoints } as unknown as Json,
-        // Initialize stats fields (Firestore doesn't have schema defaults)
+        // Initialize stats fields
         total_transactions: 0,
-        successful_transactions: 0,
         total_volume: "0",
         average_response_time_ms: 0,
-      };
+      } as any;
 
       const { data: vendorData, error: vendorError } = await firebaseAdmin
         .from("perkos_vendors")

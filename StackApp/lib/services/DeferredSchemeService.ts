@@ -41,7 +41,7 @@ export class DeferredSchemeService {
   constructor(network: SupportedNetwork = config.defaultNetwork) {
     this.network = network;
 
-    const escrowAddress = config.deferredEscrowAddresses[network];
+    const escrowAddress = (config.deferredEscrowAddresses as Record<string, `0x${string}` | undefined>)[network];
     if (!escrowAddress) {
       throw new Error(`Deferred escrow address not configured for network: ${network}`);
     }
@@ -108,7 +108,7 @@ export class DeferredSchemeService {
       goat: CHAIN_IDS.GOAT,
       "goat-testnet": CHAIN_IDS.GOAT_TESTNET,
     };
-    return chainIdMap[network];
+    return chainIdMap[network]!;
   }
 
   /**
