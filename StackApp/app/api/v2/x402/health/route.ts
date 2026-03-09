@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { firebaseAdmin } from "@/lib/db/firebase";
@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
  * x402 V2 Health Check Endpoint
  * Provides comprehensive system status for monitoring and discovery.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const baseUrl = new URL(request.url).origin;
   const startTime = Date.now();
 
   // Initialize health status
@@ -35,10 +36,10 @@ export async function GET() {
       networksHealthy: 0,
     },
     endpoints: {
-      verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-      settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-      supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
-      discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
+      verify: `${baseUrl}/api/v2/x402/verify`,
+      settle: `${baseUrl}/api/v2/x402/settle`,
+      supported: `${baseUrl}/api/v2/x402/supported`,
+      discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
     },
   };
 
