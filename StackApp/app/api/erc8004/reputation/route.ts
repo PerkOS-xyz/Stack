@@ -144,33 +144,45 @@ export async function GET(req: NextRequest) {
       }) as [bigint, bigint, number];
     }
 
-    // Get all feedback with filtering
-    const [
-      feedbackClients,
-      feedbackIndexes,
-      values,
-      valueDecimalsArr,
-      tag1s,
-      tag2s,
-      revoked
-    ] = await client.readContract({
-      address: registries.reputation as Address,
-      abi: REPUTATION_ABI,
-      functionName: "readAllFeedback",
-      args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
-    }) as [Address[], bigint[], bigint[], number[], string[], string[], boolean[]];
+    // Get all feedback with filtering (skip if no clients)
+    let feedback: Array<{
+      client: string;
+      feedbackIndex: string;
+      value: string;
+      valueDecimals: number;
+      formattedValue: string;
+      tag1: string;
+      tag2: string;
+      isRevoked: boolean;
+    }> = [];
 
-    // Format feedback array
-    const feedback = feedbackClients.map((fbClient, i) => ({
-      client: fbClient,
-      feedbackIndex: feedbackIndexes[i].toString(),
-      value: values[i].toString(),
-      valueDecimals: valueDecimalsArr[i],
-      formattedValue: formatValue(values[i], valueDecimalsArr[i]),
-      tag1: tag1s[i],
-      tag2: tag2s[i],
-      isRevoked: revoked[i],
-    }));
+    if (clientAddresses.length > 0) {
+      const [
+        feedbackClients,
+        feedbackIndexes,
+        values,
+        valueDecimalsArr,
+        tag1s,
+        tag2s,
+        revoked
+      ] = await client.readContract({
+        address: registries.reputation as Address,
+        abi: REPUTATION_ABI,
+        functionName: "readAllFeedback",
+        args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
+      }) as [Address[], bigint[], bigint[], number[], string[], string[], boolean[]];
+
+      feedback = feedbackClients.map((fbClient, i) => ({
+        client: fbClient,
+        feedbackIndex: feedbackIndexes[i].toString(),
+        value: values[i].toString(),
+        valueDecimals: valueDecimalsArr[i],
+        formattedValue: formatValue(values[i], valueDecimalsArr[i]),
+        tag1: tag1s[i],
+        tag2: tag2s[i],
+        isRevoked: revoked[i],
+      }));
+    }
 
     return NextResponse.json({
       agentId,
