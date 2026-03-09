@@ -3,6 +3,7 @@ import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 // Inline ABI matching official ReputationRegistryUpgradeable
 const REPUTATION_ABI = [
   { name: "giveFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "endpoint", type: "string" }, { name: "feedbackURI", type: "string" }, { name: "feedbackHash", type: "bytes32" }], outputs: [] },
@@ -44,6 +45,16 @@ export async function OPTIONS() {
  * - includeRevoked: Include revoked feedback (optional, default: false)
  */
 export async function GET(req: NextRequest) {
+  // Rate limit: 60 requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateLimitResult = rateLimit(clientIp, 60, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const network = searchParams.get("network") as SupportedNetwork;
