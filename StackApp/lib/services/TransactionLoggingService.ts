@@ -65,7 +65,7 @@ export class TransactionLoggingService {
       optimism: CHAIN_IDS.OPTIMISM,
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
     };
-    return chainIdMap[network];
+    return chainIdMap[network]!;
   }
 
   /**

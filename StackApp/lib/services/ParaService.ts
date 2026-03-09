@@ -227,7 +227,7 @@ export class ParaService {
 
       // Create a Para Account using the server SDK
       console.log("Calling createParaAccount...");
-      const account = await createParaAccount(this.para);
+      const account = await createParaAccount(this.para as any);
       console.log(`Para account created with address: ${account.address}`);
 
       // Get the chain configuration from our chains.ts
