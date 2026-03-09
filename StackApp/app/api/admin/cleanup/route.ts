@@ -1,40 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vendorDiscoveryService } from "@/lib/services/VendorDiscoveryService";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 export const dynamic = "force-dynamic";
 
-// Helper to verify admin access
-function isAdminWallet(address: string): boolean {
-  const adminWallets = process.env.ADMIN_WALLETS || "";
-  const adminList = adminWallets
-    .split(",")
-    .map((w) => w.trim().toLowerCase())
-    .filter((w) => w.length > 0);
-  return adminList.includes(address.toLowerCase());
-}
-
 /**
- * POST /api/admin/cleanup?address=0x...
+ * POST /api/admin/cleanup
  * Clean up orphaned data (endpoints without vendors)
  */
 export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const address = searchParams.get("address");
-
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address parameter required" },
-        { status: 400 }
-      );
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
-
-    if (!isAdminWallet(address)) {
-      return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 }
-      );
-    }
+    const address = auth.address;
 
     console.log(`[AdminCleanup] Starting cleanup requested by ${address}`);
 

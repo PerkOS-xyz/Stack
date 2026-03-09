@@ -1,32 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/verify?address=0x...
- * Verifies if a wallet address is an admin
+ * GET /api/admin/verify
+ * Verifies if a wallet address is an admin via signed request.
+ * Requires X-Admin-Signature, X-Admin-Timestamp, X-Admin-Address headers.
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const address = searchParams.get("address");
+    const auth = await verifyAdminRequest(req);
 
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address parameter required" },
-        { status: 400 }
-      );
-    }
-
-    const adminWallets = process.env.ADMIN_WALLETS || "";
-    const adminList = adminWallets
-      .split(",")
-      .map((w) => w.trim().toLowerCase())
-      .filter((w) => w.length > 0);
-
-    const isAdmin = adminList.includes(address.toLowerCase());
-
-    return NextResponse.json({ isAdmin });
+    return NextResponse.json({
+      isAdmin: auth.authorized,
+      address: auth.address || null,
+    });
   } catch (error) {
     console.error("Error in GET /api/admin/verify:", error);
     return NextResponse.json(

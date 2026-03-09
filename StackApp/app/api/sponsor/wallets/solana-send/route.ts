@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 import { Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction } from "@solana/web3.js";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
 // Note: Wallet service import is done dynamically below to support provider switching
@@ -37,6 +38,11 @@ function isValidSolanaAddress(address: string): boolean {
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const { walletId, toAddress, amount, network } = body;
 
