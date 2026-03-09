@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Payment verified for ${userWalletAddress}`);
+    console.log(`Payment verified for ${userWalletAddress}`);
 
     // Settle the payment on-chain
     const settleResult = await x402Service.settle(x402Request);
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Payment settled for ${userWalletAddress}:`, {
+    console.log(`Payment settled for ${userWalletAddress}:`, {
       transactionHash: settleResult.transaction,
     });
 
@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription created/updated for ${userWalletAddress}:`, {
+    console.log(`Subscription created/updated for ${userWalletAddress}:`, {
       tier,
       billingCycle,
       network,

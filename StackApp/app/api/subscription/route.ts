@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription created/updated for ${userWalletAddress}:`);
+    console.log(`Subscription created/updated for ${userWalletAddress}:`);
     console.log(`   Tier: ${tier}`);
     console.log(`   Status: ${subscription.status}`);
 
@@ -185,7 +185,7 @@ export async function DELETE(req: NextRequest) {
     const subscriptionService = getSubscriptionService();
     await subscriptionService.cancelSubscription(userWalletAddress);
 
-    console.log(`✅ Subscription cancelled for ${userWalletAddress}`);
+    console.log(`Subscription cancelled for ${userWalletAddress}`);
 
     return NextResponse.json({
       success: true,

@@ -350,7 +350,7 @@ export async function POST(req: NextRequest) {
     const actualAmountSent = formatEther(valueInWei);
 
     // Log the transaction
-    console.log(`✅ Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
+    console.log(`Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
     console.log(`   Amount: ${actualAmountSent} ${symbol}`);
     console.log(`   Network: ${network} (Chain ID: ${chain.id})`);
     console.log(`   Transaction Hash: ${transactionHash}`);

@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription payment processed for ${userWalletAddress}:`);
+    console.log(`Subscription payment processed for ${userWalletAddress}:`);
     console.log(`   Tier: ${tier}`);
     console.log(`   Billing: ${billingCycle}`);
     console.log(`   Network: ${network}`);
