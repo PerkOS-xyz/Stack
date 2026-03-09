@@ -72,6 +72,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Validate agentId is a valid numeric value
+    try {
+      BigInt(agentId);
+    } catch {
+      return NextResponse.json(
+        { error: "agentId must be a valid numeric identifier" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     if (!hasErc8004Registries(network)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
