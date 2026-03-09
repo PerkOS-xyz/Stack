@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 // Inline ABI matching official ReputationRegistryUpgradeable
 const REPUTATION_ABI = [
   { name: "giveFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "endpoint", type: "string" }, { name: "feedbackURI", type: "string" }, { name: "feedbackHash", type: "bytes32" }], outputs: [] },
@@ -24,6 +25,10 @@ function formatValue(value: bigint, decimals: number): string {
 }
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 /**
  * GET /api/erc8004/reputation
@@ -52,14 +57,14 @@ export async function GET(req: NextRequest) {
     if (!network || !agentId) {
       return NextResponse.json(
         { error: "Network and agentId parameters required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -69,7 +74,7 @@ export async function GET(req: NextRequest) {
     if (!chain || !registries.reputation) {
       return NextResponse.json(
         { error: "Invalid network configuration" },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -101,7 +106,7 @@ export async function GET(req: NextRequest) {
         },
         network,
         registryAddress: registries.reputation,
-      });
+    }, { headers: corsHeaders });
     }
 
     // Get all clients first (needed for getSummary — spec requires non-empty clientAddresses)
@@ -169,12 +174,19 @@ export async function GET(req: NextRequest) {
       totalClients: clients.length,
       network,
       registryAddress: registries.reputation,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Error in GET /api/erc8004/reputation:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("revert") || msg.includes("ERC721") || msg.includes("nonexistent")) {
+      return NextResponse.json(
+        { error: "Agent not found" },
+        { status: 404, headers: corsHeaders }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to fetch reputation data" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -196,14 +208,14 @@ export async function POST(req: NextRequest) {
     if (!network) {
       return NextResponse.json(
         { error: "Network parameter required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network as SupportedNetwork)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -216,14 +228,14 @@ export async function POST(req: NextRequest) {
       if (!agentId || value === undefined) {
         return NextResponse.json(
           { error: "agentId and value required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       if (valueDecimals < 0 || valueDecimals > 18) {
         return NextResponse.json(
           { error: "valueDecimals must be 0-18" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -261,7 +273,7 @@ export async function POST(req: NextRequest) {
           valueDecimals,
           formattedValue: formatValue(BigInt(value), valueDecimals),
         },
-      });
+    }, { headers: corsHeaders });
     }
 
     // Append response to feedback
@@ -271,7 +283,7 @@ export async function POST(req: NextRequest) {
       if (!agentId || !clientAddress || feedbackIndex === undefined || !responseURI) {
         return NextResponse.json(
           { error: "agentId, clientAddress, feedbackIndex, and responseURI required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -291,7 +303,7 @@ export async function POST(req: NextRequest) {
           description: `Append response to feedback #${feedbackIndex} for agent ${agentId}`,
         },
         message: "Sign and submit this transaction to respond to feedback",
-      });
+    }, { headers: corsHeaders });
     }
 
     // Revoke feedback
@@ -301,7 +313,7 @@ export async function POST(req: NextRequest) {
       if (!agentId || feedbackIndex === undefined) {
         return NextResponse.json(
           { error: "agentId and feedbackIndex required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -315,18 +327,18 @@ export async function POST(req: NextRequest) {
           description: `Revoke feedback #${feedbackIndex} for agent ${agentId}`,
         },
         message: "Sign and submit this transaction to revoke feedback",
-      });
+    }, { headers: corsHeaders });
     }
 
     return NextResponse.json(
       { error: `Unknown action: ${action}. Valid: giveFeedback, appendResponse, revokeFeedback` },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   } catch (error) {
     console.error("Error in POST /api/erc8004/reputation:", error);
     return NextResponse.json(
       { error: "Failed to prepare reputation transaction" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

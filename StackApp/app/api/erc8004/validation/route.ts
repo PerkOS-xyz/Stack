@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address, type Hex } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 // Inline ABI matching official ValidationRegistryUpgradeable
 const VALIDATION_ABI = [
   { name: "validationRequest", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validatorAddress", type: "address" }, { name: "agentId", type: "uint256" }, { name: "requestURI", type: "string" }, { name: "requestHash", type: "bytes32" }], outputs: [] },
@@ -15,6 +16,10 @@ const VALIDATION_ABI = [
 ] as const;
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 /**
  * GET /api/erc8004/validation
@@ -39,14 +44,14 @@ export async function GET(req: NextRequest) {
     if (!network) {
       return NextResponse.json(
         { error: "Network parameter required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -56,7 +61,7 @@ export async function GET(req: NextRequest) {
     if (!chain || !registries.validation) {
       return NextResponse.json(
         { error: "Validation registry not available on this network" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -86,7 +91,7 @@ export async function GET(req: NextRequest) {
         isPositive: response > 50,
         network,
         registryAddress: registries.validation,
-      });
+    }, { headers: corsHeaders });
     }
 
     // Get requests for a validator
@@ -104,7 +109,7 @@ export async function GET(req: NextRequest) {
         requestHashes,
         network,
         registryAddress: registries.validation,
-      });
+    }, { headers: corsHeaders });
     }
 
     // Get validations for an agent
@@ -137,7 +142,7 @@ export async function GET(req: NextRequest) {
         tag: tag || null,
         network,
         registryAddress: registries.validation,
-      });
+    }, { headers: corsHeaders });
     }
 
     // Registry info
@@ -153,12 +158,12 @@ export async function GET(req: NextRequest) {
       identityRegistry,
       model: "request-response",
       description: "EIP-8004 v2 validation registry — progressive responses, no status enum",
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Error in GET /api/erc8004/validation:", error);
     return NextResponse.json(
       { error: "Failed to fetch validation data" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -179,14 +184,14 @@ export async function POST(req: NextRequest) {
     if (!network || !action) {
       return NextResponse.json(
         { error: "Network and action parameters required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network as SupportedNetwork)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -195,7 +200,7 @@ export async function POST(req: NextRequest) {
     if (!registries.validation) {
       return NextResponse.json(
         { error: "Validation registry not available on this network" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -206,7 +211,7 @@ export async function POST(req: NextRequest) {
       if (!validatorAddress || !agentId) {
         return NextResponse.json(
           { error: "validatorAddress and agentId required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -225,7 +230,7 @@ export async function POST(req: NextRequest) {
           description: `Request validation for agent ${agentId} from ${validatorAddress}`,
         },
         message: "Sign and submit this transaction to request validation",
-      });
+    }, { headers: corsHeaders });
     }
 
     // Respond to validation (progressive — can be called multiple times)
@@ -235,14 +240,14 @@ export async function POST(req: NextRequest) {
       if (!requestHash || response === undefined || !tag) {
         return NextResponse.json(
           { error: "requestHash, response, and tag required" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       if (response < 0 || response > 100) {
         return NextResponse.json(
           { error: "Response must be 0-100" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -268,18 +273,18 @@ export async function POST(req: NextRequest) {
           isPositive: response > 50,
           tag,
         },
-      });
+    }, { headers: corsHeaders });
     }
 
     return NextResponse.json(
       { error: `Unknown action: ${action}. Valid: request, respond` },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   } catch (error) {
     console.error("Error in POST /api/erc8004/validation:", error);
     return NextResponse.json(
       { error: "Failed to prepare validation transaction" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

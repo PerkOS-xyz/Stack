@@ -8,8 +8,13 @@ import {
 } from "@/lib/utils/x402-headers";
 import { verifyAgentIdentity, buildReputationFeedbackTx } from "@/lib/services/AgentIdentityService";
 import type { SupportedNetwork } from "@/lib/utils/config";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
@@ -23,8 +28,40 @@ export async function POST(request: NextRequest) {
     const x402Service = new X402Service();
     const body = (await request.json()) as X402SettleRequest;
 
+    // Input validation
+    if (!body.x402Version) {
+      return NextResponse.json(
+        { success: false, errorReason: "Missing required field: x402Version", payer: null, transaction: null, network: "unknown" },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload) {
+      return NextResponse.json(
+        { success: false, errorReason: "Missing required field: paymentPayload", payer: null, transaction: null, network: "unknown" },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload.network) {
+      return NextResponse.json(
+        { success: false, errorReason: "Missing required field: paymentPayload.network", payer: null, transaction: null, network: "unknown" },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload.scheme) {
+      return NextResponse.json(
+        { success: false, errorReason: "Missing required field: paymentPayload.scheme", payer: null, transaction: null, network: "unknown" },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentRequirements) {
+      return NextResponse.json(
+        { success: false, errorReason: "Missing required field: paymentRequirements", payer: null, transaction: null, network: "unknown" },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+
     // Extract network and scheme for headers
-    const network = body.paymentPayload?.network || "unknown";
+    const network = body.paymentPayload.network;
     const scheme = body.paymentPayload?.scheme || "exact";
 
     // Log request details
@@ -162,10 +199,10 @@ export async function POST(request: NextRequest) {
     };
 
     if (!result.success) {
-      return NextResponse.json(v2Response, { status: 400, headers });
+      return NextResponse.json(v2Response, { status: 400, headers: { ...corsHeaders, ...headers } });
     }
 
-    return NextResponse.json(v2Response, { headers });
+    return NextResponse.json(v2Response, { headers: { ...corsHeaders, ...headers } });
   } catch (error) {
     console.log(
       "\n❌ Settle Error:",
@@ -201,7 +238,7 @@ export async function POST(request: NextRequest) {
         network: "unknown",
         receipt,
       },
-      { status: 400, headers }
+      { status: 400, headers: { ...corsHeaders, ...headers } }
     );
   }
 }
