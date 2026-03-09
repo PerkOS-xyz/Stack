@@ -5,50 +5,14 @@ import { X402Service } from "@/lib/services/X402Service";
 export const dynamic = 'force-dynamic';
 
 /**
- * Root-level /settle endpoint for x402-express compatibility
- * The x402 library expects endpoints at /verify and /settle on the facilitator URL
+ * Root-level /settle endpoint for x402-express compatibility.
  */
 export async function POST(request: NextRequest) {
-  const timestamp = new Date().toISOString();
-  const requestId = Math.random().toString(36).substring(7);
-
-  console.log('\n' + '💰'.repeat(35));
-  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId} (root /settle)`);
-  console.log('💰'.repeat(35));
-
   try {
     const x402Service = new X402Service();
     const body = await request.json() as X402SettleRequest;
 
-    // Log request details
-    console.log('📥 Settle Request Details:');
-    console.log('   x402Version:', body.x402Version);
-    console.log('   Payment Network:', body.paymentPayload?.network);
-    console.log('   Payment Scheme:', body.paymentPayload?.scheme);
-    console.log('   Requirements Network:', body.paymentRequirements?.network);
-    console.log('   Pay To:', body.paymentRequirements?.payTo);
-    console.log('   Max Amount:', body.paymentRequirements?.maxAmountRequired);
-
-    if (body.paymentPayload?.payload) {
-      const payload = body.paymentPayload.payload as any;
-      console.log('   Payload From:', payload.authorization?.from || payload.from || 'N/A');
-      console.log('   Payload Value:', payload.authorization?.value || payload.value || 'N/A');
-    }
-
-    console.log('\n⏳ Executing settlement...');
     const result = await x402Service.settle(body);
-
-    // Log result
-    console.log('\n📤 Settle Result:');
-    console.log('   Success:', result.success);
-    console.log('   Payer:', result.payer);
-    console.log('   Network:', result.network);
-    if (result.success) {
-      console.log('   ✅ Transaction:', result.transaction);
-    } else {
-      console.log('   ❌ Error Reason:', result.errorReason);
-    }
-    console.log('💰'.repeat(35) + '\n');
 
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
@@ -56,10 +20,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.log('\n❌ Settle Error:', error instanceof Error ? error.message : String(error));
-    console.log('💰'.repeat(35) + '\n');
+    console.error("[x402:settle] error:", error instanceof Error ? error.message : String(error));
 
-    // x402 standard uses errorReason, not error
     return NextResponse.json(
       {
         success: false,
