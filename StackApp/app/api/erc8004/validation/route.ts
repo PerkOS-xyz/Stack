@@ -3,6 +3,7 @@ import { createPublicClient, http, type Address, type Hex } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 // Inline ABI matching official ValidationRegistryUpgradeable
 const VALIDATION_ABI = [
   { name: "validationRequest", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validatorAddress", type: "address" }, { name: "agentId", type: "uint256" }, { name: "requestURI", type: "string" }, { name: "requestHash", type: "bytes32" }], outputs: [] },
@@ -33,6 +34,16 @@ export async function OPTIONS() {
  * - tag: Filter by tag (optional, requires agentId)
  */
 export async function GET(req: NextRequest) {
+  // Rate limit: 60 requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateLimitResult = rateLimit(clientIp, 60, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const network = searchParams.get("network") as SupportedNetwork;

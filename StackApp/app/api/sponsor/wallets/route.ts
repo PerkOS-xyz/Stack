@@ -38,8 +38,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Strip sensitive server-side fields before returning to client
+    const sanitizedWallets = (wallets || []).map(
+      ({ para_wallet_id, para_user_share, ...safe }: Record<string, unknown>) => safe
+    );
+
     logApiPerformance("/api/sponsor/wallets", "GET", startTime, 200);
-    return NextResponse.json({ wallets: wallets || [] });
+    return NextResponse.json({ wallets: sanitizedWallets });
   } catch (error) {
     console.error("Error in GET /api/sponsor/wallets:", error);
     logApiPerformance("/api/sponsor/wallets", "GET", startTime, 500);

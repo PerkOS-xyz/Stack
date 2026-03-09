@@ -3,6 +3,7 @@ import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,16 @@ const IDENTITY_ABI = [
  * - action: "getWallet" to get agent wallet (optional, requires agentId)
  */
 export async function GET(req: NextRequest) {
+  // Rate limit: 60 requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateLimitResult = rateLimit(clientIp, 60, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const network = searchParams.get("network") as SupportedNetwork;

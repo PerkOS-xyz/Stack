@@ -9,6 +9,8 @@ import {
 import { verifyAgentIdentity, buildReputationFeedbackTx } from "@/lib/services/AgentIdentityService";
 import type { SupportedNetwork } from "@/lib/utils/config";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { x402RequestSchema, validateBody } from "@/lib/validation/schemas";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,41 +24,30 @@ export async function POST(request: NextRequest) {
 
   console.log(` [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
 
+  // Rate limit: 30 requests per minute per IP
+  const clientIp = getClientIp(request);
+  const rateLimitResult = rateLimit(clientIp, 30, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { success: false, errorReason: "Rate limit exceeded. Try again later.", payer: null, transaction: null, network: "unknown" },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": "60", "X-Request-Id": requestId } }
+    );
+  }
+
   try {
     const x402Service = new X402Service();
-    const body = (await request.json()) as X402SettleRequest;
+    const rawBody = await request.json();
 
-    // Input validation
-    if (!body.x402Version) {
+    // Validate input structure with Zod
+    const validation = validateBody(x402RequestSchema, rawBody);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, errorReason: "Missing required field: x402Version", payer: null, transaction: null, network: "unknown" },
+        { success: false, errorReason: validation.error, payer: null, transaction: null, network: "unknown" },
         { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
       );
     }
-    if (!body.paymentPayload) {
-      return NextResponse.json(
-        { success: false, errorReason: "Missing required field: paymentPayload", payer: null, transaction: null, network: "unknown" },
-        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
-      );
-    }
-    if (!body.paymentPayload.network) {
-      return NextResponse.json(
-        { success: false, errorReason: "Missing required field: paymentPayload.network", payer: null, transaction: null, network: "unknown" },
-        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
-      );
-    }
-    if (!body.paymentPayload.scheme) {
-      return NextResponse.json(
-        { success: false, errorReason: "Missing required field: paymentPayload.scheme", payer: null, transaction: null, network: "unknown" },
-        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
-      );
-    }
-    if (!body.paymentRequirements) {
-      return NextResponse.json(
-        { success: false, errorReason: "Missing required field: paymentRequirements", payer: null, transaction: null, network: "unknown" },
-        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
-      );
-    }
+
+    const body = rawBody as X402SettleRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload.network;

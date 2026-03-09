@@ -20,12 +20,12 @@ const nextConfig = {
       },
     ];
   },
-  // Allow build to continue even with errors
+  // Enforce strict type checking and linting during builds
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Disable static generation for dynamic routes
   generateBuildId: async () => {

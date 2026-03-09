@@ -3,6 +3,7 @@ import { firebaseAdmin } from "@/lib/db/firebase";
 import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 import { Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction } from "@solana/web3.js";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+import { solanaSendSchema, validateBody } from "@/lib/validation/schemas";
 // Note: Wallet service import is done dynamically below to support provider switching
 
 interface SponsorWallet {
@@ -44,32 +45,21 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { walletId, toAddress, amount, network } = body;
 
-    console.log("[Solana Send] Request received:", { walletId, toAddress, amount, network });
-
-    // Validate required fields
-    if (!walletId || !toAddress || !amount || !network) {
-      console.log("[Solana Send] Missing required fields");
-      return NextResponse.json(
-        { error: "Missing required fields: walletId, toAddress, amount, network" },
-        { status: 400 }
-      );
+    // Validate input with Zod schema
+    const validation = validateBody(solanaSendSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // Validate Solana network
+    const { walletId, toAddress, amount, network } = validation.data;
+    console.log("[Solana Send] Request received:", { walletId, toAddress, amount, network });
+
+    // Validate Solana network RPC
     const rpcUrl = SOLANA_RPC_URLS[network];
     if (!rpcUrl) {
       return NextResponse.json(
         { error: `Unsupported Solana network: ${network}. Supported: solana, solana-devnet` },
-        { status: 400 }
-      );
-    }
-
-    // Validate recipient address format
-    if (!isValidSolanaAddress(toAddress)) {
-      return NextResponse.json(
-        { error: "Invalid Solana recipient address format" },
         { status: 400 }
       );
     }
