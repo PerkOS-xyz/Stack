@@ -12,43 +12,21 @@ import type { SupportedNetwork } from "@/lib/utils/config";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const timestamp = new Date().toISOString();
   const requestId = generateRequestId();
-
-  console.log("\n" + "💰".repeat(35));
-  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
-  console.log("💰".repeat(35));
 
   try {
     const x402Service = new X402Service();
     const body = (await request.json()) as X402SettleRequest;
 
-    // Extract network and scheme for headers
     const network = body.paymentPayload?.network || "unknown";
     const scheme = body.paymentPayload?.scheme || "exact";
 
-    // Log request details
-    console.log("📥 Settle Request Details:");
-    console.log("   Request ID:", requestId);
-    console.log("   x402Version:", body.x402Version);
-    console.log("   Payment Network:", network);
-    console.log("   Payment Scheme:", scheme);
-    console.log("   Requirements Network:", body.paymentRequirements?.network);
-    console.log("   Pay To:", body.paymentRequirements?.payTo);
-    console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
-    console.log("   Resource:", typeof body.paymentRequirements?.resource === 'string'
-      ? body.paymentRequirements.resource
-      : JSON.stringify(body.paymentRequirements?.resource));
-
-    // Extract payment details for receipt
     let paymentAmount: string | undefined;
     let paymentAsset: string | undefined;
 
     if (body.paymentPayload?.payload) {
       const payload = body.paymentPayload.payload as unknown as Record<string, unknown>;
       const authorization = payload.authorization as Record<string, unknown> | undefined;
-      console.log("   Payload From:", authorization?.from || payload.from || "N/A");
-      console.log("   Payload Value:", authorization?.value || payload.value || "N/A");
       paymentAmount = String(authorization?.value || payload.value || "");
     }
 
@@ -56,65 +34,34 @@ export async function POST(request: NextRequest) {
       paymentAsset = body.paymentRequirements.asset;
     }
 
-    // Extract vendor domain from request headers for domain-based rules
-    // Priority: 1) Origin header, 2) Referer header, 3) resource URL from paymentRequirements
+    // Resolve vendor domain for domain-based rules
     const origin = request.headers.get("origin");
     const referer = request.headers.get("referer");
     let vendorDomain: string | undefined;
 
     if (origin) {
-      try {
-        const originUrl = new URL(origin);
-        vendorDomain = originUrl.host; // Includes port if present
-        console.log("   Vendor Domain (from Origin):", vendorDomain);
-      } catch { /* ignore parse errors */ }
+      try { vendorDomain = new URL(origin).host; } catch { /* ignore */ }
     } else if (referer) {
-      try {
-        const refererUrl = new URL(referer);
-        vendorDomain = refererUrl.host;
-        console.log("   Vendor Domain (from Referer):", vendorDomain);
-      } catch { /* ignore parse errors */ }
+      try { vendorDomain = new URL(referer).host; } catch { /* ignore */ }
     }
 
-    // Fallback: Extract domain from resource URL in paymentRequirements
-    // This handles server-to-server calls where Origin/Referer aren't present
     if (!vendorDomain && body.paymentRequirements?.resource) {
       try {
-        // Import the helper to get the resource URL (handles both V1 string and V2 object)
         const { getResourceUrl } = await import("@/lib/types/x402");
         const resourceUrlStr = getResourceUrl(body.paymentRequirements);
         if (resourceUrlStr) {
-          const resourceUrl = new URL(resourceUrlStr);
-          vendorDomain = resourceUrl.host;
-          console.log("   Vendor Domain (from resource):", vendorDomain);
+          vendorDomain = new URL(resourceUrlStr).host;
         }
-      } catch { /* ignore parse errors */ }
+      } catch { /* ignore */ }
     }
 
-    if (!vendorDomain) {
-      console.log("   Vendor Domain: N/A");
-    }
-    console.log("\n⏳ Executing settlement...");
     const result = await x402Service.settle(body, vendorDomain);
 
-    // Log result
-    console.log("\n📤 Settle Result:");
-    console.log("   Success:", result.success);
-    console.log("   Payer:", result.payer);
-    console.log("   Network:", result.network);
-    if (result.success) {
-      console.log("   ✅ Transaction:", result.transaction);
-    } else {
-      console.log("   ❌ Error Reason:", result.errorReason);
-    }
-    console.log("💰".repeat(35) + "\n");
-
-    // Optional ERC-8004 identity check and auto reputation feedback
+    // ERC-8004 reputation feedback on successful settlement
     const agentId = request.headers.get("X-Agent-Id");
     let reputationTx = null;
     if (result.success && agentId && network !== "unknown") {
       const identity = await verifyAgentIdentity(agentId, network as SupportedNetwork);
-      console.log(`   🆔 ERC-8004 Identity: agent=${agentId} exists=${identity.exists}`);
       if (identity.exists) {
         reputationTx = buildReputationFeedbackTx({
           network: network as SupportedNetwork,
@@ -126,13 +73,9 @@ export async function POST(request: NextRequest) {
           endpoint: typeof body.paymentRequirements?.resource === "string"
             ? body.paymentRequirements.resource : "",
         });
-        if (reputationTx) {
-          console.log(`   ⭐ Reputation feedback tx prepared for agent ${agentId}`);
-        }
       }
     }
 
-    // Build V2 response headers
     const headers = getSettleHeaders({
       requestId,
       network: result.network || network,
@@ -142,7 +85,6 @@ export async function POST(request: NextRequest) {
       transaction: result.transaction,
     });
 
-    // Create V2 receipt
     const receipt = createV2Receipt({
       requestId,
       network: result.network || network,
@@ -154,7 +96,6 @@ export async function POST(request: NextRequest) {
       asset: paymentAsset,
     });
 
-    // Enhanced V2 response with receipt and optional reputation tx
     const v2Response = {
       ...result,
       receipt,
@@ -167,13 +108,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(v2Response, { headers });
   } catch (error) {
-    console.log(
-      "\n❌ Settle Error:",
-      error instanceof Error ? error.message : String(error)
-    );
-    console.log("💰".repeat(35) + "\n");
+    console.error("[x402:settle]", requestId, error instanceof Error ? error.message : String(error));
 
-    // Build error headers
     const headers = getSettleHeaders({
       requestId,
       network: "unknown",
@@ -181,7 +117,6 @@ export async function POST(request: NextRequest) {
       success: false,
     });
 
-    // Create error receipt
     const receipt = createV2Receipt({
       requestId,
       network: "unknown",
