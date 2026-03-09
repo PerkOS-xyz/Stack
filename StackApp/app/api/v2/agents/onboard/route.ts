@@ -8,8 +8,13 @@ import {
 } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 /**
  * POST /api/v2/agents/onboard
@@ -32,8 +37,35 @@ export async function POST(request: NextRequest) {
     if (!network) {
       return NextResponse.json(
         { error: "network parameter required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
+    }
+
+    // Validate optional fields
+    if (agentId !== undefined && agentId !== null) {
+      const parsed = Number(agentId);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return NextResponse.json(
+          { error: "agentId must be a positive integer" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+    }
+    if (tokenURI !== undefined && tokenURI !== null) {
+      try { new URL(tokenURI); } catch {
+        return NextResponse.json(
+          { error: "tokenURI must be a valid URL" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+    }
+    if (paymentReceiver !== undefined && paymentReceiver !== null) {
+      if (!/^0x[a-fA-F0-9]{40}$/.test(paymentReceiver)) {
+        return NextResponse.json(
+          { error: "paymentReceiver must be a valid Ethereum address (0x + 40 hex chars)" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
     }
 
     const supportedNetwork = network as SupportedNetwork;
@@ -41,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (!hasErc8004Registries(supportedNetwork)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -49,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (!chain) {
       return NextResponse.json(
         { error: `Chain config not found for ${network}` },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -111,12 +143,12 @@ export async function POST(request: NextRequest) {
       message: alreadyRegistered
         ? "Agent already registered. x402 config provided."
         : "Sign the registration transaction, then use x402 config for payments.",
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Error in POST /api/v2/agents/onboard:", error);
     return NextResponse.json(
       { error: "Failed to prepare onboarding" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
