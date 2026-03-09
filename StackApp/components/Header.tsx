@@ -77,7 +77,7 @@ export function Header() {
       try {
         // Reverse lookup ENS name
         const name = await ensClient.getEnsName({
-          address: address,
+          address: address as `0x${string}`,
         });
         setEnsName(name);
 

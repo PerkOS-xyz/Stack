@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       priceUsd: priceUsd || endpoints[0]?.priceUsd,
       endpoints: endpoints.map((ep: { path: string; method?: string; description?: string; priceUsd: string; inputSchema?: object; outputSchema?: object }) => ({
         path: ep.path,
-        method: ep.method || "POST",
+        method: (ep.method || "POST") as "GET" | "POST" | "PUT" | "DELETE",
         description: ep.description || undefined,
         priceUsd: ep.priceUsd,
         inputSchema: ep.inputSchema,
