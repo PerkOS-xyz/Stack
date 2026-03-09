@@ -544,7 +544,7 @@ class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements Pr
     if (!result.data || result.data.length === 0) {
       // Return error with code property
       const error = new Error('No rows returned') as Error & { code: string };
-      error.code = 'PGRST116'; // Error code for "no rows returned"
+      error.code = 'NOT_FOUND'; // No rows returned
       return { data: null, error };
     }
 
