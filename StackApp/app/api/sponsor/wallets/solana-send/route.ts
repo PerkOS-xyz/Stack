@@ -300,7 +300,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ [Solana Send] Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
+    console.log(`[Solana Send] Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
     console.log(`   Amount: ${actualAmountSOL} SOL (${lamports} lamports)`);
     console.log(`   Network: ${network}`);
     console.log(`   Signature: ${signature}`);

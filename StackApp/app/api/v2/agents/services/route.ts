@@ -1,11 +1,4 @@
-/**
- * /api/v2/agents/services
- * 
- * GET  — List agent's registered services
- * POST — Register a new service (vendor) in Stack marketplace
- * 
- * Requires X-API-Key header.
- */
+/** /api/v2/agents/services — CRUD for agent's registered services. Requires X-API-Key. */
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiKey } from "@/lib/middleware/apiKeyAuth";
@@ -67,7 +60,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate endpoints
     for (const ep of endpoints) {
       if (!ep.path || !ep.priceUsd) {
         return NextResponse.json(
@@ -77,7 +69,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Use VendorDiscoveryService direct registration
     const result = await vendorDiscoveryService.registerVendorDirect({
       url,
       name: name || undefined,
@@ -112,7 +103,6 @@ export async function POST(req: NextRequest) {
           status: result.vendor?.status,
           priceUsd: result.vendor?.price_usd,
         },
-        message: "Service registered successfully",
       },
       { status: 201 }
     );

@@ -236,13 +236,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription payment processed for ${userWalletAddress}:`);
-    console.log(`   Tier: ${tier}`);
-    console.log(`   Billing: ${billingCycle}`);
-    console.log(`   Network: ${network}`);
-    console.log(`   Amount: ${formatUnits(transferredAmount, 6)} USDC`);
-    console.log(`   TX: ${transactionHash}`);
-    console.log(`   Expires: ${expiresAt.toISOString()}`);
+    console.log("[subscription:pay]", { tier, billingCycle, network, expires: expiresAt.toISOString() });
 
     return NextResponse.json({
       success: true,

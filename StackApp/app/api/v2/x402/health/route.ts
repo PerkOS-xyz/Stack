@@ -7,15 +7,11 @@ import { createPublicClient, http } from "viem";
 
 export const dynamic = "force-dynamic";
 
-/**
- * x402 V2 Health Check Endpoint
- * Provides comprehensive system status for monitoring and discovery.
- */
+/** GET /api/v2/x402/health — System health check. */
 export async function GET(request: NextRequest) {
   const baseUrl = new URL(request.url).origin;
   const startTime = Date.now();
 
-  // Initialize health status
   const health: HealthStatus = {
     status: "healthy",
     version: {
@@ -47,7 +43,6 @@ export async function GET(request: NextRequest) {
     health.capabilities.schemes.push("deferred");
   }
 
-  // Check database connectivity
   try {
     const dbStart = Date.now();
     const { error } = await firebaseAdmin
@@ -67,13 +62,11 @@ export async function GET(request: NextRequest) {
     health.status = "degraded";
   }
 
-  // Check network connectivity (sample networks to avoid timeout)
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
   const uniqueNetworks = [...new Set(supportedKinds.map((k) => k.network))];
   health.capabilities.networksConfigured = uniqueNetworks.length;
 
-  // Check a sample of networks (max 4 to keep response fast)
   const sampleNetworks = uniqueNetworks.slice(0, 4);
 
   for (const network of sampleNetworks) {
@@ -118,17 +111,14 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Determine overall status
   if (health.checks.database.status === "unhealthy") {
     health.status = "unhealthy";
   } else if (health.capabilities.networksHealthy < sampleNetworks.length) {
     health.status = "degraded";
   }
 
-  // Add response time
   health.responseTime = Date.now() - startTime;
 
-  // Build response headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-x402-Version": "2.0.0",
@@ -139,7 +129,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(health, { headers });
 }
 
-// Helper to get chain ID
 function getChainId(network: string): number | null {
   const chainIdMap: Record<string, number> = {
     avalanche: CHAIN_IDS.AVALANCHE,
@@ -162,7 +151,6 @@ function getChainId(network: string): number | null {
   return chainIdMap[network] || null;
 }
 
-// Types
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
   version: {

@@ -6,24 +6,12 @@ import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
 
-/**
- * ERC-8004: Agent Registration File (v2)
- * Standard endpoint: /.well-known/erc-8004.json
- *
- * v2 changes:
- * - "endpoints" renamed to "services"
- * - Added "x402Support" and "active" top-level fields
- * - agentRegistry format: {namespace}:{chainId}:{identityRegistry}
- * - Reputation uses int128 value + valueDecimals (not uint8 score)
- *
- * @see https://eips.ethereum.org/EIPS/eip-8004
- */
+/** GET /.well-known/erc-8004.json — ERC-8004 Agent Registration File (v2). */
 export async function GET(request: NextRequest) {
   const baseUrl = new URL(request.url).origin;
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
 
-  // Fetch live reputation stats
   let reputationStats = {
     totalTransactions: 0,
     successfulTransactions: 0,
@@ -71,7 +59,6 @@ export async function GET(request: NextRequest) {
     console.error("Failed to fetch reputation stats:", error);
   }
 
-  // Build registrations array with agentRegistry format
   const registrations: Array<{
     agentRegistry: string;  // {namespace}:{chainId}:{identityRegistry}
     agentId: string | null;
@@ -92,7 +79,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Build services object (v2: renamed from "endpoints")
   const services = {
     a2a: `${baseUrl}/api/v2/x402`,
     mcp: null as string | null,
@@ -101,17 +87,14 @@ export async function GET(request: NextRequest) {
     wallet: config.paymentReceiver,
     discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
     agentCard: `${baseUrl}/api/.well-known/agent-card.json`,
-    // x402 service endpoints
     x402Verify: `${baseUrl}/api/v2/x402/verify`,
     x402Settle: `${baseUrl}/api/v2/x402/settle`,
     x402Config: `${baseUrl}/api/v2/x402/config`,
     x402Supported: `${baseUrl}/api/v2/x402/supported`,
     x402Health: `${baseUrl}/api/v2/x402/health`,
-    // Unified onboarding
     agentOnboard: `${baseUrl}/api/v2/agents/onboard`,
   };
 
-  // Build supportedTrust array
   const supportedTrust: Array<{
     type: string;
     description: string;
@@ -179,25 +162,19 @@ export async function GET(request: NextRequest) {
     },
   ];
 
-  // ERC-8004 v2 Agent Registration File
   const agentRegistration = {
-    // === v2 Required Fields ===
     type: "service",
     name: config.facilitatorName,
     description: config.facilitatorDescription,
     active: true,
     x402Support: true,
 
-    // v2: "services" (renamed from "endpoints")
     services,
 
-    // On-chain registrations
     registrations,
 
-    // Trust mechanisms
     supportedTrust,
 
-    // === Extended Metadata ===
     image: `${baseUrl}/logo.png`,
     icon: `${baseUrl}/icon.png`,
     agentId: config.paymentReceiver,

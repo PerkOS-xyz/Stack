@@ -1,8 +1,4 @@
-/**
- * GET /api/llms.txt
- * 
- * LLM-readable documentation for Stack's Agent API.
- */
+/** GET /api/llms.txt — LLM-readable documentation for Stack's Agent API. */
 
 import { NextResponse } from "next/server";
 

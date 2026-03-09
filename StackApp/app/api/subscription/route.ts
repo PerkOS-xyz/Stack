@@ -138,9 +138,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription created/updated for ${userWalletAddress}:`);
-    console.log(`   Tier: ${tier}`);
-    console.log(`   Status: ${subscription.status}`);
+    console.log("[subscription] updated", { tier, status: subscription.status });
 
     return NextResponse.json({
       success: true,
@@ -180,12 +178,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // TODO: Add authentication check - user can only cancel their own subscription
-
     const subscriptionService = getSubscriptionService();
     await subscriptionService.cancelSubscription(userWalletAddress);
 
-    console.log(`✅ Subscription cancelled for ${userWalletAddress}`);
+    console.log("[subscription] cancelled", userWalletAddress);
 
     return NextResponse.json({
       success: true,

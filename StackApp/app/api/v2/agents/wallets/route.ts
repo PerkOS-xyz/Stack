@@ -1,11 +1,4 @@
-/**
- * /api/v2/agents/wallets
- * 
- * GET  — List agent's server wallets
- * POST — Create a new server wallet for the agent
- * 
- * Requires X-API-Key header.
- */
+/** /api/v2/agents/wallets — Manage agent server wallets. Requires X-API-Key. */
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiKey } from "@/lib/middleware/apiKeyAuth";
@@ -59,7 +52,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     let { network = "evm", name } = body;
 
-    // Validate network
     const validNetworks = ["evm", "solana"];
     if (!validNetworks.includes(network)) {
       return NextResponse.json(
@@ -68,7 +60,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Count existing wallets for naming
     const { count } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
       .select("*", { count: "exact", head: true })
@@ -77,7 +68,6 @@ export async function POST(req: NextRequest) {
     const walletName =
       name?.trim() || (count && count > 0 ? `Agent Wallet ${count + 1}` : "Default Agent Wallet");
 
-    // Dynamic import to avoid loading SDK for GET requests
     const { getServerWalletService } = await import("@/lib/wallet/server");
     const walletService = await getServerWalletService();
 
@@ -126,7 +116,6 @@ export async function POST(req: NextRequest) {
           walletType: wallet.wallet_type,
           name: wallet.wallet_name,
         },
-        message: "Wallet created successfully",
       },
       { status: 201 }
     );

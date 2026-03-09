@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
     // Use X402Service for verification and settlement
     const x402Service = new X402Service();
 
-    console.log(`🔍 Verifying x402 payment for ${userWalletAddress}:`, {
+    console.log('[subscription:x402:verify]', {
       tier,
       billingCycle,
       network,
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Payment verified for ${userWalletAddress}`);
+    console.log('[subscription:x402] payment verified');
 
     // Settle the payment on-chain
     const settleResult = await x402Service.settle(x402Request);
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Payment settled for ${userWalletAddress}:`, {
+    console.log('[subscription:x402] payment settled', {
       transactionHash: settleResult.transaction,
     });
 
@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription created/updated for ${userWalletAddress}:`, {
+    console.log('[subscription:x402] subscription updated', {
       tier,
       billingCycle,
       network,
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
         payment_status: "completed",
       });
 
-      console.log(`📄 Invoice created for ${userWalletAddress}:`, invoice.id);
+      console.log('[subscription:x402] invoice created', invoice.id);
 
       // If coupon was used, redeem it
       if (coupon?.id) {
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
             discountAmount,
             expectedPrice
           );
-          console.log(`🎟️ Coupon ${coupon.code} redeemed for ${userWalletAddress}`);
+          console.log("[subscription:x402] coupon redeemed", coupon.code);
         } catch (redeemError) {
           // Log but don't fail the payment - coupon redemption is secondary
           console.error("Failed to redeem coupon:", redeemError);

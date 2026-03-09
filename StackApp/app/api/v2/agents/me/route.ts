@@ -1,9 +1,4 @@
-/**
- * GET /api/v2/agents/me
- * 
- * Returns authenticated agent's profile, wallets, and services.
- * Requires X-API-Key header.
- */
+/** GET /api/v2/agents/me — Returns authenticated agent's profile, wallets, and services. */
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiKey } from "@/lib/middleware/apiKeyAuth";

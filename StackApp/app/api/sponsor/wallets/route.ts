@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Server wallet created and assigned to user:`);
+    console.log(`Server wallet created and assigned to user:`);
     console.log(`   Provider: ${ACTIVE_PROVIDER}`);
     console.log(`   User: ${userWalletAddress}`);
     console.log(`   Name: ${finalWalletName}`);
@@ -233,7 +233,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Wallet deleted successfully:`);
+    console.log(`Wallet deleted successfully:`);
     console.log(`   Wallet ID: ${walletId}`);
     console.log(`   Address: ${existingWallet.sponsor_address}`);
     console.log(`   User: ${userWalletAddress}`);
