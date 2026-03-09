@@ -19,9 +19,7 @@ export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = generateRequestId();
 
-  console.log("\n" + "🔷".repeat(35));
-  console.log(`🔵 [STACK] [${timestamp}] X402 VERIFY REQUEST ${requestId}`);
-  console.log("🔷".repeat(35));
+  console.log(` [STACK] [${timestamp}] X402 VERIFY REQUEST ${requestId}`);
 
   try {
     const x402Service = new X402Service();
@@ -67,40 +65,39 @@ export async function POST(request: NextRequest) {
     const agentId = request.headers.get("X-Agent-Id");
     if (agentId && network !== "unknown") {
       const identity = await verifyAgentIdentity(agentId, network as SupportedNetwork);
-      console.log(`   🆔 ERC-8004 Identity Check: agent=${agentId} exists=${identity.exists}`);
+      console.log(`    ERC-8004 Identity Check: agent=${agentId} exists=${identity.exists}`);
       if (identity.exists) {
-        console.log(`   🆔 Agent Owner: ${identity.owner}`);
+        console.log(`    Agent Owner: ${identity.owner}`);
       }
       // Identity check is informational — does not block verification
     }
 
     // Log request details
-    console.log("📥 Verify Request Details:");
-    console.log("   Request ID:", requestId);
-    console.log("   x402Version:", body.x402Version);
-    console.log("   Payment Network:", network);
-    console.log("   Payment Scheme:", scheme);
-    console.log("   Requirements Network:", body.paymentRequirements?.network);
-    console.log("   Pay To:", body.paymentRequirements?.payTo);
-    console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
+    console.log(" Verify Request Details:");
+    console.log("Request ID:", requestId);
+    console.log("x402Version:", body.x402Version);
+    console.log("Payment Network:", network);
+    console.log("Payment Scheme:", scheme);
+    console.log("Requirements Network:", body.paymentRequirements?.network);
+    console.log("Pay To:", body.paymentRequirements?.payTo);
+    console.log("Max Amount:", body.paymentRequirements?.maxAmountRequired);
 
     if (body.paymentPayload?.payload) {
       const payload = body.paymentPayload.payload as unknown as Record<string, unknown>;
       const authorization = payload.authorization as Record<string, unknown> | undefined;
-      console.log("   Payload From:", authorization?.from || payload.from || "N/A");
-      console.log("   Payload Value:", authorization?.value || payload.value || "N/A");
+      console.log("Payload From:", authorization?.from || payload.from || "N/A");
+      console.log("Payload Value:", authorization?.value || payload.value || "N/A");
     }
 
     const result = await x402Service.verify(body);
 
     // Log result
-    console.log("\n📤 Verify Result:");
-    console.log("   Is Valid:", result.isValid);
-    console.log("   Payer:", result.payer);
+    console.log("\n Verify Result:");
+    console.log("Is Valid:", result.isValid);
+    console.log("Payer:", result.payer);
     if (!result.isValid) {
-      console.log("   ❌ Invalid Reason:", result.invalidReason);
+      console.log(" Invalid Reason:", result.invalidReason);
     }
-    console.log("🔷".repeat(35) + "\n");
 
     // Build V2 response headers
     const headers = getVerifyHeaders({
@@ -114,10 +111,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { headers: { ...corsHeaders, ...headers } });
   } catch (error) {
     console.log(
-      "\n❌ Verify Error:",
+      "\n Verify Error:",
       error instanceof Error ? error.message : String(error)
     );
-    console.log("🔷".repeat(35) + "\n");
 
     // Build error headers
     const headers = getVerifyHeaders({

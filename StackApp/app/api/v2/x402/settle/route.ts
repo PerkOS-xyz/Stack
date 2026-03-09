@@ -20,9 +20,7 @@ export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
   const requestId = generateRequestId();
 
-  console.log("\n" + "💰".repeat(35));
-  console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
-  console.log("💰".repeat(35));
+  console.log(` [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId}`);
 
   try {
     const x402Service = new X402Service();
@@ -65,15 +63,15 @@ export async function POST(request: NextRequest) {
     const scheme = body.paymentPayload?.scheme || "exact";
 
     // Log request details
-    console.log("📥 Settle Request Details:");
-    console.log("   Request ID:", requestId);
-    console.log("   x402Version:", body.x402Version);
-    console.log("   Payment Network:", network);
-    console.log("   Payment Scheme:", scheme);
-    console.log("   Requirements Network:", body.paymentRequirements?.network);
-    console.log("   Pay To:", body.paymentRequirements?.payTo);
-    console.log("   Max Amount:", body.paymentRequirements?.maxAmountRequired);
-    console.log("   Resource:", typeof body.paymentRequirements?.resource === 'string'
+    console.log(" Settle Request Details:");
+    console.log("Request ID:", requestId);
+    console.log("x402Version:", body.x402Version);
+    console.log("Payment Network:", network);
+    console.log("Payment Scheme:", scheme);
+    console.log("Requirements Network:", body.paymentRequirements?.network);
+    console.log("Pay To:", body.paymentRequirements?.payTo);
+    console.log("Max Amount:", body.paymentRequirements?.maxAmountRequired);
+    console.log("Resource:", typeof body.paymentRequirements?.resource === 'string'
       ? body.paymentRequirements.resource
       : JSON.stringify(body.paymentRequirements?.resource));
 
@@ -84,8 +82,8 @@ export async function POST(request: NextRequest) {
     if (body.paymentPayload?.payload) {
       const payload = body.paymentPayload.payload as unknown as Record<string, unknown>;
       const authorization = payload.authorization as Record<string, unknown> | undefined;
-      console.log("   Payload From:", authorization?.from || payload.from || "N/A");
-      console.log("   Payload Value:", authorization?.value || payload.value || "N/A");
+      console.log("Payload From:", authorization?.from || payload.from || "N/A");
+      console.log("Payload Value:", authorization?.value || payload.value || "N/A");
       paymentAmount = String(authorization?.value || payload.value || "");
     }
 
@@ -103,13 +101,13 @@ export async function POST(request: NextRequest) {
       try {
         const originUrl = new URL(origin);
         vendorDomain = originUrl.host; // Includes port if present
-        console.log("   Vendor Domain (from Origin):", vendorDomain);
+        console.log("Vendor Domain (from Origin):", vendorDomain);
       } catch { /* ignore parse errors */ }
     } else if (referer) {
       try {
         const refererUrl = new URL(referer);
         vendorDomain = refererUrl.host;
-        console.log("   Vendor Domain (from Referer):", vendorDomain);
+        console.log("Vendor Domain (from Referer):", vendorDomain);
       } catch { /* ignore parse errors */ }
     }
 
@@ -123,35 +121,34 @@ export async function POST(request: NextRequest) {
         if (resourceUrlStr) {
           const resourceUrl = new URL(resourceUrlStr);
           vendorDomain = resourceUrl.host;
-          console.log("   Vendor Domain (from resource):", vendorDomain);
+          console.log("Vendor Domain (from resource):", vendorDomain);
         }
       } catch { /* ignore parse errors */ }
     }
 
     if (!vendorDomain) {
-      console.log("   Vendor Domain: N/A");
+      console.log("Vendor Domain: N/A");
     }
-    console.log("\n⏳ Executing settlement...");
+    console.log("\n Executing settlement...");
     const result = await x402Service.settle(body, vendorDomain);
 
     // Log result
-    console.log("\n📤 Settle Result:");
-    console.log("   Success:", result.success);
-    console.log("   Payer:", result.payer);
-    console.log("   Network:", result.network);
+    console.log("\n Settle Result:");
+    console.log("Success:", result.success);
+    console.log("Payer:", result.payer);
+    console.log("Network:", result.network);
     if (result.success) {
-      console.log("   ✅ Transaction:", result.transaction);
+      console.log(" Transaction:", result.transaction);
     } else {
-      console.log("   ❌ Error Reason:", result.errorReason);
+      console.log(" Error Reason:", result.errorReason);
     }
-    console.log("💰".repeat(35) + "\n");
 
     // Optional ERC-8004 identity check and auto reputation feedback
     const agentId = request.headers.get("X-Agent-Id");
     let reputationTx = null;
     if (result.success && agentId && network !== "unknown") {
       const identity = await verifyAgentIdentity(agentId, network as SupportedNetwork);
-      console.log(`   🆔 ERC-8004 Identity: agent=${agentId} exists=${identity.exists}`);
+      console.log(`    ERC-8004 Identity: agent=${agentId} exists=${identity.exists}`);
       if (identity.exists) {
         reputationTx = buildReputationFeedbackTx({
           network: network as SupportedNetwork,
@@ -164,7 +161,7 @@ export async function POST(request: NextRequest) {
             ? body.paymentRequirements.resource : "",
         });
         if (reputationTx) {
-          console.log(`   ⭐ Reputation feedback tx prepared for agent ${agentId}`);
+          console.log(`    Reputation feedback tx prepared for agent ${agentId}`);
         }
       }
     }
@@ -205,10 +202,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(v2Response, { headers: { ...corsHeaders, ...headers } });
   } catch (error) {
     console.log(
-      "\n❌ Settle Error:",
+      "\n Settle Error:",
       error instanceof Error ? error.message : String(error)
     );
-    console.log("💰".repeat(35) + "\n");
 
     // Build error headers
     const headers = getSettleHeaders({
