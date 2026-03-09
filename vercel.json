@@ -2,5 +2,27 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/.well-known/agent-card.json",
+      "destination": "/api/.well-known/agent-card.json"
+    },
+    {
+      "source": "/.well-known/agent-registration.json",
+      "destination": "/api/.well-known/agent-registration.json"
+    },
+    {
+      "source": "/.well-known/erc-8004.json",
+      "destination": "/api/.well-known/erc-8004.json"
+    },
+    {
+      "source": "/.well-known/x402-discovery.json",
+      "destination": "/api/.well-known/x402-discovery.json"
+    },
+    {
+      "source": "/.well-known/x402-payment.json",
+      "destination": "/api/.well-known/x402-payment.json"
+    }
+  ]
 }
