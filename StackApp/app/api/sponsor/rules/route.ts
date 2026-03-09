@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 // GET /api/sponsor/rules?walletId=xxx - Get all rules for a sponsor wallet
 export async function GET(req: NextRequest) {
@@ -45,6 +46,11 @@ export async function GET(req: NextRequest) {
 // POST /api/sponsor/rules - Create a new rule
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       walletId,
@@ -139,6 +145,11 @@ export async function POST(req: NextRequest) {
 // DELETE /api/sponsor/rules?ruleId=xxx - Delete a rule
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const ruleId = searchParams.get("ruleId");
 
@@ -177,6 +188,11 @@ export async function DELETE(req: NextRequest) {
 // PATCH /api/sponsor/rules?ruleId=xxx - Update a rule
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const ruleId = searchParams.get("ruleId");
 

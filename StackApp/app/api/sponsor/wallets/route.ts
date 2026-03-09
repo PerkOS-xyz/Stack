@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 // Note: Wallet service imports are done dynamically in POST handler to avoid
 // loading SDK modules for GET requests that don't need them
 
@@ -66,6 +67,11 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     let { userWalletAddress, network = "evm", walletName, isPublic = false } = body;
 
@@ -190,6 +196,11 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const { walletId, userWalletAddress } = body;
 
@@ -262,6 +273,11 @@ export async function DELETE(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const { walletId, walletName, isPublic, userWalletAddress } = body;
 
