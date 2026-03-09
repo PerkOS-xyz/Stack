@@ -7,8 +7,13 @@ import {
 } from "@/lib/utils/x402-headers";
 import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
 import type { SupportedNetwork } from "@/lib/utils/config";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString();
@@ -22,8 +27,40 @@ export async function POST(request: NextRequest) {
     const x402Service = new X402Service();
     const body = (await request.json()) as X402VerifyRequest;
 
+    // Input validation
+    if (!body.x402Version) {
+      return NextResponse.json(
+        { isValid: false, invalidReason: "Missing required field: x402Version", payer: null },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload) {
+      return NextResponse.json(
+        { isValid: false, invalidReason: "Missing required field: paymentPayload", payer: null },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload.network) {
+      return NextResponse.json(
+        { isValid: false, invalidReason: "Missing required field: paymentPayload.network", payer: null },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentPayload.scheme) {
+      return NextResponse.json(
+        { isValid: false, invalidReason: "Missing required field: paymentPayload.scheme", payer: null },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+    if (!body.paymentRequirements) {
+      return NextResponse.json(
+        { isValid: false, invalidReason: "Missing required field: paymentRequirements", payer: null },
+        { status: 400, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+      );
+    }
+
     // Extract network and scheme for headers
-    const network = body.paymentPayload?.network || "unknown";
+    const network = body.paymentPayload.network;
     const scheme = body.paymentPayload?.scheme || "exact";
 
     // Optional ERC-8004 identity verification
@@ -74,7 +111,7 @@ export async function POST(request: NextRequest) {
       payer: result.payer,
     });
 
-    return NextResponse.json(result, { headers });
+    return NextResponse.json(result, { headers: { ...corsHeaders, ...headers } });
   } catch (error) {
     console.log(
       "\n❌ Verify Error:",
@@ -97,7 +134,7 @@ export async function POST(request: NextRequest) {
           error instanceof Error ? error.message : "Verification failed",
         payer: null,
       },
-      { status: 400, headers }
+      { status: 400, headers: { ...corsHeaders, ...headers } }
     );
   }
 }
