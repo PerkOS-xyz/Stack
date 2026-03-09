@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { firebaseAdmin } from "@/lib/db/firebase";
@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
  * Provides agent metadata with payment capabilities for AI agent discovery.
  * Updated to x402 V2 format with multi-chain support.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const baseUrl = new URL(request.url).origin;
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
 
@@ -60,12 +61,12 @@ export async function GET() {
     type: "Agent",
     name: config.facilitatorName,
     summary: config.facilitatorDescription,
-    url: config.facilitatorUrl,
+    url: baseUrl,
 
     // Profile
     icon: {
       type: "Image",
-      url: `${config.facilitatorUrl}/logo.png`,
+      url: `${baseUrl}/logo.png`,
       mediaType: "image/png",
     },
 
@@ -101,11 +102,11 @@ export async function GET() {
 
     // x402 V2 Endpoints
     endpoints: {
-      x402: `${config.facilitatorUrl}/api/v2/x402`,
-      verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-      settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-      supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
-      discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
+      x402: `${baseUrl}/api/v2/x402`,
+      verify: `${baseUrl}/api/v2/x402/verify`,
+      settle: `${baseUrl}/api/v2/x402/settle`,
+      supported: `${baseUrl}/api/v2/x402/supported`,
+      discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
     },
 
     // Trust indicators (EIP-8004 compliant)
