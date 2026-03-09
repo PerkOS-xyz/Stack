@@ -334,7 +334,7 @@ export class VendorDiscoveryService {
       average_response_time_ms: 0,
     } as any;
 
-    // Insert vendor - use type assertion for Supabase client
+    // Insert vendor - use type assertion for db client
     const { data: vendorData, error: vendorError } = await firebaseAdmin
       .from("perkos_vendors")
       .insert(vendorInsert as never)
