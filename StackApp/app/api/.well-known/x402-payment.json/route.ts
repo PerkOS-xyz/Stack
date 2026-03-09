@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { firebaseAdmin } from "@/lib/db/firebase";
@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
  * Provides payment configuration for x402 protocol integration.
  * Updated to V2 format with multi-chain support and CAIP identifiers.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const baseUrl = new URL(request.url).origin;
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
 
@@ -69,24 +70,24 @@ export async function GET() {
       id: config.paymentReceiver,
       name: config.facilitatorName,
       description: config.facilitatorDescription,
-      url: config.facilitatorUrl,
-      logo: `${config.facilitatorUrl}/logo.png`,
+      url: baseUrl,
+      logo: `${baseUrl}/logo.png`,
     },
 
     // V2 API endpoints
     endpoints: {
-      verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-      settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-      supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
-      config: `${config.facilitatorUrl}/api/v2/x402/config`,
-      health: `${config.facilitatorUrl}/api/v2/x402/health`,
+      verify: `${baseUrl}/api/v2/x402/verify`,
+      settle: `${baseUrl}/api/v2/x402/settle`,
+      supported: `${baseUrl}/api/v2/x402/supported`,
+      config: `${baseUrl}/api/v2/x402/config`,
+      health: `${baseUrl}/api/v2/x402/health`,
     },
 
     // Discovery endpoints
     discovery: {
-      agentCard: `${config.facilitatorUrl}/api/.well-known/agent-card.json`,
-      erc8004: `${config.facilitatorUrl}/api/.well-known/erc-8004.json`,
-      x402Discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
+      agentCard: `${baseUrl}/api/.well-known/agent-card.json`,
+      erc8004: `${baseUrl}/api/.well-known/erc-8004.json`,
+      x402Discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
     },
 
     // Supported schemes

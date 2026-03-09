@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { config, type SupportedNetwork, getErc8004Registries, hasErc8004Registries } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { firebaseAdmin } from "@/lib/db/firebase";
@@ -18,7 +18,8 @@ export const dynamic = "force-dynamic";
  *
  * @see https://eips.ethereum.org/EIPS/eip-8004
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const baseUrl = new URL(request.url).origin;
   const x402Service = new X402Service();
   const supportedKinds = x402Service.getSupported().kinds;
 
@@ -86,28 +87,28 @@ export async function GET() {
       registrations.push({
         agentRegistry: `eip155:${chainId}:${registryInfo.identity}`,
         agentId: null,
-        tokenURI: `${config.facilitatorUrl}/api/.well-known/erc-8004.json`,
+        tokenURI: `${baseUrl}/api/.well-known/erc-8004.json`,
       });
     }
   }
 
   // Build services object (v2: renamed from "endpoints")
   const services = {
-    a2a: `${config.facilitatorUrl}/api/v2/x402`,
+    a2a: `${baseUrl}/api/v2/x402`,
     mcp: null as string | null,
     ens: null as string | null,
     did: null as string | null,
     wallet: config.paymentReceiver,
-    discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
-    agentCard: `${config.facilitatorUrl}/api/.well-known/agent-card.json`,
+    discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
+    agentCard: `${baseUrl}/api/.well-known/agent-card.json`,
     // x402 service endpoints
-    x402Verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-    x402Settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-    x402Config: `${config.facilitatorUrl}/api/v2/x402/config`,
-    x402Supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
-    x402Health: `${config.facilitatorUrl}/api/v2/x402/health`,
+    x402Verify: `${baseUrl}/api/v2/x402/verify`,
+    x402Settle: `${baseUrl}/api/v2/x402/settle`,
+    x402Config: `${baseUrl}/api/v2/x402/config`,
+    x402Supported: `${baseUrl}/api/v2/x402/supported`,
+    x402Health: `${baseUrl}/api/v2/x402/health`,
     // Unified onboarding
-    agentOnboard: `${config.facilitatorUrl}/api/v2/agents/onboard`,
+    agentOnboard: `${baseUrl}/api/v2/agents/onboard`,
   };
 
   // Build supportedTrust array
@@ -197,10 +198,10 @@ export async function GET() {
     supportedTrust,
 
     // === Extended Metadata ===
-    image: `${config.facilitatorUrl}/logo.png`,
-    icon: `${config.facilitatorUrl}/icon.png`,
+    image: `${baseUrl}/logo.png`,
+    icon: `${baseUrl}/icon.png`,
     agentId: config.paymentReceiver,
-    url: config.facilitatorUrl,
+    url: baseUrl,
 
     capabilities: [
       "x402-v2",

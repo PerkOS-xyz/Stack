@@ -170,7 +170,7 @@ export const config = {
   },
 
   // Payment Receiver
-  paymentReceiver: process.env.NEXT_PUBLIC_X402_PAYMENT_RECEIVER as Address,
+  paymentReceiver: (process.env.NEXT_PUBLIC_X402_PAYMENT_RECEIVER || "0x7d66c8a836a0b7d7DFA2f78b7E339878f996D919") as Address,
 
   // Deferred Scheme - Escrow addresses by network
   deferredEnabled: process.env.NEXT_PUBLIC_DEFERRED_ENABLED === "true",
@@ -198,7 +198,7 @@ export const config = {
   // Facilitator Info
   facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
   facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
-  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "http://localhost:3402",
+  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || process.env.NEXT_PUBLIC_APP_URL || "https://stack.perkos.xyz",
 } as const;
 
 // Helper functions

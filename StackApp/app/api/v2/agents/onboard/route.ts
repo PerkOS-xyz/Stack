@@ -80,17 +80,20 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Derive base URL from the incoming request for correct host in any environment
+    const baseUrl = new URL(request.url).origin;
+
     // Build x402 payment configuration
     const x402Config = {
-      facilitator: config.facilitatorUrl,
+      facilitator: baseUrl,
       payTo: paymentReceiver || config.paymentReceiver,
       network,
       asset: paymentToken,
       endpoints: {
-        verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-        settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-        config: `${config.facilitatorUrl}/api/v2/x402/config`,
-        supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
+        verify: `${baseUrl}/api/v2/x402/verify`,
+        settle: `${baseUrl}/api/v2/x402/settle`,
+        config: `${baseUrl}/api/v2/x402/config`,
+        supported: `${baseUrl}/api/v2/x402/supported`,
       },
       schemes: ["exact", ...(config.deferredEnabled ? ["deferred"] : [])],
     };
