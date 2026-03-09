@@ -11,19 +11,7 @@ import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
 
 export const dynamic = "force-dynamic";
 
-/**
- * POST /api/v2/agents/onboard
- *
- * Unified onboarding: register ERC-8004 identity + configure x402 payment wallet.
- * Returns unsigned transaction for on-chain registration plus x402 configuration.
- *
- * Body:
- * - network: SupportedNetwork (required)
- * - tokenURI: Agent metadata URI (optional)
- * - metadata: Array of {metadataKey, metadataValue} (optional)
- * - agentId: Existing agent ID to check (optional — skips registration if exists)
- * - paymentReceiver: Address to receive x402 payments (optional, defaults to config)
- */
+/** POST /api/v2/agents/onboard — Register ERC-8004 identity + configure x402 payments. */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -76,7 +64,6 @@ export async function POST(request: NextRequest) {
         args: tokenURI
           ? (hasMetadata ? [tokenURI, metadata] : [tokenURI])
           : [],
-        description: "Register as an agent in the ERC-8004 Identity Registry",
       };
     }
 
@@ -108,9 +95,6 @@ export async function POST(request: NextRequest) {
         reputationRegistry: registries.reputation,
         network,
       },
-      message: alreadyRegistered
-        ? "Agent already registered. x402 config provided."
-        : "Sign the registration transaction, then use x402 config for payments.",
     });
   } catch (error) {
     console.error("Error in POST /api/v2/agents/onboard:", error);

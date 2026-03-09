@@ -16,17 +16,7 @@ const VALIDATION_ABI = [
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/erc8004/validation
- * Get validation data from Validation Registry (EIP-8004 v2: simplified, no enum)
- *
- * Query params:
- * - network: Network name (required)
- * - requestHash: Specific validation request hash (optional)
- * - agentId: Get all validations for agent (optional)
- * - validatorAddress: Get all requests for validator (optional)
- * - tag: Filter by tag (optional, requires agentId)
- */
+/** GET /api/erc8004/validation — Query validation data from Validation Registry. */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -65,7 +55,6 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // Get specific validation by requestHash
     if (requestHash) {
       const [validator, validationAgentId, response, responseHash, responseTag, lastUpdate] =
         await client.readContract({
@@ -89,7 +78,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get requests for a validator
     if (validatorAddress) {
       const requestHashes = await client.readContract({
         address: registries.validation as Address,
@@ -107,7 +95,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get validations for an agent
     if (agentId) {
       const requestHashes = await client.readContract({
         address: registries.validation as Address,
@@ -116,8 +103,7 @@ export async function GET(req: NextRequest) {
         args: [BigInt(agentId)],
       }) as Hex[];
 
-      // Get summary
-      const validatorAddresses: Address[] = [];
+        const validatorAddresses: Address[] = [];
       const [count, averageResponse] = await client.readContract({
         address: registries.validation as Address,
         abi: VALIDATION_ABI,
@@ -140,7 +126,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Registry info
     const identityRegistry = await client.readContract({
       address: registries.validation as Address,
       abi: VALIDATION_ABI,
@@ -152,7 +137,6 @@ export async function GET(req: NextRequest) {
       registryAddress: registries.validation,
       identityRegistry,
       model: "request-response",
-      description: "EIP-8004 v2 validation registry — progressive responses, no status enum",
     });
   } catch (error) {
     console.error("Error in GET /api/erc8004/validation:", error);
@@ -163,14 +147,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST /api/erc8004/validation
- * Validation operations (returns unsigned transactions)
- *
- * Actions:
- * - request: Request validation from a validator
- * - respond: Submit validation response (can be called multiple times — progressive)
- */
+/** POST /api/erc8004/validation — Validation operations (returns unsigned transactions). */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -222,9 +199,7 @@ export async function POST(req: NextRequest) {
             requestURI || "",
             requestDataHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
           ],
-          description: `Request validation for agent ${agentId} from ${validatorAddress}`,
         },
-        message: "Sign and submit this transaction to request validation",
       });
     }
 
@@ -259,10 +234,7 @@ export async function POST(req: NextRequest) {
             responseDataHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
             tag,
           ],
-          description: `Respond to validation ${requestHash} with score ${response}`,
         },
-        message: "Sign and submit this transaction to respond to validation",
-        note: "Progressive validation: this function can be called multiple times to update the response",
         responseInfo: {
           response,
           isPositive: response > 50,

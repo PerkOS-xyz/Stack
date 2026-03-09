@@ -25,19 +25,7 @@ function formatValue(value: bigint, decimals: number): string {
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/erc8004/reputation
- * Get reputation data from Reputation Registry (EIP-8004 v2: int128 value + valueDecimals)
- *
- * Query params:
- * - network: Network name (required)
- * - agentId: Agent ID (required)
- * - clientAddress: Filter by specific client (optional)
- * - feedbackIndex: Specific feedback index (optional, requires clientAddress)
- * - tag1: Filter by tag1 (optional)
- * - tag2: Filter by tag2 (optional)
- * - includeRevoked: Include revoked feedback (optional, default: false)
- */
+/** GET /api/erc8004/reputation — Query reputation data from Reputation Registry. */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -78,7 +66,6 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // Read specific feedback entry
     if (clientAddress && feedbackIndex !== null && feedbackIndex !== undefined) {
       const [value, valueDecimals, feedbackTag1, feedbackTag2, isRevoked] = await client.readContract({
         address: registries.reputation as Address,
@@ -104,7 +91,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get all clients first (needed for getSummary — spec requires non-empty clientAddresses)
     const clients = await client.readContract({
       address: registries.reputation as Address,
       abi: REPUTATION_ABI,
@@ -112,12 +98,10 @@ export async function GET(req: NextRequest) {
       args: [BigInt(agentId)],
     }) as Address[];
 
-    // Build clientAddresses filter
     const clientAddresses = clientAddress
       ? [clientAddress as Address]
       : clients.length > 0 ? clients : [];
 
-    // Get summary (requires non-empty clientAddresses per spec)
     let count = 0n, summaryValue = 0n, summaryValueDecimals = 0;
     if (clientAddresses.length > 0) {
       [count, summaryValue, summaryValueDecimals] = await client.readContract({
@@ -128,7 +112,6 @@ export async function GET(req: NextRequest) {
       }) as [bigint, bigint, number];
     }
 
-    // Get all feedback with filtering
     const [
       feedbackClients,
       feedbackIndexes,
@@ -144,7 +127,6 @@ export async function GET(req: NextRequest) {
       args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
     }) as [Address[], bigint[], bigint[], number[], string[], string[], boolean[]];
 
-    // Format feedback array
     const feedback = feedbackClients.map((fbClient, i) => ({
       client: fbClient,
       feedbackIndex: feedbackIndexes[i].toString(),
@@ -179,15 +161,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST /api/erc8004/reputation
- * Reputation operations (returns unsigned transactions)
- *
- * Actions:
- * - giveFeedback (default): Submit feedback with int128 value + valueDecimals
- * - appendResponse: Respond to feedback
- * - revokeFeedback: Revoke own feedback
- */
+/** POST /api/erc8004/reputation — Reputation operations (returns unsigned transactions). */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -209,7 +183,6 @@ export async function POST(req: NextRequest) {
 
     const registries = getErc8004Registries(network as SupportedNetwork);
 
-    // Give feedback (v2: int128 value + uint8 valueDecimals)
     if (action === "giveFeedback") {
       const { agentId, value, valueDecimals = 0, tag1, tag2, endpoint, feedbackURI, feedbackHash } = body;
 
@@ -243,19 +216,16 @@ export async function POST(req: NextRequest) {
           feedbackURI || "",
           feedbackHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
         ],
-        description: `Give feedback to agent ${agentId} with value ${value} (${valueDecimals} decimals)`,
       } : {
         to: registries.reputation,
         network,
         function: "giveFeedback(uint256,int128,uint8)",
         args: [agentId, value, valueDecimals],
-        description: `Give feedback to agent ${agentId} with value ${value}`,
       };
 
       return NextResponse.json({
         success: true,
         transaction: feedbackData,
-        message: "Sign and submit this transaction to give feedback",
         valueInfo: {
           value,
           valueDecimals,
@@ -264,7 +234,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Append response to feedback
     if (action === "appendResponse") {
       const { agentId, clientAddress, feedbackIndex, responseURI, responseHash } = body;
 
@@ -288,13 +257,10 @@ export async function POST(req: NextRequest) {
             responseURI,
             responseHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
           ],
-          description: `Append response to feedback #${feedbackIndex} for agent ${agentId}`,
         },
-        message: "Sign and submit this transaction to respond to feedback",
       });
     }
 
-    // Revoke feedback
     if (action === "revokeFeedback") {
       const { agentId, feedbackIndex } = body;
 
@@ -312,9 +278,7 @@ export async function POST(req: NextRequest) {
           network,
           function: "revokeFeedback(uint256,uint64)",
           args: [agentId, feedbackIndex],
-          description: `Revoke feedback #${feedbackIndex} for agent ${agentId}`,
         },
-        message: "Sign and submit this transaction to revoke feedback",
       });
     }
 

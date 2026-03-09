@@ -18,16 +18,7 @@ const IDENTITY_ABI = [
   { name: "isAuthorizedOrOwner", type: "function", stateMutability: "view", inputs: [{ name: "spender", type: "address" }, { name: "agentId", type: "uint256" }], outputs: [{ type: "bool" }] },
 ] as const;
 
-/**
- * GET /api/erc8004/identity
- * Get agent info from Identity Registry (official ERC-8004 contracts)
- *
- * Query params:
- * - network: Network name (required)
- * - agentId: Agent ID to lookup (optional — returns registry info if not provided)
- * - owner: Get agent count for owner address (optional)
- * - action: "getWallet" to get agent wallet (optional, requires agentId)
- */
+/** GET /api/erc8004/identity — Query agent info from Identity Registry. */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -65,7 +56,6 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // Get agent wallet
     if (action === "getWallet" && agentId) {
       const wallet = await client.readContract({
         address: registries.identity as Address,
@@ -82,7 +72,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get specific agent
     if (agentId) {
       const tokenURI = await client.readContract({
         address: registries.identity as Address,
@@ -120,7 +109,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Get agent count for owner
     if (owner) {
       const balance = await client.readContract({
         address: registries.identity as Address,
@@ -137,7 +125,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Return registry info (no totalAgents in official contract — use ERC-721 standard)
     let version = "unknown";
     try {
       version = await client.readContract({
@@ -176,26 +163,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST /api/erc8004/identity
- * Agent identity operations (returns unsigned transactions)
- *
- * Actions:
- * - register: Register a new agent
- * - setURI: Update agent URI
- * - setWallet: Set agent wallet (EIP-712 signature required)
- * - unsetWallet: Remove agent wallet
- *
- * Body:
- * - network: Network name (required)
- * - action: Operation to perform (default: "register")
- * - agentId: Agent ID (required for setURI, setWallet, unsetWallet)
- * - tokenURI/newURI: URI for registration/update
- * - metadata: Array of {metadataKey, metadataValue} pairs (optional, register only)
- * - newWallet: New wallet address (setWallet only)
- * - deadline: Signature deadline (setWallet only)
- * - signature: EIP-712/ERC-1271 signature (setWallet only)
- */
+/** POST /api/erc8004/identity — Agent identity operations (returns unsigned transactions). */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -217,7 +185,6 @@ export async function POST(req: NextRequest) {
 
     const registries = getErc8004Registries(network as SupportedNetwork);
 
-    // Register new agent
     if (action === "register") {
       const { tokenURI, metadata } = body;
       const registrationData = {
@@ -229,13 +196,11 @@ export async function POST(req: NextRequest) {
         args: tokenURI
           ? (metadata?.length > 0 ? [tokenURI, metadata] : [tokenURI])
           : [],
-        description: "Register as an agent in the ERC-8004 Identity Registry",
       };
 
       return NextResponse.json({
         success: true,
         transaction: registrationData,
-        message: "Sign and submit this transaction to register as an agent",
       });
     }
 
@@ -256,9 +221,7 @@ export async function POST(req: NextRequest) {
           network,
           function: "setAgentURI(uint256,string)",
           args: [agentId, newURI],
-          description: `Update URI for agent ${agentId}`,
         },
-        message: "Sign and submit this transaction to update agent URI",
       });
     }
 
@@ -279,9 +242,7 @@ export async function POST(req: NextRequest) {
           network,
           function: "setAgentWallet(uint256,address,uint256,bytes)",
           args: [agentId, newWallet, deadline, signature],
-          description: `Set wallet for agent ${agentId} to ${newWallet}`,
         },
-        message: "Sign and submit this transaction to set agent wallet",
       });
     }
 
@@ -302,9 +263,7 @@ export async function POST(req: NextRequest) {
           network,
           function: "unsetAgentWallet(uint256)",
           args: [agentId],
-          description: `Remove wallet for agent ${agentId}`,
         },
-        message: "Sign and submit this transaction to remove agent wallet",
       });
     }
 
