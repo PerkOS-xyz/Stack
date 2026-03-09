@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { generateRequestId } from "@/lib/utils/x402-headers";
 
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS() {
+  return corsOptions();
+}
 
 // Minimal ABI matching the official IdentityRegistryUpgradeable contract
 const IDENTITY_ABI = [
@@ -39,14 +45,14 @@ export async function GET(req: NextRequest) {
     if (!network) {
       return NextResponse.json(
         { error: "Network parameter required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -56,7 +62,7 @@ export async function GET(req: NextRequest) {
     if (!chain || !registries.identity) {
       return NextResponse.json(
         { error: `Chain config not found for ${network}` },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -67,57 +73,73 @@ export async function GET(req: NextRequest) {
 
     // Get agent wallet
     if (action === "getWallet" && agentId) {
-      const wallet = await client.readContract({
-        address: registries.identity as Address,
-        abi: IDENTITY_ABI,
-        functionName: "getAgentWallet",
-        args: [BigInt(agentId)],
-      });
-
-      return NextResponse.json({
-        agentId,
-        wallet,
-        network,
-        registryAddress: registries.identity,
-      });
-    }
-
-    // Get specific agent
-    if (agentId) {
-      const tokenURI = await client.readContract({
-        address: registries.identity as Address,
-        abi: IDENTITY_ABI,
-        functionName: "tokenURI",
-        args: [BigInt(agentId)],
-      });
-
-      const ownerAddress = await client.readContract({
-        address: registries.identity as Address,
-        abi: IDENTITY_ABI,
-        functionName: "ownerOf",
-        args: [BigInt(agentId)],
-      });
-
-      let wallet: unknown = null;
       try {
-        wallet = await client.readContract({
+        const wallet = await client.readContract({
           address: registries.identity as Address,
           abi: IDENTITY_ABI,
           functionName: "getAgentWallet",
           args: [BigInt(agentId)],
         });
-      } catch {
-        // agentWallet may be unset
-      }
 
-      return NextResponse.json({
-        agentId,
-        tokenURI,
-        owner: ownerAddress,
-        wallet,
-        network,
-        registryAddress: registries.identity,
-      });
+        return NextResponse.json({
+          agentId,
+          wallet,
+          network,
+          registryAddress: registries.identity,
+        }, { headers: corsHeaders });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("revert") || msg.includes("ERC721") || msg.includes("nonexistent")) {
+          return NextResponse.json({ error: "Agent not found" }, { status: 404, headers: corsHeaders });
+        }
+        throw err;
+      }
+    }
+
+    // Get specific agent
+    if (agentId) {
+      try {
+        const tokenURI = await client.readContract({
+          address: registries.identity as Address,
+          abi: IDENTITY_ABI,
+          functionName: "tokenURI",
+          args: [BigInt(agentId)],
+        });
+
+        const ownerAddress = await client.readContract({
+          address: registries.identity as Address,
+          abi: IDENTITY_ABI,
+          functionName: "ownerOf",
+          args: [BigInt(agentId)],
+        });
+
+        let wallet: unknown = null;
+        try {
+          wallet = await client.readContract({
+            address: registries.identity as Address,
+            abi: IDENTITY_ABI,
+            functionName: "getAgentWallet",
+            args: [BigInt(agentId)],
+          });
+        } catch {
+          // agentWallet may be unset
+        }
+
+        return NextResponse.json({
+          agentId,
+          tokenURI,
+          owner: ownerAddress,
+          wallet,
+          network,
+          registryAddress: registries.identity,
+        }, { headers: corsHeaders });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("revert") || msg.includes("ERC721") || msg.includes("nonexistent")) {
+          return NextResponse.json({ error: "Agent not found" }, { status: 404, headers: corsHeaders });
+        }
+        throw err;
+      }
     }
 
     // Get agent count for owner
@@ -134,7 +156,7 @@ export async function GET(req: NextRequest) {
         agentCount: (balance as bigint).toString(),
         network,
         registryAddress: registries.identity,
-      });
+}, { headers: corsHeaders });
     }
 
     // Return registry info (no totalAgents in official contract — use ERC-721 standard)
@@ -166,12 +188,12 @@ export async function GET(req: NextRequest) {
       symbol,
       version,
       spec: "ERC-8004",
-    });
+}, { headers: corsHeaders });
   } catch (error) {
     console.error("Error in GET /api/erc8004/identity:", error);
     return NextResponse.json(
       { error: "Failed to fetch identity data" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -204,14 +226,14 @@ export async function POST(req: NextRequest) {
     if (!network) {
       return NextResponse.json(
         { error: "Network parameter required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network as SupportedNetwork)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -236,7 +258,7 @@ export async function POST(req: NextRequest) {
         success: true,
         transaction: registrationData,
         message: "Sign and submit this transaction to register as an agent",
-      });
+}, { headers: corsHeaders });
     }
 
     // Set agent URI
@@ -245,7 +267,7 @@ export async function POST(req: NextRequest) {
       if (!agentId || !newURI) {
         return NextResponse.json(
           { error: "agentId and newURI required for setURI" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -259,7 +281,7 @@ export async function POST(req: NextRequest) {
           description: `Update URI for agent ${agentId}`,
         },
         message: "Sign and submit this transaction to update agent URI",
-      });
+}, { headers: corsHeaders });
     }
 
     // Set agent wallet (EIP-712 signature verified)
@@ -268,7 +290,7 @@ export async function POST(req: NextRequest) {
       if (!agentId || !newWallet || !deadline || !signature) {
         return NextResponse.json(
           { error: "agentId, newWallet, deadline, and signature required for setWallet" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -282,7 +304,7 @@ export async function POST(req: NextRequest) {
           description: `Set wallet for agent ${agentId} to ${newWallet}`,
         },
         message: "Sign and submit this transaction to set agent wallet",
-      });
+}, { headers: corsHeaders });
     }
 
     // Unset agent wallet
@@ -291,7 +313,7 @@ export async function POST(req: NextRequest) {
       if (!agentId) {
         return NextResponse.json(
           { error: "agentId required for unsetWallet" },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
@@ -305,18 +327,18 @@ export async function POST(req: NextRequest) {
           description: `Remove wallet for agent ${agentId}`,
         },
         message: "Sign and submit this transaction to remove agent wallet",
-      });
+}, { headers: corsHeaders });
     }
 
     return NextResponse.json(
       { error: `Unknown action: ${action}. Valid: register, setURI, setWallet, unsetWallet` },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   } catch (error) {
     console.error("Error in POST /api/erc8004/identity:", error);
     return NextResponse.json(
       { error: "Failed to prepare identity transaction" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
