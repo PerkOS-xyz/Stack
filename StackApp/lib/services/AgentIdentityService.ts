@@ -7,7 +7,6 @@ import {
 } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 
-// Inline ABI — do NOT import from @/lib/contracts/erc8004
 const IDENTITY_ABI = [
   { name: "ownerOf", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
   { name: "getAgentWallet", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ type: "address" }] },
@@ -21,11 +20,7 @@ export interface AgentIdentityResult {
   error?: string;
 }
 
-/**
- * Verify that an agent exists on-chain via the ERC-8004 Identity Registry.
- * Returns { exists: true, owner } if found, { exists: false } otherwise.
- * Gracefully returns { exists: false } on any error (network issues, etc).
- */
+/** Verify agent existence on-chain via the ERC-8004 Identity Registry. */
 export async function verifyAgentIdentity(
   agentId: string | number,
   network: SupportedNetwork
@@ -56,15 +51,11 @@ export async function verifyAgentIdentity(
 
     return { exists: true, owner: owner as string };
   } catch {
-    // ownerOf reverts if token doesn't exist — this is expected
     return { exists: false };
   }
 }
 
-/**
- * Get the on-chain wallet address for an agent from the Identity Registry.
- * Returns the wallet address or null if not set / agent doesn't exist.
- */
+/** Get the on-chain wallet address for an agent. */
 export async function getAgentWallet(
   agentId: string | number,
   network: SupportedNetwork
@@ -90,7 +81,6 @@ export async function getAgentWallet(
     });
 
     const walletStr = wallet as string;
-    // Zero address means wallet not set
     if (walletStr === "0x0000000000000000000000000000000000000000") return null;
     return walletStr;
   } catch {
@@ -98,10 +88,7 @@ export async function getAgentWallet(
   }
 }
 
-/**
- * Build an unsigned transaction for submitting reputation feedback.
- * Used after successful x402 settlement to record on-chain reputation.
- */
+/** Build an unsigned transaction for submitting reputation feedback. */
 export function buildReputationFeedbackTx(params: {
   network: SupportedNetwork;
   agentId: string | number;
@@ -117,7 +104,6 @@ export function buildReputationFeedbackTx(params: {
   function: string;
   args: unknown[];
   network: string;
-  description: string;
 } | null {
   if (!hasErc8004Registries(params.network)) return null;
 
@@ -137,7 +123,6 @@ export function buildReputationFeedbackTx(params: {
       params.feedbackURI ?? "",
       params.feedbackHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000",
     ],
-    network: params.network,
     description: `Auto reputation feedback for agent ${params.agentId} after x402 settlement`,
   };
 }

@@ -44,7 +44,6 @@ export class EventIndexer {
   }
 
   /**
-   * Start indexing events from all networks
    */
   async start() {
     if (this.isRunning) {
@@ -53,7 +52,7 @@ export class EventIndexer {
     }
 
     this.isRunning = true;
-    console.log('🚀 Starting event indexer...');
+    console.log('[EventIndexer] starting');
 
     // Start indexing for each network
     for (const [networkKey, client] of this.clients) {
@@ -62,10 +61,9 @@ export class EventIndexer {
   }
 
   /**
-   * Stop all indexers
    */
   stop() {
-    console.log('⏹️  Stopping event indexer...');
+    console.log('[EventIndexer] stopping');
     this.isRunning = false;
 
     for (const [network, intervalId] of this.intervalIds) {
@@ -77,14 +75,13 @@ export class EventIndexer {
   }
 
   /**
-   * Start indexing for a specific network
    */
   private startNetworkIndexer(network: string, client: PublicClient) {
     // Get chain ID from the chains utility function
     const chainId = getChainIdFromNetwork(network as SupportedNetwork);
     if (!chainId) return;
 
-    console.log(`📡 Starting indexer for ${network} (Chain ID: ${chainId})`);
+    console.log(`[EventIndexer] indexer started for ${network}`);
 
     // Get the latest indexed block from database or use configured start block
     this.getLastIndexedBlock(network).then((lastBlock) => {
@@ -115,7 +112,6 @@ export class EventIndexer {
   }
 
   /**
-   * Index events from a range of blocks
    */
   private async indexBlockRange(
     network: string,
@@ -124,7 +120,7 @@ export class EventIndexer {
     fromBlock: bigint,
     toBlock: bigint
   ) {
-    console.log(`📊 Indexing ${network} blocks ${fromBlock} to ${toBlock}`);
+    console.log(`[EventIndexer] indexing ${network} blocks ${fromBlock}-${toBlock}`);
 
     try {
       // Index EIP-3009 TransferWithAuthorization events
@@ -136,9 +132,9 @@ export class EventIndexer {
       // Update network stats
       await this.updateNetworkStats(network, chainId);
 
-      console.log(`✅ Indexed ${network} up to block ${toBlock}`);
+      console.log(`[EventIndexer] indexed ${network} up to block ${toBlock}`);
     } catch (error) {
-      console.error(`❌ Error indexing ${network}:`, error);
+      console.error(`[EventIndexer] error indexing ${network}:`, error);
     }
   }
 
