@@ -3,7 +3,6 @@ import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
-import { generateRequestId } from "@/lib/utils/x402-headers";
 // Inline ABI matching official ReputationRegistryUpgradeable
 const REPUTATION_ABI = [
   { name: "giveFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "endpoint", type: "string" }, { name: "feedbackURI", type: "string" }, { name: "feedbackHash", type: "bytes32" }], outputs: [] },

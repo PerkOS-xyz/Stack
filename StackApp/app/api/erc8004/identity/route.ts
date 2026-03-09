@@ -3,7 +3,6 @@ import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
-import { generateRequestId } from "@/lib/utils/x402-headers";
 
 export const dynamic = "force-dynamic";
 
