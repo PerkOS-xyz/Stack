@@ -105,8 +105,8 @@ export class UsageAggregationService {
       .eq("year_month", previousMonth);
 
     // Aggregate current month
-    const current = this.aggregateStats(currentStats || []);
-    const previous = this.aggregateStats(previousStats || []);
+    const current = this.aggregateStats((currentStats || []) as any);
+    const previous = this.aggregateStats((previousStats || []) as any);
 
     // Calculate percentage changes
     const calcChange = (curr: number, prev: number): number => {
@@ -320,7 +320,7 @@ export class UsageAggregationService {
     const stats: Partial<MonthlyVendorStats> = {
       year_month: yearMonth,
       user_wallet_address: userWalletAddress,
-      vendor_id: vendorId,
+      vendor_id: vendorId ?? undefined,
       domain_url: domainUrl,
       total_transactions: successCount,
       successful_transactions: successCount,

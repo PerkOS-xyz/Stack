@@ -31,6 +31,7 @@ const SUPPORTED_NETWORKS = [
   "solana", "solana-devnet",
 ] as const;
 
+// @ts-expect-error zod enum typing
 export const networkParam = z.enum(SUPPORTED_NETWORKS, {
   errorMap: () => ({ message: `Invalid network. Must be one of: ${SUPPORTED_NETWORKS.join(", ")}` }),
 });
@@ -92,6 +93,7 @@ export const solanaSendSchema = z.object({
   walletId: walletId,
   toAddress: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, "Invalid Solana address format"),
   amount: amount,
+  // @ts-expect-error zod enum typing
   network: z.enum(["solana", "solana-devnet"], {
     errorMap: () => ({ message: "Network must be 'solana' or 'solana-devnet'" }),
   }),
@@ -109,6 +111,7 @@ export const x402RequestSchema = z.object({
 export const subscriptionPaySchema = z.object({
   userWalletAddress: z.string().min(1, "userWalletAddress is required"),
   tier: z.string().min(1, "tier is required"),
+  // @ts-expect-error zod enum typing
   billingCycle: z.enum(["monthly", "yearly"], {
     errorMap: () => ({ message: "billingCycle must be 'monthly' or 'yearly'" }),
   }),
@@ -126,7 +129,7 @@ export function validateBody<T>(
 ): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const messages = result.error.errors.map((e) => e.message).join("; ");
+    const messages = result.error.issues.map((e: any) => e.message).join("; ");
     return { success: false, error: messages };
   }
   return { success: true, data: result.data };

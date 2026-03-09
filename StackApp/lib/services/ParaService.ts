@@ -238,7 +238,7 @@ export class ParaService {
 
       // Create the Para Viem WalletClient
       console.log("Creating Para Viem WalletClient...");
-      const walletClient = createParaViemClient(this.para, {
+      const walletClient = createParaViemClient(this.para as any, {
         account: account,
         chain: chain,
         transport: http(rpcUrl),

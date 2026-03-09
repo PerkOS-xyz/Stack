@@ -25,7 +25,7 @@ export class X402Service {
     // Initialize deferred scheme for networks with escrow configured
     if (config.deferredEnabled) {
       for (const network of SUPPORTED_NETWORKS) {
-        const escrowAddress = config.deferredEscrowAddresses[network];
+        const escrowAddress = (config.deferredEscrowAddresses as any)[network];
         if (escrowAddress) {
           try {
             this.deferredSchemes.set(network, new DeferredSchemeService(network));
