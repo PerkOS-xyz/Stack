@@ -1,4 +1,4 @@
-import { getAdminDb } from "../db/firebase";
+import { getAdminFirestoreDb } from "../db/firebase";
 import { logger } from "../utils/logger";
 import type { StellarTransaction } from "../types/stellar";
 
@@ -8,7 +8,7 @@ export class StellarTransactionService {
   async log(
     tx: Omit<StellarTransaction, "id" | "createdAt">,
   ): Promise<StellarTransaction> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const record = { ...tx, createdAt: Date.now() };
     const docRef = await db.collection(COLLECTION).add(record);
 
@@ -26,7 +26,7 @@ export class StellarTransactionService {
     walletId: string,
     limitCount = 50,
   ): Promise<StellarTransaction[]> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const snapshot = await db
       .collection(COLLECTION)
       .where("walletId", "==", walletId)
@@ -34,7 +34,7 @@ export class StellarTransactionService {
       .limit(limitCount)
       .get();
 
-    return snapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as StellarTransaction[];
@@ -44,7 +44,7 @@ export class StellarTransactionService {
     userId: string,
     limitCount = 50,
   ): Promise<StellarTransaction[]> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const snapshot = await db
       .collection(COLLECTION)
       .where("userId", "==", userId)
@@ -52,7 +52,7 @@ export class StellarTransactionService {
       .limit(limitCount)
       .get();
 
-    return snapshot.docs.map((doc) => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as StellarTransaction[];
@@ -63,7 +63,7 @@ export class StellarTransactionService {
     status: StellarTransaction["status"],
     stellarTxHash?: string,
   ): Promise<void> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const update: Record<string, unknown> = { status };
     if (stellarTxHash) update.stellarTxHash = stellarTxHash;
     await db.collection(COLLECTION).doc(txId).update(update);

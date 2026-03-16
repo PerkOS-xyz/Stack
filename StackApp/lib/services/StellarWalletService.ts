@@ -1,6 +1,6 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import crypto from "crypto";
-import { getAdminDb } from "../db/firebase";
+import { getAdminFirestoreDb } from "../db/firebase";
 import { logger } from "../utils/logger";
 import type { StellarWallet, StellarConfig } from "../types/stellar";
 
@@ -51,7 +51,7 @@ function decryptSecret(encrypted: string, iv: string, authTag: string): string {
 
 export class StellarWalletService {
   async createWallet(userId: string): Promise<StellarWallet> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const existing = await this.getWalletByUserId(userId);
     if (existing) {
       throw new Error("Wallet already exists for this user");
@@ -85,7 +85,7 @@ export class StellarWalletService {
   }
 
   async getWalletByUserId(userId: string): Promise<StellarWallet | null> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const snapshot = await db
       .collection(COLLECTION)
       .where("userId", "==", userId)
@@ -100,7 +100,7 @@ export class StellarWalletService {
   }
 
   async getKeypair(walletId: string): Promise<Keypair> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const doc = await db.collection(COLLECTION).doc(walletId).get();
     if (!doc.exists) throw new Error("Wallet not found");
 
@@ -110,7 +110,7 @@ export class StellarWalletService {
   }
 
   async updateBalance(walletId: string, xlm: string, usdc: string): Promise<void> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     await db.collection(COLLECTION).doc(walletId).update({
       xlmBalance: xlm,
       usdcBalance: usdc,
@@ -119,7 +119,7 @@ export class StellarWalletService {
   }
 
   async recordSpending(walletId: string, amount: string): Promise<void> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const doc = await db.collection(COLLECTION).doc(walletId).get();
     if (!doc.exists) throw new Error("Wallet not found");
 
@@ -141,7 +141,7 @@ export class StellarWalletService {
   }
 
   async canSpend(walletId: string, amount: string): Promise<boolean> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     const doc = await db.collection(COLLECTION).doc(walletId).get();
     if (!doc.exists) return false;
 
@@ -160,7 +160,7 @@ export class StellarWalletService {
   }
 
   async freezeWallet(walletId: string): Promise<void> {
-    const db = getAdminDb();
+    const db = getAdminFirestoreDb();
     await db.collection(COLLECTION).doc(walletId).update({
       status: "frozen",
       updatedAt: Date.now(),
