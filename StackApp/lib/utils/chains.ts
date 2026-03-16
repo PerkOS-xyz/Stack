@@ -60,3 +60,15 @@ export {
   // Types
   type Chain,
 } from "@perkos/util-chains";
+
+import { SUPPORTED_NETWORKS as _SUPPORTED_NETWORKS } from "@perkos/util-chains";
+
+// Extend SUPPORTED_NETWORKS to include Stellar
+export const EXTENDED_SUPPORTED_NETWORKS = [
+  ..._SUPPORTED_NETWORKS,
+  "stellar:pubnet" as const,
+] as const;
+
+export type ExtendedSupportedNetwork =
+  | (typeof _SUPPORTED_NETWORKS)[number]
+  | "stellar:pubnet";
