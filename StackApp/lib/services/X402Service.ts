@@ -8,6 +8,7 @@ import type {
 } from "../types/x402";
 import { ExactSchemeService } from "./ExactSchemeService";
 import { DeferredSchemeService } from "./DeferredSchemeService";
+import { StellarExactSchemeService } from "./StellarExactSchemeService";
 import { config, type SupportedNetwork } from "../utils/config";
 import { SUPPORTED_NETWORKS } from "../utils/chains";
 import { logger } from "../utils/logger";
@@ -15,11 +16,22 @@ import { logger } from "../utils/logger";
 export class X402Service {
   private exactSchemes: Map<SupportedNetwork, ExactSchemeService> = new Map();
   private deferredSchemes: Map<SupportedNetwork, DeferredSchemeService> = new Map();
+  private stellarExactScheme: StellarExactSchemeService | null = null;
 
   constructor() {
-    // Initialize exact scheme for all networks
+    // Initialize exact scheme for all EVM networks
     for (const network of SUPPORTED_NETWORKS) {
       this.exactSchemes.set(network, new ExactSchemeService(network));
+    }
+
+    // Initialize Stellar exact scheme
+    try {
+      this.stellarExactScheme = new StellarExactSchemeService();
+      logger.info("Stellar exact scheme initialized for stellar:pubnet");
+    } catch (error) {
+      logger.warn("Failed to initialize Stellar exact scheme", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     // Initialize deferred scheme for networks with escrow configured
@@ -73,6 +85,8 @@ export class X402Service {
       // Optimism
       "eip155:10": "optimism",
       "eip155:11155420": "optimism-sepolia",
+      // Stellar (CAIP-2 maps to itself since it's not an EVM legacy network)
+      "stellar:pubnet": "stellar:pubnet" as SupportedNetwork,
     };
     return caip2Map[caip2] || null;
   }
@@ -85,11 +99,19 @@ export class X402Service {
     if (SUPPORTED_NETWORKS.includes(network as SupportedNetwork)) {
       return network as SupportedNetwork;
     }
+    // Check for stellar:pubnet
+    if (network === "stellar:pubnet") {
+      return "stellar:pubnet" as SupportedNetwork;
+    }
     // If in CAIP-2 format, convert to legacy
     if (network.includes(":")) {
       return this.caip2ToLegacyNetwork(network);
     }
     return null;
+  }
+
+  private isStellarNetwork(network: string): boolean {
+    return network.startsWith("stellar:");
   }
 
   private isValidNetwork(network: string): network is SupportedNetwork {
@@ -172,6 +194,18 @@ export class X402Service {
 
     // Route to appropriate scheme
     if (paymentPayload.scheme === "exact") {
+      // Route Stellar networks to StellarExactSchemeService
+      if (this.isStellarNetwork(network)) {
+        if (!this.stellarExactScheme) {
+          return {
+            isValid: false,
+            invalidReason: "Stellar exact scheme not initialized",
+            payer: null,
+          };
+        }
+        return this.stellarExactScheme.verify(paymentPayload as any, paymentRequirements);
+      }
+
       const exactScheme = this.getExactScheme(network);
       return exactScheme.verify(
         paymentPayload.payload as any,
@@ -275,6 +309,20 @@ export class X402Service {
 
     // Route to appropriate scheme
     if (paymentPayload.scheme === "exact") {
+      // Route Stellar networks to StellarExactSchemeService
+      if (this.isStellarNetwork(network)) {
+        if (!this.stellarExactScheme) {
+          return {
+            success: false,
+            errorReason: "Stellar exact scheme not initialized",
+            payer: null,
+            transaction: null,
+            network,
+          };
+        }
+        return this.stellarExactScheme.settle(paymentPayload as any, paymentRequirements);
+      }
+
       const exactScheme = this.getExactScheme(network);
       return exactScheme.settle(
         paymentPayload.payload as any,
@@ -314,9 +362,14 @@ export class X402Service {
   getSupported(): SupportedResponse {
     const kinds: SupportedResponse["kinds"] = [];
 
-    // Add exact scheme for all networks
+    // Add exact scheme for all EVM networks
     for (const network of SUPPORTED_NETWORKS) {
       kinds.push({ scheme: "exact", network });
+    }
+
+    // Add Stellar exact scheme
+    if (this.stellarExactScheme) {
+      kinds.push({ scheme: "exact", network: "stellar:pubnet" as SupportedNetwork });
     }
 
     // Add deferred scheme for networks with escrow configured
