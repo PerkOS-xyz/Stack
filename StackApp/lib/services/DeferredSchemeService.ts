@@ -72,7 +72,7 @@ export class DeferredSchemeService {
   }
 
   private getChainIdForNetwork(network: SupportedNetwork): number {
-    const chainIdMap: Record<SupportedNetwork, number> = {
+    const chainIdMap: Partial<Record<SupportedNetwork, number>> = {
       avalanche: CHAIN_IDS.AVALANCHE,
       "avalanche-fuji": CHAIN_IDS.AVALANCHE_FUJI,
       celo: CHAIN_IDS.CELO,
@@ -91,8 +91,24 @@ export class DeferredSchemeService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
+      bsc: 56,
+      "bsc-testnet": 97,
+      linea: 59144,
+      "linea-sepolia": 59141,
+      gnosis: 100,
+      "gnosis-chiado": 10200,
+      mantle: 5000,
+      "mantle-sepolia": 5003,
+      metis: 1088,
+      "metis-sepolia": 59902,
+      megaeth: 6342,
+      "megaeth-testnet": 6343,
+      abstract: 2741,
+      "abstract-testnet": 11124,
+      goat: 2345,
+      "goat-testnet": 48816,
     };
-    return chainIdMap[network];
+    return chainIdMap[network]!;
   }
 
   /**

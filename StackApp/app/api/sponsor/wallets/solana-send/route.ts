@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
-import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 import { Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction } from "@solana/web3.js";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
 import { solanaSendSchema, validateBody } from "@/lib/validation/schemas";
@@ -39,11 +38,6 @@ function isValidSolanaAddress(address: string): boolean {
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const auth = await verifyAdminRequest(req);
-    if (!auth.authorized) {
-      return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
-
     const body = await req.json();
 
     // Validate input with Zod schema

@@ -85,7 +85,7 @@ export class X402Service {
    */
   private normalizeNetwork(network: string): SupportedNetwork | null {
     // If already in legacy format, return as-is
-    if (SUPPORTED_NETWORKS.includes(network as SupportedNetwork)) {
+    if ((SUPPORTED_NETWORKS as readonly string[]).includes(network)) {
       return network as SupportedNetwork;
     }
     // If in CAIP-2 format, convert to legacy

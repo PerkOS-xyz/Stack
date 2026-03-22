@@ -23,7 +23,7 @@ export {
   arbitrumSepolia,
   optimism,
   optimismSepolia,
-  unichainChain as unichain,
+  unichain,
   unichainSepolia,
 
   // Registries
