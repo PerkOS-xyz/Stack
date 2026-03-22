@@ -8,14 +8,14 @@ Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across mul
 
 ### Key Features
 
-- 🔌 **REST APIs**: Standards-compliant x402 facilitator endpoints for payment verification and settlement
-- 💰 **x402 Micropayments**: Dual payment schemes (exact + deferred) with gasless transactions
-- 🪪 **ERC-8004 Identity**: On-chain agent identity NFTs (ERC-721) with metadata storage
-- ⭐ **Reputation System**: On-chain feedback with EIP-712 signatures and aggregated ratings
-- 🛡️ **Validation Registry**: Stake-based validator attestations with confidence scoring
-- ⛓️ **Multi-Chain**: 16 networks including Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism
-- 🔐 **Production-Ready**: UUPS upgradeable contracts, event indexing, and enterprise security
-- 📊 **Analytics & Monitoring**: Real-time dashboards and network statistics
+- **REST APIs**: Standards-compliant x402 facilitator endpoints for payment verification and settlement
+- **x402 Micropayments**: Dual payment schemes (exact + deferred) with gasless transactions
+- **ERC-8004 Identity**: On-chain agent identity NFTs (ERC-721) with metadata storage
+- **Reputation System**: On-chain feedback with EIP-712 signatures and aggregated ratings
+- **Validation Registry**: Stake-based validator attestations with confidence scoring
+- **Multi-Chain**: 16 networks including Avalanche, Base, Ethereum, Polygon, Arbitrum, Optimism
+- **Production-Ready**: UUPS upgradeable contracts, event indexing, and enterprise security
+- **Analytics & Monitoring**: Real-time dashboards and network statistics
 
 ## Project Structure
 
@@ -119,12 +119,12 @@ The **MiddlewareApp** is a Next.js 15 middleware server that powers PerkOS Stack
 
 **Primary Functions:**
 
-- 🔄 **Protocol Orchestration**: Routes x402 payment requests between wallets and services
-- ✅ **Payment Verification**: Validates signatures, amounts, and network parameters
-- ⛓️ **On-Chain Settlement**: Executes payments on blockchain networks
-- 📊 **Event Indexing**: Monitors and indexes blockchain transactions to database
+- **Protocol Orchestration**: Routes x402 payment requests between wallets and services
+- **Payment Verification**: Validates signatures, amounts, and network parameters
+- **On-Chain Settlement**: Executes payments on blockchain networks
+- **Event Indexing**: Monitors and indexes blockchain transactions to database
 - 🔍 **Agent Discovery**: Provides ERC-8004 compliant discovery endpoints
-- 💰 **Deferred Payments**: Manages off-chain voucher aggregation and batch settlement
+- **Deferred Payments**: Manages off-chain voucher aggregation and batch settlement
 
 **Key Capabilities:**
 
@@ -187,7 +187,7 @@ paraModalConfig={{
 | Option | Icon | Description |
 |--------|------|-------------|
 | User Wallet | 👛 | Opens Para modal for on-ramp, send/receive, wallet tools |
-| Sponsor Wallets | 💰 | Manage sponsor wallets (visible when sponsor wallet exists) |
+| Sponsor Wallets | -- | Manage sponsor wallets (visible when sponsor wallet exists) |
 
 ### Middleware Server Architecture
 
@@ -332,7 +332,7 @@ POST /api/v2/x402/verify
     "extra": {
       "type": "aggregation",
       "escrow": "0x...",
-      "facilitator": "https://x402.perkos.io"
+      "facilitator": "https://stack.perkos.xyz"
     }
   }
 }
@@ -503,7 +503,7 @@ Returns agent metadata with payment capabilities:
   "type": "Agent",
   "name": "PerkOS x402 Middleware",
   "description": "Community-friendly multi-chain payment facilitator",
-  "url": "https://x402.perkos.io",
+  "url": "https://stack.perkos.xyz",
   "capabilities": [
     "x402-payment-exact",
     "x402-payment-deferred",
@@ -518,8 +518,8 @@ Returns agent metadata with payment capabilities:
     }
   ],
   "endpoints": {
-    "x402": "https://x402.perkos.io/api/v2/x402",
-    "discovery": "https://x402.perkos.io/discovery"
+    "x402": "https://stack.perkos.xyz/api/v2/x402",
+    "discovery": "https://stack.perkos.xyz/discovery"
   }
 }
 ```
@@ -539,7 +539,7 @@ Returns ERC-8004 compliant agent registration with on-chain registry integration
   "agent": {
     "name": "Stack",
     "description": "Multi-chain x402 payment infrastructure",
-    "image": "https://x402.perkos.io/logo.png"
+    "image": "https://stack.perkos.xyz/logo.png"
   },
   "identity": {
     "format": "caip-2",
@@ -552,9 +552,9 @@ Returns ERC-8004 compliant agent registration with on-chain registry integration
     ]
   },
   "endpoints": {
-    "a2a": "https://x402.perkos.io/api/v2/x402",
+    "a2a": "https://stack.perkos.xyz/api/v2/x402",
     "mcp": null,
-    "discovery": "https://x402.perkos.io/api/.well-known/erc-8004.json"
+    "discovery": "https://stack.perkos.xyz/api/.well-known/erc-8004.json"
   },
   "registries": {
     "identity": {
@@ -796,7 +796,7 @@ NEXT_PUBLIC_CELO_RPC=https://forno.celo.org
 # Facilitator Configuration
 NEXT_PUBLIC_FACILITATOR_NAME="PerkOS x402 Middleware"
 NEXT_PUBLIC_FACILITATOR_DESCRIPTION="Community-friendly multi-chain payment facilitator"
-NEXT_PUBLIC_FACILITATOR_URL=https://x402.perkos.io
+NEXT_PUBLIC_FACILITATOR_URL=https://stack.perkos.xyz
 NEXT_PUBLIC_PAYMENT_RECEIVER=0x...  # Facilitator wallet address
 
 # Payment Configuration
@@ -1040,16 +1040,16 @@ See [Documents/UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_G
 
 ### Best Practices
 
-- 🔒 Never expose private keys in client-side code
-- 🔒 Use environment variables for sensitive configuration
-- 🔒 Implement rate limiting on API endpoints
-- 🔒 Validate all user inputs before processing
-- 🔒 Use HTTPS for all production deployments
-- 🔒 Monitor for unusual transaction patterns
-- 🔒 Regular security audits of smart contracts
-- 🔒 Use multi-sig wallets for contract ownership
-- 🔒 Test all contract upgrades on testnet first
-- 🔒 Maintain 24-48 hour monitoring period after upgrades
+- Never expose private keys in client-side code
+- Use environment variables for sensitive configuration
+- Implement rate limiting on API endpoints
+- Validate all user inputs before processing
+- Use HTTPS for all production deployments
+- Monitor for unusual transaction patterns
+- Regular security audits of smart contracts
+- Use multi-sig wallets for contract ownership
+- Test all contract upgrades on testnet first
+- Maintain 24-48 hour monitoring period after upgrades
 
 ## Roadmap
 
@@ -1107,7 +1107,7 @@ We welcome contributions from the community! Please see [CONTRIBUTING.md](CONTRI
 
 All detailed documentation is located in the `/Documents` folder:
 
-- **[UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_GUIDE.md)** - ⭐ Upgradeable contract deployment and upgrade guide
+- **[UPGRADEABLE_CONTRACTS_GUIDE.md](Documents/UPGRADEABLE_CONTRACTS_GUIDE.md)** - Upgradeable contract deployment and upgrade guide
 - **[FIREBASE_SETUP.md](Documents/FIREBASE_SETUP.md)** - Complete Firebase database setup guide
 - **[DEPLOYMENT_CHECKLIST.md](Documents/DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
 - **[X402_DEFERRED_SCHEME.md](Documents/X402_DEFERRED_SCHEME.md)** - Deferred payment implementation guide
@@ -1129,27 +1129,27 @@ All detailed documentation is located in the `/Documents` folder:
 
 ### Built on PerkOS Stack
 
-- Website: https://perkos.io
+- Website: https://perkos.xyz
 - Discord: [PerkOS Stack Community](#)
 - Twitter: [@PerkOS](#)
 - GitHub: https://github.com/perkos/PerkOS-Stack
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+BSL 1.1 License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
 Need help? We're here for you:
 
-- 📧 Email: support@perkos.io
+- Email: contact@perkos.xyz
 - 💬 Discord: [PerkOS Stack Community](#)
 - 🐛 Issues: [GitHub Issues](#)
 - 📖 Docs: [PerkOS Stack Documentation](#)
 
 ---
 
-**Stack it. Ship it. Scale it.** 🏗️
+**Infrastructure for the agentic economy.**
 
 _The infrastructure behind the spark_
 

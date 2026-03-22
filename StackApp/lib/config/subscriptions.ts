@@ -66,12 +66,12 @@ function parseFloatOrDefault(value: string | undefined, defaultValue: number): n
  */
 const ENV_VALUES = {
   // Prices
-  STARTER_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_STARTER_PRICE_MONTHLY, 29),
-  STARTER_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_STARTER_PRICE_YEARLY, 290),
-  PRO_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_PRO_PRICE_MONTHLY, 99),
-  PRO_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_PRO_PRICE_YEARLY, 990),
-  SCALE_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_SCALE_PRICE_MONTHLY, 499),
-  SCALE_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_SCALE_PRICE_YEARLY, 4990),
+  STARTER_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_STARTER_PRICE_MONTHLY, 5),
+  STARTER_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_STARTER_PRICE_YEARLY, 50),
+  PRO_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_PRO_PRICE_MONTHLY, 49),
+  PRO_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_PRO_PRICE_YEARLY, 490),
+  SCALE_PRICE_MONTHLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_SCALE_PRICE_MONTHLY, 299),
+  SCALE_PRICE_YEARLY: parseFloatOrDefault(process.env.NEXT_PUBLIC_STACK_SCALE_PRICE_YEARLY, 2990),
 
   // Transaction limits
   FREE_TX_LIMIT: parseIntOrDefault(process.env.NEXT_PUBLIC_STACK_FREE_TX_LIMIT, 1000),
@@ -114,10 +114,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     priceMonthly: 0,
     priceYearly: 0,
     features: [
-      `${ENV_VALUES.FREE_TX_LIMIT.toLocaleString()} transactions/month`,
+      `${ENV_VALUES.FREE_TX_LIMIT.toLocaleString()} API calls/month`,
       `${ENV_VALUES.FREE_RATE_LIMIT} requests/minute`,
+      '1 network',
       '1 sponsor wallet',
-      'All networks included',
       'Basic analytics',
       'Community support',
     ],
@@ -142,10 +142,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     priceMonthly: ENV_VALUES.STARTER_PRICE_MONTHLY,
     priceYearly: ENV_VALUES.STARTER_PRICE_YEARLY,
     features: [
-      `${ENV_VALUES.STARTER_TX_LIMIT.toLocaleString()} transactions/month`,
+      `${ENV_VALUES.STARTER_TX_LIMIT.toLocaleString()} API calls/month`,
       `${ENV_VALUES.STARTER_RATE_LIMIT} requests/minute`,
+      '3 networks',
       '5 sponsor wallets',
-      'All networks included',
       'Basic analytics',
       'Email support',
       'Webhook notifications',
@@ -172,10 +172,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     priceMonthly: ENV_VALUES.PRO_PRICE_MONTHLY,
     priceYearly: ENV_VALUES.PRO_PRICE_YEARLY,
     features: [
-      `${ENV_VALUES.PRO_TX_LIMIT.toLocaleString()} transactions/month`,
+      `${ENV_VALUES.PRO_TX_LIMIT.toLocaleString()} API calls/month`,
       `${ENV_VALUES.PRO_RATE_LIMIT} requests/minute`,
+      'All networks',
       '25 sponsor wallets',
-      'All networks included',
       'Advanced analytics',
       'Priority support',
       'Full API access',
@@ -203,10 +203,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     priceMonthly: ENV_VALUES.SCALE_PRICE_MONTHLY,
     priceYearly: ENV_VALUES.SCALE_PRICE_YEARLY,
     features: [
-      `${ENV_VALUES.SCALE_TX_LIMIT.toLocaleString()} transactions/month`,
+      `${ENV_VALUES.SCALE_TX_LIMIT.toLocaleString()} API calls/month`,
       `${ENV_VALUES.SCALE_RATE_LIMIT.toLocaleString()} requests/minute`,
+      'All networks + Priority',
       '100 sponsor wallets',
-      'All networks included',
       'Advanced analytics',
       'Priority support',
       'Custom branding',
@@ -236,10 +236,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     priceMonthly: -1, // Custom pricing
     priceYearly: -1, // Custom pricing
     features: [
-      'Unlimited transactions',
+      'Unlimited API calls',
       `${ENV_VALUES.ENTERPRISE_RATE_LIMIT.toLocaleString()}+ requests/minute`,
       'Unlimited sponsor wallets',
-      'All networks included',
+      'All networks + SLA',
       'Advanced analytics',
       '24/7 priority support',
       'Custom branding',

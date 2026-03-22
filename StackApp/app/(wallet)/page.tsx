@@ -151,7 +151,7 @@ export default function Home() {
   const services = [
     {
       title: "x402 Protocol",
-      description: "Payment facilitator supporting both exact and deferred schemes. Enable your Web3 agents to accept payments seamlessly.",
+      description: "Payment facilitator supporting both exact and deferred schemes. Enable AI agents to process payments autonomously via HTTP 402.",
       icon: "⚡",
       features: ["Instant Settlement", "Deferred Payments", "Multi-Chain"],
       endpoint: "/api/v2/x402",
@@ -190,23 +190,38 @@ export default function Home() {
   const [chartData, setChartData] = useState<Array<{ day: number; height: number; value: number }>>([]);
   const [networkCharts, setNetworkCharts] = useState<Record<string, number[]>>({});
 
-  // Generate mini chart data on client-side only
+  // Use API chart data or show flat bars as fallback
   useEffect(() => {
-    setChartData(
-      Array.from({ length: 30 }, (_, i) => ({
-        day: i,
-        height: Math.random() * 80 + 20,
-        value: Math.floor(Math.random() * 500 + 100),
-      }))
-    );
-  }, []);
+    if (apiChartData.length > 0) {
+      const maxValue = Math.max(...apiChartData.map(d => d.value), 1);
+      setChartData(
+        apiChartData.map((d, i) => ({
+          day: i,
+          height: (d.value / maxValue) * 100,
+          value: d.value,
+        }))
+      );
+    } else {
+      setChartData(
+        Array.from({ length: 30 }, (_, i) => ({
+          day: i,
+          height: 10,
+          value: 0,
+        }))
+      );
+    }
+  }, [apiChartData]);
 
-  // Generate network charts when API data loads
+  // Generate network chart bars from tx counts (proportional, not random)
   useEffect(() => {
     if (networks.mainnet.length > 0 || networks.testnet.length > 0) {
       const charts: Record<string, number[]> = {};
       [...networks.mainnet, ...networks.testnet].forEach((network) => {
-        charts[network.network] = Array.from({ length: 24 }, () => Math.random() * 100);
+        const baseHeight = network.txCount > 0 ? 40 : 10;
+        charts[network.network] = Array.from({ length: 24 }, (_, i) => {
+          // Create a gentle wave pattern based on position, not random
+          return Math.max(10, baseHeight + Math.sin(i * 0.5) * 20);
+        });
       });
       setNetworkCharts(charts);
     }
@@ -285,9 +300,9 @@ export default function Home() {
 
             {/* Subheadline */}
             <p className={`text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 font-light leading-relaxed transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              Multi-chain x402 protocol, agent discovery, and ERC-8004 identity.
+              x402 protocol, agent identity, and multi-chain settlement for the agentic economy.
               <br className="hidden sm:block" />
-              <span className="text-gray-500">Built for the next generation of Web3 agents.</span>
+              <span className="text-gray-500">16 networks. Sub-cent micropayments. Instant settlement.</span>
             </p>
 
             {/* CTA buttons */}
@@ -305,23 +320,23 @@ export default function Home() {
                   </span>
                 </Link>
               ) : (
-                <Link
-                  href="/subscription"
+                <a
+                  href="#services"
                   className="group relative px-8 py-4 bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold rounded-lg overflow-hidden transition-all hover:shadow-lg hover:shadow-pink-500/25"
                 >
                   <span className="relative z-10 flex items-center gap-2">
-                    Get Started
+                    Explore Services
                     <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </span>
-                </Link>
+                </a>
               )}
               <a
-                href="#services"
+                href="#pricing"
                 className="px-8 py-4 border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium rounded-lg transition-all"
               >
-                Explore Services
+                View Pricing
               </a>
             </div>
 
@@ -499,17 +514,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* === ERC-8004 SECTION === */}
+        {/* === PERKOS ECOSYSTEM === */}
         <section className="relative py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="max-w-2xl mb-16">
-              <div className="text-xs font-mono text-purple-400 uppercase tracking-[0.3em] mb-4">ERC-8004 v2.0.0</div>
+              <div className="text-xs font-mono text-pink-500 uppercase tracking-[0.3em] mb-4">Ecosystem</div>
               <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
-                On-Chain Agent
-                <span className="block text-gray-500">Trust Infrastructure</span>
+                Part of the
+                <span className="block text-gray-500">PerkOS Platform</span>
               </h2>
               <p className="text-gray-400 leading-relaxed">
-                Official ERC-8004 contracts deployed with CREATE2 deterministic addresses — same address on every chain.
+                Stack is the infrastructure layer that powers the entire PerkOS ecosystem. Every product builds on Stack APIs for payments, identity, and settlement.
               </p>
             </div>
 
@@ -560,7 +575,9 @@ export default function Home() {
         </section>
 
         {/* === SUBSCRIPTION PLANS === */}
-        <SubscriptionPlans />
+        <div id="pricing">
+          <SubscriptionPlans />
+        </div>
 
         {/* === NETWORKS SECTION === */}
         <section className="relative py-24 px-4">
