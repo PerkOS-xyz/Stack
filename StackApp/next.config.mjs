@@ -18,14 +18,34 @@ const nextConfig = {
         source: '/_next/static/css/app/capsule-core.css.map',
         destination: '/api/empty-source-map',
       },
+      {
+        source: '/.well-known/agent-card.json',
+        destination: '/api/.well-known/agent-card.json',
+      },
+      {
+        source: '/.well-known/agent-registration.json',
+        destination: '/api/.well-known/agent-registration.json',
+      },
+      {
+        source: '/.well-known/erc-8004.json',
+        destination: '/api/.well-known/erc-8004.json',
+      },
+      {
+        source: '/.well-known/x402-discovery.json',
+        destination: '/api/.well-known/x402-discovery.json',
+      },
+      {
+        source: '/.well-known/x402-payment.json',
+        destination: '/api/.well-known/x402-payment.json',
+      },
     ];
   },
-  // Allow build to continue even with errors
+  // Enforce strict type checking and linting during builds
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Disable static generation for dynamic routes
   generateBuildId: async () => {

@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 export const dynamic = "force-dynamic";
-
-// Admin wallets that can access this endpoint
-const ADMIN_WALLETS = (process.env.ADMIN_WALLETS || "").toLowerCase().split(",").filter(Boolean);
-
-function isAdmin(address: string | null): boolean {
-  if (!address) return false;
-  return ADMIN_WALLETS.includes(address.toLowerCase());
-}
 
 /**
  * GET /api/admin/subscriptions
@@ -17,11 +10,9 @@ function isAdmin(address: string | null): boolean {
  */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const adminAddress = searchParams.get("admin");
-
-    if (!isAdmin(adminAddress)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
     // Query without order to avoid Firestore index requirements
@@ -88,12 +79,13 @@ export async function GET(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { adminAddress, action } = body;
-
-    if (!isAdmin(adminAddress)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
+
+    const body = await req.json();
+    const { action } = body;
 
     if (action === "cleanup-duplicates") {
       // Get all subscriptions

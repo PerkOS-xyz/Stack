@@ -57,7 +57,7 @@ export class ParaTransactionService {
    * Get chain ID for network
    */
   private getChainId(network: SupportedNetwork): number {
-    const chainIdMap: Record<SupportedNetwork, number> = {
+    const chainIdMap: Partial<Record<SupportedNetwork, number>> = {
       avalanche: CHAIN_IDS.AVALANCHE,
       "avalanche-fuji": CHAIN_IDS.AVALANCHE_FUJI,
       celo: CHAIN_IDS.CELO,
@@ -75,7 +75,7 @@ export class ParaTransactionService {
       optimism: CHAIN_IDS.OPTIMISM,
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
     };
-    return chainIdMap[network];
+    return chainIdMap[network]!;
   }
 
   /**

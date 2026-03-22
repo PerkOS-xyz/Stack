@@ -10,8 +10,8 @@
 
 [![x402 Protocol](https://img.shields.io/badge/x402-Protocol-blue)](https://github.com/coinbase/x402)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Discovery-purple)](https://eips.ethereum.org/EIPS/eip-8004)
-[![Networks](https://img.shields.io/badge/Networks-16-green)](#supported-networks)
-[![Gas Control](https://img.shields.io/badge/Gas_Control-Advanced-orange)](#advanced-gas-sponsorship-control)
+[![Networks](https://img.shields.io/badge/Networks-25%2B-green)](#supported-networks)
+[![Gas Control](https://img.shields.io/badge/Gas_Control-Advanced-orange)](#-advanced-gas-sponsorship-control)
 [![MPC Wallets](https://img.shields.io/badge/MPC-Server_Wallets-teal)](#9-server-side-wallets-new)
 [![License](https://img.shields.io/badge/License-BSL_1.1-yellow)](LICENSE)
 
@@ -163,18 +163,28 @@ const deferredPayment = { scheme: "deferred", network: "base", ... };
 
 ### 3. Built-in Discovery (ERC-8004)
 
-Your agents are automatically discoverable:
+Full on-chain agent infrastructure across **25+ networks** using official CREATE2 deterministic contracts (same addresses on every chain):
 
-```json
-GET /.well-known/agent-card.json
-{
-  "@context": "https://www.w3.org/ns/activitystreams",
-  "type": "Agent",
-  "name": "Your Service",
-  "capabilities": ["x402-payment-exact", "x402-payment-deferred"],
-  "paymentMethods": [...]
-}
-```
+**Three Core Registries:**
+
+| Registry | Purpose |
+|----------|---------|
+| **Identity Registry** | ERC-721 agent registration, lookup, and wallet management on 25+ chains |
+| **Reputation Registry** | On-chain feedback with `int128 value` + `uint8 valueDecimals`, tags, revocation, and append responses |
+| **Validation Registry** | Request-response model for independent third-party verification |
+
+**API Endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET/POST /api/erc8004/identity` | Register agents, lookup identities, manage wallets |
+| `GET/POST /api/erc8004/reputation` | Submit feedback, get summaries, revoke entries |
+| `GET/POST /api/erc8004/validation` | Request and respond to validation checks |
+| `GET /.well-known/erc-8004.json` | Standard agent registration & discovery file |
+
+**Supported Networks:** Ethereum, Base, Arbitrum, Optimism, Avalanche, Celo, BSC, Linea, Monad, Gnosis, Mantle, Metis, MegaETH, Abstract, GOAT Network + testnets
+
+> **Spec compliant** — ERC-8004 v2.0.0 with deterministic CREATE2 addresses across all chains
 
 ### 4. Multi-Chain by Default
 

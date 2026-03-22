@@ -4,6 +4,7 @@ import { SUBSCRIPTION_TIERS, getAllTiers, SubscriptionTier } from "@/lib/config/
 import { createPublicClient, http, parseUnits, formatUnits, type Address } from "viem";
 import { getChainByNetwork, getUSDCAddress, getChainIdFromNetwork, type SupportedNetwork } from "@/lib/utils/chains";
 import { config } from "@/lib/utils/config";
+import { subscriptionPaySchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -49,47 +50,20 @@ const ERC20_ABI = [
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {
-      userWalletAddress,
-      tier,
-      billingCycle,
-      network,
-      transactionHash,
-    } = body;
+    const rawBody = await req.json();
 
-    // Validate required fields
-    if (!userWalletAddress) {
-      return NextResponse.json(
-        { error: "userWalletAddress required" },
-        { status: 400 }
-      );
+    // Validate input with Zod schema
+    const validation = validateBody(subscriptionPaySchema, rawBody);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (!tier || !getAllTiers().includes(tier)) {
+    const { userWalletAddress, tier, billingCycle, network, transactionHash } = validation.data;
+
+    // Validate tier against configured tiers
+    if (!getAllTiers().includes(tier as SubscriptionTier)) {
       return NextResponse.json(
         { error: `Invalid tier. Must be one of: ${getAllTiers().join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    if (!billingCycle || !["monthly", "yearly"].includes(billingCycle)) {
-      return NextResponse.json(
-        { error: "billingCycle must be 'monthly' or 'yearly'" },
-        { status: 400 }
-      );
-    }
-
-    if (!network) {
-      return NextResponse.json(
-        { error: "network required" },
-        { status: 400 }
-      );
-    }
-
-    if (!transactionHash) {
-      return NextResponse.json(
-        { error: "transactionHash required" },
         { status: 400 }
       );
     }
@@ -236,7 +210,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log(`✅ Subscription payment processed for ${userWalletAddress}:`);
+    console.log(`Subscription payment processed for ${userWalletAddress}:`);
     console.log(`   Tier: ${tier}`);
     console.log(`   Billing: ${billingCycle}`);
     console.log(`   Network: ${network}`);

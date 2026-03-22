@@ -39,7 +39,7 @@ export class ExactSchemeService {
   }
 
   private getChainIdForNetwork(network: SupportedNetwork): number {
-    const chainIdMap: Record<SupportedNetwork, number> = {
+    const chainIdMap: Partial<Record<SupportedNetwork, number>> = {
       avalanche: CHAIN_IDS.AVALANCHE,
       "avalanche-fuji": CHAIN_IDS.AVALANCHE_FUJI,
       celo: CHAIN_IDS.CELO,
@@ -57,7 +57,7 @@ export class ExactSchemeService {
       optimism: CHAIN_IDS.OPTIMISM,
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
     };
-    return chainIdMap[network];
+    return chainIdMap[network]!;
   }
 
   /**

@@ -1,25 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
-import { chains } from "@/lib/utils/chains";
-import { REPUTATION_REGISTRY_ABI, type Feedback, isScoreApproved } from "@/lib/contracts/erc8004";
+import { getChainByNetwork } from "@/lib/utils/chains";
+import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
+// Inline ABI matching official ReputationRegistryUpgradeable
+const REPUTATION_ABI = [
+  { name: "giveFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "endpoint", type: "string" }, { name: "feedbackURI", type: "string" }, { name: "feedbackHash", type: "bytes32" }], outputs: [] },
+  { name: "revokeFeedback", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "feedbackIndex", type: "uint64" }], outputs: [] },
+  { name: "appendResponse", type: "function", stateMutability: "nonpayable", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }, { name: "responseURI", type: "string" }, { name: "responseHash", type: "bytes32" }], outputs: [] },
+  { name: "readFeedback", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }], outputs: [{ name: "value", type: "int128" }, { name: "valueDecimals", type: "uint8" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "isRevoked", type: "bool" }] },
+  { name: "getSummary", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddresses", type: "address[]" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }], outputs: [{ name: "count", type: "uint64" }, { name: "summaryValue", type: "int128" }, { name: "summaryValueDecimals", type: "uint8" }] },
+  { name: "readAllFeedback", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddresses", type: "address[]" }, { name: "tag1", type: "string" }, { name: "tag2", type: "string" }, { name: "includeRevoked", type: "bool" }], outputs: [{ name: "clients", type: "address[]" }, { name: "feedbackIndexes", type: "uint64[]" }, { name: "values", type: "int128[]" }, { name: "valueDecimalsArr", type: "uint8[]" }, { name: "tag1s", type: "string[]" }, { name: "tag2s", type: "string[]" }, { name: "revokedStatuses", type: "bool[]" }] },
+  { name: "getClients", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ name: "", type: "address[]" }] },
+  { name: "getLastIndex", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }], outputs: [{ name: "", type: "uint64" }] },
+  { name: "getResponseCount", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "clientAddress", type: "address" }, { name: "feedbackIndex", type: "uint64" }, { name: "responders", type: "address[]" }], outputs: [{ name: "count", type: "uint64" }] },
+  { name: "getIdentityRegistry", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "getVersion", type: "function", stateMutability: "pure", inputs: [], outputs: [{ name: "", type: "string" }] },
+] as const;
+
+function formatValue(value: bigint, decimals: number): string {
+  if (decimals === 0) return value.toString();
+  const str = value.toString().padStart(decimals + 1, '0');
+  return str.slice(0, -decimals) + '.' + str.slice(-decimals);
+}
 
 export const dynamic = "force-dynamic";
 
+export async function OPTIONS() {
+  return corsOptions();
+}
+
 /**
  * GET /api/erc8004/reputation
- * Get reputation data from Reputation Registry (EIP-8004 compliant)
+ * Get reputation data from Reputation Registry (EIP-8004 v2: int128 value + valueDecimals)
  *
  * Query params:
  * - network: Network name (required)
- * - agentId: Agent ID to lookup (required)
+ * - agentId: Agent ID (required)
  * - clientAddress: Filter by specific client (optional)
- * - feedbackIndex: Specific feedback index for a client (optional, requires clientAddress)
+ * - feedbackIndex: Specific feedback index (optional, requires clientAddress)
  * - tag1: Filter by tag1 (optional)
  * - tag2: Filter by tag2 (optional)
  * - includeRevoked: Include revoked feedback (optional, default: false)
  */
 export async function GET(req: NextRequest) {
+  // Rate limit: 60 requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateLimitResult = rateLimit(clientIp, 60, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+    );
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const network = searchParams.get("network") as SupportedNetwork;
@@ -33,24 +68,34 @@ export async function GET(req: NextRequest) {
     if (!network || !agentId) {
       return NextResponse.json(
         { error: "Network and agentId parameters required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Validate agentId is a valid numeric value
+    try {
+      BigInt(agentId);
+    } catch {
+      return NextResponse.json(
+        { error: "agentId must be a valid numeric identifier" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     const registries = getErc8004Registries(network);
-    const chain = chains[network];
+    const chain = getChainByNetwork(network);
 
     if (!chain || !registries.reputation) {
       return NextResponse.json(
         { error: "Invalid network configuration" },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -59,190 +104,274 @@ export async function GET(req: NextRequest) {
       transport: http(getRpcUrl(network)),
     });
 
-    // If clientAddress and feedbackIndex provided, get specific feedback
+    // Read specific feedback entry
     if (clientAddress && feedbackIndex !== null && feedbackIndex !== undefined) {
-      const [score, feedbackTag1, feedbackTag2, isRevoked] = await client.readContract({
+      const [value, valueDecimals, feedbackTag1, feedbackTag2, isRevoked] = await client.readContract({
         address: registries.reputation as Address,
-        abi: REPUTATION_REGISTRY_ABI,
+        abi: REPUTATION_ABI,
         functionName: "readFeedback",
         args: [BigInt(agentId), clientAddress as Address, BigInt(feedbackIndex)],
-      }) as [number, string, string, boolean];
+      }) as [bigint, number, string, string, boolean];
 
       return NextResponse.json({
         agentId,
         clientAddress,
         feedbackIndex,
         feedback: {
-          score,
+          value: value.toString(),
+          valueDecimals,
+          formattedValue: formatValue(value, valueDecimals),
           tag1: feedbackTag1,
           tag2: feedbackTag2,
           isRevoked,
-          isPositive: isScoreApproved(score),
         },
         network,
         registryAddress: registries.reputation,
-      });
+    }, { headers: corsHeaders });
     }
 
-    // Get summary with optional tag filtering
-    const clientAddresses = clientAddress ? [clientAddress as Address] : [];
-
-    const [count, averageScore] = await client.readContract({
-      address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
-      functionName: "getSummary",
-      args: [BigInt(agentId), clientAddresses, tag1, tag2],
-    }) as [bigint, number];
-
-    // Get all clients who have given feedback
+    // Get all clients first (needed for getSummary — spec requires non-empty clientAddresses)
     const clients = await client.readContract({
       address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
+      abi: REPUTATION_ABI,
       functionName: "getClients",
       args: [BigInt(agentId)],
     }) as Address[];
 
-    // Get all feedback with filtering
-    const [
-      feedbackClients,
-      scores,
-      tag1s,
-      tag2s,
-      revoked
-    ] = await client.readContract({
-      address: registries.reputation as Address,
-      abi: REPUTATION_REGISTRY_ABI,
-      functionName: "readAllFeedback",
-      args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
-    }) as [Address[], number[], string[], string[], boolean[]];
+    // Build clientAddresses filter
+    const clientAddresses = clientAddress
+      ? [clientAddress as Address]
+      : clients.length > 0 ? clients : [];
 
-    // Format feedback array
-    const feedback = feedbackClients.map((client, i) => ({
-      client,
-      score: scores[i],
-      tag1: tag1s[i],
-      tag2: tag2s[i],
-      isRevoked: revoked[i],
-      isPositive: isScoreApproved(scores[i]),
-    }));
+    // Get summary (requires non-empty clientAddresses per spec)
+    let count = 0n, summaryValue = 0n, summaryValueDecimals = 0;
+    if (clientAddresses.length > 0) {
+      [count, summaryValue, summaryValueDecimals] = await client.readContract({
+        address: registries.reputation as Address,
+        abi: REPUTATION_ABI,
+        functionName: "getSummary",
+        args: [BigInt(agentId), clientAddresses, tag1, tag2],
+      }) as [bigint, bigint, number];
+    }
+
+    // Get all feedback with filtering (skip if no clients)
+    let feedback: Array<{
+      client: string;
+      feedbackIndex: string;
+      value: string;
+      valueDecimals: number;
+      formattedValue: string;
+      tag1: string;
+      tag2: string;
+      isRevoked: boolean;
+    }> = [];
+
+    if (clientAddresses.length > 0) {
+      const [
+        feedbackClients,
+        feedbackIndexes,
+        values,
+        valueDecimalsArr,
+        tag1s,
+        tag2s,
+        revoked
+      ] = await client.readContract({
+        address: registries.reputation as Address,
+        abi: REPUTATION_ABI,
+        functionName: "readAllFeedback",
+        args: [BigInt(agentId), clientAddresses, tag1, tag2, includeRevoked],
+      }) as [Address[], bigint[], bigint[], number[], string[], string[], boolean[]];
+
+      feedback = feedbackClients.map((fbClient, i) => ({
+        client: fbClient,
+        feedbackIndex: feedbackIndexes[i].toString(),
+        value: values[i].toString(),
+        valueDecimals: valueDecimalsArr[i],
+        formattedValue: formatValue(values[i], valueDecimalsArr[i]),
+        tag1: tag1s[i],
+        tag2: tag2s[i],
+        isRevoked: revoked[i],
+      }));
+    }
 
     return NextResponse.json({
       agentId,
       summary: {
         count: count.toString(),
-        averageScore,
-        isPositiveAverage: isScoreApproved(averageScore),
+        summaryValue: summaryValue.toString(),
+        summaryValueDecimals,
+        formattedSummary: formatValue(summaryValue, summaryValueDecimals),
       },
       feedback,
       clients,
       totalClients: clients.length,
       network,
       registryAddress: registries.reputation,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Error in GET /api/erc8004/reputation:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("revert") || msg.includes("ERC721") || msg.includes("nonexistent")) {
+      return NextResponse.json(
+        { error: "Agent not found" },
+        { status: 404, headers: corsHeaders }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to fetch reputation data" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
 
 /**
  * POST /api/erc8004/reputation
- * Submit feedback (returns unsigned transaction for user to sign)
+ * Reputation operations (returns unsigned transactions)
  *
- * Body for simple feedback:
- * - network: Network name (required)
- * - agentId: Agent ID (required)
- * - score: Score from 0 to 100 (required)
- *
- * Body for full feedback (EIP-8004 compliant):
- * - network: Network name (required)
- * - agentId: Agent ID (required)
- * - score: Score from 0 to 100 (required)
- * - tag1: Categorization tag (optional)
- * - tag2: Secondary tag (optional)
- * - endpoint: Endpoint reference (optional)
- * - feedbackURI: URI to detailed feedback (optional)
- * - feedbackHash: Hash of off-chain feedback (optional)
+ * Actions:
+ * - giveFeedback (default): Submit feedback with int128 value + valueDecimals
+ * - appendResponse: Respond to feedback
+ * - revokeFeedback: Revoke own feedback
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { network, agentId, score, tag1, tag2, endpoint, feedbackURI, feedbackHash } = body;
+    const { network, action = "giveFeedback" } = body;
 
-    if (!network || !agentId || score === undefined) {
+    if (!network) {
       return NextResponse.json(
-        { error: "Network, agentId, and score required" },
-        { status: 400 }
-      );
-    }
-
-    if (score < 0 || score > 100) {
-      return NextResponse.json(
-        { error: "Score must be between 0 and 100 (EIP-8004 compliant)" },
-        { status: 400 }
+        { error: "Network parameter required" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (!hasErc8004Registries(network as SupportedNetwork)) {
       return NextResponse.json(
         { error: `ERC-8004 registries not deployed on ${network}` },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     const registries = getErc8004Registries(network as SupportedNetwork);
 
-    // Determine if using simple or full feedback function
-    const hasExtendedParams = tag1 || tag2 || endpoint || feedbackURI || feedbackHash;
+    // Give feedback (v2: int128 value + uint8 valueDecimals)
+    if (action === "giveFeedback") {
+      const { agentId, value, valueDecimals = 0, tag1, tag2, endpoint, feedbackURI, feedbackHash } = body;
 
-    let feedbackData;
-    if (hasExtendedParams) {
-      // Full EIP-8004 compliant feedback
-      feedbackData = {
+      if (!agentId || value === undefined) {
+        return NextResponse.json(
+          { error: "agentId and value required" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      if (valueDecimals < 0 || valueDecimals > 18) {
+        return NextResponse.json(
+          { error: "valueDecimals must be 0-18" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const hasExtendedParams = tag1 || tag2 || endpoint || feedbackURI || feedbackHash;
+
+      const feedbackData = hasExtendedParams ? {
         to: registries.reputation,
         network,
-        function: "giveFeedback(uint256,uint8,string,string,string,string,bytes32)",
+        function: "giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32)",
         args: [
           agentId,
-          score,
+          value,
+          valueDecimals,
           tag1 || "",
           tag2 || "",
           endpoint || "",
           feedbackURI || "",
           feedbackHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
         ],
-        description: `Give feedback to agent ${agentId} with score ${score}`,
-      };
-    } else {
-      // Simple feedback with just score
-      feedbackData = {
+        description: `Give feedback to agent ${agentId} with value ${value} (${valueDecimals} decimals)`,
+      } : {
         to: registries.reputation,
         network,
-        function: "giveFeedback(uint256,uint8)",
-        args: [agentId, score],
-        description: `Give simple feedback to agent ${agentId} with score ${score}`,
+        function: "giveFeedback(uint256,int128,uint8)",
+        args: [agentId, value, valueDecimals],
+        description: `Give feedback to agent ${agentId} with value ${value}`,
       };
+
+      return NextResponse.json({
+        success: true,
+        transaction: feedbackData,
+        message: "Sign and submit this transaction to give feedback",
+        valueInfo: {
+          value,
+          valueDecimals,
+          formattedValue: formatValue(BigInt(value), valueDecimals),
+        },
+    }, { headers: corsHeaders });
     }
 
-    return NextResponse.json({
-      success: true,
-      transaction: feedbackData,
-      message: "Sign and submit this transaction to give feedback",
-      scoreInfo: {
-        score,
-        isPositive: isScoreApproved(score),
-        threshold: 50,
-        description: score > 50 ? "Positive feedback" : score === 50 ? "Neutral feedback" : "Negative feedback",
-      },
-    });
+    // Append response to feedback
+    if (action === "appendResponse") {
+      const { agentId, clientAddress, feedbackIndex, responseURI, responseHash } = body;
+
+      if (!agentId || !clientAddress || feedbackIndex === undefined || !responseURI) {
+        return NextResponse.json(
+          { error: "agentId, clientAddress, feedbackIndex, and responseURI required" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          to: registries.reputation,
+          network,
+          function: "appendResponse(uint256,address,uint64,string,bytes32)",
+          args: [
+            agentId,
+            clientAddress,
+            feedbackIndex,
+            responseURI,
+            responseHash || "0x0000000000000000000000000000000000000000000000000000000000000000",
+          ],
+          description: `Append response to feedback #${feedbackIndex} for agent ${agentId}`,
+        },
+        message: "Sign and submit this transaction to respond to feedback",
+    }, { headers: corsHeaders });
+    }
+
+    // Revoke feedback
+    if (action === "revokeFeedback") {
+      const { agentId, feedbackIndex } = body;
+
+      if (!agentId || feedbackIndex === undefined) {
+        return NextResponse.json(
+          { error: "agentId and feedbackIndex required" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        transaction: {
+          to: registries.reputation,
+          network,
+          function: "revokeFeedback(uint256,uint64)",
+          args: [agentId, feedbackIndex],
+          description: `Revoke feedback #${feedbackIndex} for agent ${agentId}`,
+        },
+        message: "Sign and submit this transaction to revoke feedback",
+    }, { headers: corsHeaders });
+    }
+
+    return NextResponse.json(
+      { error: `Unknown action: ${action}. Valid: giveFeedback, appendResponse, revokeFeedback` },
+      { status: 400, headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Error in POST /api/erc8004/reputation:", error);
     return NextResponse.json(
-      { error: "Failed to prepare feedback transaction" },
-      { status: 500 }
+      { error: "Failed to prepare reputation transaction" },
+      { status: 500, headers: corsHeaders }
     );
   }
 }

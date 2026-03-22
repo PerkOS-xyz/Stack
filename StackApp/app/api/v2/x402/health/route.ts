@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { firebaseAdmin } from "@/lib/db/firebase";
-import { CHAIN_IDS, chains } from "@/lib/utils/chains";
+import { CHAIN_IDS, chains, getChainByNetwork } from "@/lib/utils/chains";
 import { createPublicClient, http } from "viem";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
  * x402 V2 Health Check Endpoint
  * Provides comprehensive system status for monitoring and discovery.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const baseUrl = new URL(request.url).origin;
   const startTime = Date.now();
 
   // Initialize health status
@@ -35,10 +36,10 @@ export async function GET() {
       networksHealthy: 0,
     },
     endpoints: {
-      verify: `${config.facilitatorUrl}/api/v2/x402/verify`,
-      settle: `${config.facilitatorUrl}/api/v2/x402/settle`,
-      supported: `${config.facilitatorUrl}/api/v2/x402/supported`,
-      discovery: `${config.facilitatorUrl}/api/.well-known/x402-discovery.json`,
+      verify: `${baseUrl}/api/v2/x402/verify`,
+      settle: `${baseUrl}/api/v2/x402/settle`,
+      supported: `${baseUrl}/api/v2/x402/supported`,
+      discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
     },
   };
 
@@ -77,7 +78,7 @@ export async function GET() {
 
   for (const network of sampleNetworks) {
     const chainId = getChainId(network);
-    const chain = chains[network];
+    const chain = getChainByNetwork(network as SupportedNetwork);
 
     if (!chain) {
       health.checks.networks.push({
@@ -133,6 +134,9 @@ export async function GET() {
     "X-x402-Version": "2.0.0",
     "X-x402-Status": health.status,
     "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Agent-Id, X-API-Key, X-PAYMENT",
   };
 
   return NextResponse.json(health, { headers });

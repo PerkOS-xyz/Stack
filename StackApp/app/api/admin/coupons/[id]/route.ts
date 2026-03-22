@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCouponService } from "@/lib/services/CouponService";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 export const dynamic = "force-dynamic";
 
-// Helper to verify admin access
-function isAdminWallet(address: string): boolean {
-  const adminWallets = process.env.ADMIN_WALLETS || "";
-  const adminList = adminWallets
-    .split(",")
-    .map((w) => w.trim().toLowerCase())
-    .filter((w) => w.length > 0);
-  return adminList.includes(address.toLowerCase());
-}
-
 /**
- * GET /api/admin/coupons/[id]?address=0x...
+ * GET /api/admin/coupons/[id]
  * Get a single coupon with stats (admin only)
  */
 export async function GET(
@@ -22,23 +13,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const { id } = await params;
-    const { searchParams } = new URL(req.url);
-    const address = searchParams.get("address");
-
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address parameter required" },
-        { status: 400 }
-      );
-    }
-
-    if (!isAdminWallet(address)) {
-      return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 }
-      );
-    }
 
     const couponService = getCouponService();
     const coupon = await couponService.getCouponById(id);
@@ -77,23 +57,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
-    const { address, ...updateData } = body;
-
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address parameter required" },
-        { status: 400 }
-      );
-    }
-
-    if (!isAdminWallet(address)) {
-      return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 }
-      );
-    }
+    const updateData = body;
 
     const couponService = getCouponService();
 
@@ -147,24 +118,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const { id } = await params;
-    const { searchParams } = new URL(req.url);
-    const address = searchParams.get("address");
-
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address parameter required" },
-        { status: 400 }
-      );
-    }
-
-    if (!isAdminWallet(address)) {
-      return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 }
-      );
-    }
-
     const couponService = getCouponService();
 
     // Check if coupon exists

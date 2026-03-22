@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 import { chains, getNativeTokenSymbol } from "@/lib/utils/chains";
 import { parseEther, formatEther, createPublicClient, http, type Hex } from "viem";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+import { sendTransactionSchema, validateBody } from "@/lib/validation/schemas";
 // Note: Wallet service import is done dynamically below to support provider switching
 
 interface SponsorWallet {
@@ -27,27 +29,21 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { walletId, toAddress, amount, network } = body;
 
+    // Validate input with Zod schema
+    const validation = validateBody(sendTransactionSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { walletId, toAddress, amount, network } = validation.data;
     console.log("Send request received:", { walletId, toAddress, amount, network });
-
-    // Validate required fields
-    if (!walletId || !toAddress || !amount || !network) {
-      console.log("Missing required fields:", { walletId: !!walletId, toAddress: !!toAddress, amount: !!amount, network: !!network });
-      return NextResponse.json(
-        { error: "Missing required fields: walletId, toAddress, amount, network" },
-        { status: 400 }
-      );
-    }
-
-    // Validate address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
-      return NextResponse.json(
-        { error: "Invalid recipient address format" },
-        { status: 400 }
-      );
-    }
 
     // Validate amount (skip if isSendMax is true or amount is "max")
     const isSendMax = body.isSendMax === true || amount === "max";
@@ -350,7 +346,7 @@ export async function POST(req: NextRequest) {
     const actualAmountSent = formatEther(valueInWei);
 
     // Log the transaction
-    console.log(`✅ Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
+    console.log(`Transfer sent from ${wallet.sponsor_address} to ${toAddress}`);
     console.log(`   Amount: ${actualAmountSent} ${symbol}`);
     console.log(`   Network: ${network} (Chain ID: ${chain.id})`);
     console.log(`   Transaction Hash: ${transactionHash}`);

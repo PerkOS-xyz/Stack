@@ -213,7 +213,7 @@ function SubscriptionPaymentPageContent() {
         address: usdcAddress as Address,
         abi: ERC20_ABI,
         functionName: "balanceOf",
-        args: [address],
+        args: [address as `0x${string}`],
       });
 
       setUsdcBalance(balance as bigint);
@@ -335,7 +335,7 @@ function SubscriptionPaymentPageContent() {
       const validBefore = getValidBefore();
 
       const authorization = {
-        from: address,
+        from: address as `0x${string}`,
         to: paymentReceiver as Address,
         value: amountInUSDC,
         validAfter,
@@ -406,7 +406,7 @@ function SubscriptionPaymentPageContent() {
       // Sign the payment authorization using the unified wallet client
       if (walletAccount) {
         // Para SDK provides an account object with signTypedData
-        signature = await walletAccount.signTypedData({
+        signature = await walletAccount.signTypedData!({
           domain,
           types: TRANSFER_WITH_AUTHORIZATION_TYPES,
           primaryType: "TransferWithAuthorization",
@@ -415,7 +415,7 @@ function SubscriptionPaymentPageContent() {
       } else if (walletClient) {
         // Use wallet client for Dynamic or external wallets
         signature = await walletClient.signTypedData({
-          account: address,
+          account: address as `0x${string}`,
           domain,
           types: TRANSFER_WITH_AUTHORIZATION_TYPES,
           primaryType: "TransferWithAuthorization",

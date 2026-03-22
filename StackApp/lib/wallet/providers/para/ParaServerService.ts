@@ -188,14 +188,14 @@ export class ParaServerService implements IServerWalletService {
       }
 
       // Create Para account
-      const account = await createParaAccount(this.para);
+      const account = await createParaAccount(this.para as any);
       console.log(`[ParaServerService] Account created: ${account.address}`);
 
       // Get RPC URL from chain config or use default
       const rpcUrl = chain.rpcUrls.default.http[0];
 
       // Create viem wallet client
-      const walletClient = createParaViemClient(this.para, {
+      const walletClient = createParaViemClient(this.para as any, {
         account: account,
         chain: chain,
         transport: http(rpcUrl),
@@ -229,7 +229,7 @@ export class ParaServerService implements IServerWalletService {
         await this.para.setUserShare(keyMaterial);
       }
 
-      const account = await createParaAccount(this.para);
+      const account = await createParaAccount(this.para as any);
       return account;
     } catch (error) {
       console.error("[ParaServerService] Error creating account:", error);
