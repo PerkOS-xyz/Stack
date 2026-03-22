@@ -529,52 +529,47 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <a
-                href="https://aura.perkos.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-white/[0.02] border border-white/10 hover:border-pink-500/30 rounded-2xl p-8 transition-all duration-300 hover:bg-white/[0.04]"
-              >
-                <div className="text-3xl mb-4">{"*"}</div>
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-pink-400 transition-colors">Aura</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">20 AI API endpoints with pay-per-call micropayments. Vision, NLP, and developer tools powered by Stack.</p>
-              </a>
+              {/* Identity */}
+              <div className="group relative bg-gradient-to-br from-purple-500/5 to-transparent border border-purple-500/20 hover:border-purple-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-purple-500/10">
+                <div className="text-5xl mb-6 text-purple-400 font-light">🪪</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Agent Identity</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  ERC-721 agent registration on 25+ chains. Register, lookup, and manage wallets with a single on-chain identity.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">ERC-721 NFTs</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">25+ Chains</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">CREATE2</span>
+                </div>
+              </div>
 
-              <a
-                href="https://spark.perkos.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-white/[0.02] border border-white/10 hover:border-orange-500/30 rounded-2xl p-8 transition-all duration-300 hover:bg-white/[0.04]"
-              >
-                <div className="text-3xl mb-4">{"+"}</div>
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">Spark</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">No-code AI agent launcher. Deploy agents with personality across Discord, Telegram, X, and more.</p>
-              </a>
+              {/* Reputation */}
+              <div className="group relative bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/20 hover:border-amber-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-amber-500/10">
+                <div className="text-5xl mb-6 text-amber-400 font-light">⭐</div>
+                <h3 className="text-2xl font-bold text-white mb-3">On-Chain Reputation</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Submit feedback with precise scoring, tags, and categories. Support for revocation and append responses.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Feedback Scores</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Tags</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Revocable</span>
+                </div>
+              </div>
 
-              <a
-                href="https://swarm.perkos.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-white/[0.02] border border-white/10 hover:border-violet-500/30 rounded-2xl p-8 transition-all duration-300 hover:bg-white/[0.04]"
-              >
-                <div className="text-3xl mb-4">{"~"}</div>
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-violet-400 transition-colors">Swarm</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">Fleet orchestration for organizations. Coordinate hundreds of agents with real-time monitoring.</p>
-              </a>
-            </div>
-
-            <div className="mt-8 text-center">
-              <a
-                href="https://perkos.xyz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-pink-400 transition-colors"
-              >
-                Learn more at perkos.xyz
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+              {/* Validation */}
+              <div className="group relative bg-gradient-to-br from-cyan-500/5 to-transparent border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl group-hover:shadow-cyan-500/10">
+                <div className="text-5xl mb-6 text-cyan-400 font-light">✅</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Validation Registry</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Request-response model for independent third-party verification. Build trust through validated credentials.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Verification</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">Third-Party</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">On-Chain</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>

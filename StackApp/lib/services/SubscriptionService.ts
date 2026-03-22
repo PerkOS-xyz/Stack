@@ -104,7 +104,7 @@ export class SubscriptionService {
 
       if (error) {
         // Check if it's a "no rows" error (expected for new users)
-        if ((error as Error & { code?: string }).code === 'PGRST116') {
+        if ((error as Error & { code?: string }).code === 'NOT_FOUND') {
           // Cache the null result
           subscriptionCache.set(address, { subscription: null, cachedAt: now });
           return null;
@@ -155,7 +155,7 @@ export class SubscriptionService {
 
       if (error) {
         // "No rows" is expected for new users
-        if ((error as Error & { code?: string }).code === 'PGRST116') {
+        if ((error as Error & { code?: string }).code === 'NOT_FOUND') {
           console.log(`[Subscription] No existing subscription found for ${address}`);
           return null;
         }

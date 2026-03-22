@@ -307,10 +307,10 @@ export class RateLimitService {
 
     // Sum up request counts
     const sumCounts = (
-      data: { data: { request_count: number }[] | null }
+      data: any
     ): number => {
       if (!data.data) return 0;
-      return data.data.reduce((sum, row) => sum + (row.request_count || 0), 0);
+      return data.data.reduce((sum: number, row: any) => sum + (row.request_count || 0), 0);
     };
 
     return {

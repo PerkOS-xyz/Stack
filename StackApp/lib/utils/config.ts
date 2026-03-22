@@ -3,35 +3,38 @@ import type { Hex } from "viem";
 
 /**
  * Normalize a private key to the correct format for viem
- * - Removes whitespace/quotes
- * - Ensures 0x prefix
- * - Validates length (64 hex characters)
  */
 function normalizePrivateKey(key: string | undefined): Hex | undefined {
   if (!key) return undefined;
-
-  // Remove whitespace, quotes, and line breaks
   let normalized = key.trim().replace(/['"]/g, '').replace(/\r?\n/g, '');
-
-  // Add 0x prefix if missing
   if (!normalized.startsWith('0x')) {
     normalized = `0x${normalized}`;
   }
-
-  // Validate length (should be 66 chars: 0x + 64 hex chars)
   if (normalized.length !== 66) {
     console.error(`Invalid private key length: expected 66 chars (0x + 64 hex), got ${normalized.length}`);
     return undefined;
   }
-
-  // Validate it's valid hex
   if (!/^0x[0-9a-fA-F]{64}$/.test(normalized)) {
     console.error('Invalid private key format: not valid hexadecimal');
     return undefined;
   }
-
   return normalized as Hex;
 }
+
+// ============ ERC-8004 Official CREATE2 Addresses ============
+// These are deterministic across ALL EVM chains via CREATE2
+
+const ERC8004_MAINNET_ADDRESSES = {
+  identity: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as Address,
+  reputation: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63" as Address,
+  validation: undefined as Address | undefined, // Not officially deployed yet
+};
+
+const ERC8004_TESTNET_ADDRESSES = {
+  identity: "0x8004A818BFB912233c491871b3d84c89A494BD9e" as Address,
+  reputation: "0x8004B663056A597Dffe9eCcC1965A193B7388713" as Address,
+  validation: undefined as Address | undefined, // Not officially deployed yet
+};
 
 // Supported networks
 export type SupportedNetwork =
@@ -43,7 +46,46 @@ export type SupportedNetwork =
   | "monad" | "monad-testnet"
   | "arbitrum" | "arbitrum-sepolia"
   | "optimism" | "optimism-sepolia"
-  | "unichain" | "unichain-sepolia";
+  | "unichain" | "unichain-sepolia"
+  | "bsc" | "bsc-testnet"
+  | "linea" | "linea-sepolia"
+  | "gnosis" | "gnosis-chiado"
+  | "mantle" | "mantle-sepolia"
+  | "metis" | "metis-sepolia"
+  | "megaeth" | "megaeth-testnet"
+  | "abstract" | "abstract-testnet"
+  | "goat" | "goat-testnet";
+
+/** Check if a network is a testnet */
+function isTestnetNetwork(network: string): boolean {
+  return (
+    network.includes("fuji") ||
+    network.includes("sepolia") ||
+    network.includes("amoy") ||
+    network.includes("testnet") ||
+    network.includes("chiado")
+  );
+}
+
+/** Get ERC-8004 registry addresses for any network (CREATE2 deterministic) */
+function getErc8004AddressesForNetwork(network: string): {
+  identity: Address | undefined;
+  reputation: Address | undefined;
+  validation: Address | undefined;
+} {
+  const isTestnet = isTestnetNetwork(network);
+  const base = isTestnet ? ERC8004_TESTNET_ADDRESSES : ERC8004_MAINNET_ADDRESSES;
+
+  // Allow env var override for validation (not yet officially deployed)
+  const networkUpper = network.toUpperCase().replace(/-/g, '_');
+  const validationOverride = process.env[`NEXT_PUBLIC_${networkUpper}_VALIDATION_REGISTRY`] as Address | undefined;
+
+  return {
+    identity: base.identity,
+    reputation: base.reputation,
+    validation: validationOverride || base.validation,
+  };
+}
 
 export const config = {
   // Blockchain
@@ -69,6 +111,22 @@ export const config = {
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
     unichain: process.env.NEXT_PUBLIC_UNICHAIN_RPC_URL || "https://mainnet.unichain.org",
     "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_RPC_URL || "https://sepolia.unichain.org",
+    bsc: process.env.NEXT_PUBLIC_BSC_RPC_URL || "https://bsc-dataseed.binance.org",
+    "bsc-testnet": process.env.NEXT_PUBLIC_BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545",
+    linea: process.env.NEXT_PUBLIC_LINEA_RPC_URL || "https://rpc.linea.build",
+    "linea-sepolia": process.env.NEXT_PUBLIC_LINEA_SEPOLIA_RPC_URL || "https://rpc.sepolia.linea.build",
+    gnosis: process.env.NEXT_PUBLIC_GNOSIS_RPC_URL || "https://rpc.gnosischain.com",
+    "gnosis-chiado": process.env.NEXT_PUBLIC_GNOSIS_CHIADO_RPC_URL || "https://rpc.chiadochain.net",
+    mantle: process.env.NEXT_PUBLIC_MANTLE_RPC_URL || "https://rpc.mantle.xyz",
+    "mantle-sepolia": process.env.NEXT_PUBLIC_MANTLE_SEPOLIA_RPC_URL || "https://rpc.sepolia.mantle.xyz",
+    metis: process.env.NEXT_PUBLIC_METIS_RPC_URL || "https://andromeda.metis.io/?owner=1088",
+    "metis-sepolia": process.env.NEXT_PUBLIC_METIS_SEPOLIA_RPC_URL || "https://sepolia.metisdevops.link",
+    megaeth: process.env.NEXT_PUBLIC_MEGAETH_RPC_URL || "https://rpc.megaeth.com",
+    "megaeth-testnet": process.env.NEXT_PUBLIC_MEGAETH_TESTNET_RPC_URL || "https://rpc-testnet.megaeth.com",
+    abstract: process.env.NEXT_PUBLIC_ABSTRACT_RPC_URL || "https://api.abstrakt.network",
+    "abstract-testnet": process.env.NEXT_PUBLIC_ABSTRACT_TESTNET_RPC_URL || "https://api-testnet.abstrakt.network",
+    goat: process.env.NEXT_PUBLIC_GOAT_RPC_URL || "https://rpc.goat.network",
+    "goat-testnet": process.env.NEXT_PUBLIC_GOAT_TESTNET_RPC_URL || "https://rpc-testnet.goat.network",
   },
 
   privateKey: normalizePrivateKey(process.env.PRIVATE_KEY),
@@ -93,10 +151,26 @@ export const config = {
     "optimism-sepolia": (process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_PAYMENT_TOKEN || "0x5fd84259d66Cd46123540766Be93DFE6D43130D7") as Address,
     unichain: (process.env.NEXT_PUBLIC_UNICHAIN_PAYMENT_TOKEN || "0x078D782b760474a361dDA0AF3839290b0EF57AD6") as Address,
     "unichain-sepolia": (process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    bsc: (process.env.NEXT_PUBLIC_BSC_PAYMENT_TOKEN || "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d") as Address,
+    "bsc-testnet": (process.env.NEXT_PUBLIC_BSC_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    linea: (process.env.NEXT_PUBLIC_LINEA_PAYMENT_TOKEN || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff") as Address,
+    "linea-sepolia": (process.env.NEXT_PUBLIC_LINEA_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    gnosis: (process.env.NEXT_PUBLIC_GNOSIS_PAYMENT_TOKEN || "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83") as Address,
+    "gnosis-chiado": (process.env.NEXT_PUBLIC_GNOSIS_CHIADO_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    mantle: (process.env.NEXT_PUBLIC_MANTLE_PAYMENT_TOKEN || "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9") as Address,
+    "mantle-sepolia": (process.env.NEXT_PUBLIC_MANTLE_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    metis: (process.env.NEXT_PUBLIC_METIS_PAYMENT_TOKEN || "0xEA32A96608495e54156Ae48931A7c1f6f0A723A3") as Address,
+    "metis-sepolia": (process.env.NEXT_PUBLIC_METIS_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    megaeth: (process.env.NEXT_PUBLIC_MEGAETH_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    "megaeth-testnet": (process.env.NEXT_PUBLIC_MEGAETH_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    abstract: (process.env.NEXT_PUBLIC_ABSTRACT_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    "abstract-testnet": (process.env.NEXT_PUBLIC_ABSTRACT_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    goat: (process.env.NEXT_PUBLIC_GOAT_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    "goat-testnet": (process.env.NEXT_PUBLIC_GOAT_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
   },
 
   // Payment Receiver
-  paymentReceiver: process.env.NEXT_PUBLIC_X402_PAYMENT_RECEIVER as Address,
+  paymentReceiver: (process.env.NEXT_PUBLIC_X402_PAYMENT_RECEIVER || "0x7d66c8a836a0b7d7DFA2f78b7E339878f996D919") as Address,
 
   // Deferred Scheme - Escrow addresses by network
   deferredEnabled: process.env.NEXT_PUBLIC_DEFERRED_ENABLED === "true",
@@ -122,103 +196,9 @@ export const config = {
   },
 
   // Facilitator Info
-  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "PerkOS Stack",
-  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain payment infrastructure for the agentic economy. x402 facilitator, agent discovery, and ERC-8004 identity across 16 networks.",
-  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "https://stack.perkos.xyz",
-
-  // ERC-8004 Registry Addresses (by network)
-  erc8004Registries: {
-    avalanche: {
-      identity: process.env.NEXT_PUBLIC_AVALANCHE_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_AVALANCHE_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_AVALANCHE_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "avalanche-fuji": {
-      identity: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_AVALANCHE_FUJI_VALIDATION_REGISTRY as Address | undefined,
-    },
-    base: {
-      identity: process.env.NEXT_PUBLIC_BASE_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_BASE_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_BASE_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "base-sepolia": {
-      identity: process.env.NEXT_PUBLIC_BASE_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_BASE_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_BASE_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-    celo: {
-      identity: process.env.NEXT_PUBLIC_CELO_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_CELO_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_CELO_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "celo-sepolia": {
-      identity: process.env.NEXT_PUBLIC_CELO_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_CELO_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_CELO_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-    ethereum: {
-      identity: process.env.NEXT_PUBLIC_ETHEREUM_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_ETHEREUM_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_ETHEREUM_VALIDATION_REGISTRY as Address | undefined,
-    },
-    sepolia: {
-      identity: process.env.NEXT_PUBLIC_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-    polygon: {
-      identity: process.env.NEXT_PUBLIC_POLYGON_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_POLYGON_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_POLYGON_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "polygon-amoy": {
-      identity: process.env.NEXT_PUBLIC_POLYGON_AMOY_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_POLYGON_AMOY_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_POLYGON_AMOY_VALIDATION_REGISTRY as Address | undefined,
-    },
-    monad: {
-      identity: process.env.NEXT_PUBLIC_MONAD_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_MONAD_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_MONAD_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "monad-testnet": {
-      identity: process.env.NEXT_PUBLIC_MONAD_TESTNET_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_MONAD_TESTNET_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_MONAD_TESTNET_VALIDATION_REGISTRY as Address | undefined,
-    },
-    arbitrum: {
-      identity: process.env.NEXT_PUBLIC_ARBITRUM_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_ARBITRUM_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_ARBITRUM_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "arbitrum-sepolia": {
-      identity: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-    optimism: {
-      identity: process.env.NEXT_PUBLIC_OPTIMISM_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_OPTIMISM_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_OPTIMISM_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "optimism-sepolia": {
-      identity: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-    unichain: {
-      identity: process.env.NEXT_PUBLIC_UNICHAIN_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_UNICHAIN_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_UNICHAIN_VALIDATION_REGISTRY as Address | undefined,
-    },
-    "unichain-sepolia": {
-      identity: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_IDENTITY_REGISTRY as Address | undefined,
-      reputation: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_REPUTATION_REGISTRY as Address | undefined,
-      validation: process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_VALIDATION_REGISTRY as Address | undefined,
-    },
-  },
+  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
+  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
+  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || process.env.NEXT_PUBLIC_APP_URL || "https://stack.perkos.xyz",
 } as const;
 
 // Helper functions
@@ -227,7 +207,7 @@ export function getPaymentToken(network: SupportedNetwork): Address {
 }
 
 export function getEscrowAddress(network: SupportedNetwork): Address | undefined {
-  return config.deferredEscrowAddresses[network];
+  return config.deferredEscrowAddresses[network as keyof typeof config.deferredEscrowAddresses];
 }
 
 export function getRpcUrl(network: SupportedNetwork): string {
@@ -235,20 +215,29 @@ export function getRpcUrl(network: SupportedNetwork): string {
 }
 
 export function isDeferredEnabledForNetwork(network: SupportedNetwork): boolean {
-  return config.deferredEnabled && !!config.deferredEscrowAddresses[network];
+  return config.deferredEnabled && !!getEscrowAddress(network);
 }
 
+/**
+ * Get ERC-8004 registry addresses for a network.
+ * Uses hardcoded CREATE2 deterministic addresses (same on all chains).
+ */
 export function getErc8004Registries(network: SupportedNetwork): {
   identity: Address | undefined;
   reputation: Address | undefined;
   validation: Address | undefined;
 } {
-  return config.erc8004Registries[network] || { identity: undefined, reputation: undefined, validation: undefined };
+  return getErc8004AddressesForNetwork(network);
 }
 
+/**
+ * Check if ERC-8004 registries are available on a network.
+ * Identity and Reputation are always available (CREATE2 deployed on 25+ chains).
+ * Validation is not yet officially deployed.
+ */
 export function hasErc8004Registries(network: SupportedNetwork): boolean {
-  const registries = config.erc8004Registries[network];
-  return !!(registries?.identity && registries?.reputation && registries?.validation);
+  const registries = getErc8004Registries(network);
+  return !!(registries.identity && registries.reputation);
 }
 
 // Validation

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 
 // Email addresses (with defaults)
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "contact@perkos.io";
@@ -32,6 +33,16 @@ interface ContactFormData {
  * Handle contact form submissions with auto-responder
  */
 export async function POST(req: NextRequest) {
+  // Rate limit: 5 requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateLimitResult = rateLimit(clientIp, 5, 60000);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   try {
     const body: ContactFormData = await req.json();
     const { name, email, subject, message, company } = body;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 // Note: Wallet service imports are done dynamically in POST handler to avoid
 // loading SDK modules for GET requests that don't need them
 
@@ -37,8 +38,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Strip sensitive server-side fields before returning to client
+    const sanitizedWallets = (wallets || []).map(
+      ({ para_wallet_id, para_user_share, ...safe }: Record<string, unknown>) => safe
+    );
+
     logApiPerformance("/api/sponsor/wallets", "GET", startTime, 200);
-    return NextResponse.json({ wallets: wallets || [] });
+    return NextResponse.json({ wallets: sanitizedWallets });
   } catch (error) {
     console.error("Error in GET /api/sponsor/wallets:", error);
     logApiPerformance("/api/sponsor/wallets", "GET", startTime, 500);
@@ -66,6 +72,11 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     let { userWalletAddress, network = "evm", walletName, isPublic = false } = body;
 
@@ -161,7 +172,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Server wallet created and assigned to user:`);
+    console.log(`Server wallet created and assigned to user:`);
     console.log(`   Provider: ${ACTIVE_PROVIDER}`);
     console.log(`   User: ${userWalletAddress}`);
     console.log(`   Name: ${finalWalletName}`);
@@ -190,6 +201,11 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const { walletId, userWalletAddress } = body;
 
@@ -233,7 +249,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    console.log(`✅ Wallet deleted successfully:`);
+    console.log(`Wallet deleted successfully:`);
     console.log(`   Wallet ID: ${walletId}`);
     console.log(`   Address: ${existingWallet.sponsor_address}`);
     console.log(`   User: ${userWalletAddress}`);
@@ -262,6 +278,11 @@ export async function DELETE(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const { walletId, walletName, isPublic, userWalletAddress } = body;
 

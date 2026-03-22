@@ -129,8 +129,8 @@ interface SelectOptions {
 }
 
 /**
- * Supabase-compatible query builder for Firestore
- * Provides a familiar API for migration from Supabase
+ * Firestore query builder
+ * Provides a chainable query API
  * Implements PromiseLike so it can be awaited directly
  */
 class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements PromiseLike<QueryResult<T>> {
@@ -200,13 +200,13 @@ class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements Pr
 
   /**
    * OR filter for complex conditions
-   * Supabase format: "field1.op.value,field2.op.value"
+   * Filter format: "field1.op.value,field2.op.value"
    * Example: "transaction_hash.ilike.%test%,payer_address.ilike.%test%"
    * Since Firestore doesn't support OR across different fields natively,
    * we store these for client-side filtering
    */
   or(filterString: string): this {
-    // Parse the Supabase filter string format
+    // Parse the filter string format
     const conditions = filterString.split(',');
     const orFilters: Array<{ field: string; op: string; value: string }> = [];
 
@@ -542,9 +542,9 @@ class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements Pr
     }
 
     if (!result.data || result.data.length === 0) {
-      // Return Supabase-compatible error with code property
+      // Return error with code property
       const error = new Error('No rows returned') as Error & { code: string };
-      error.code = 'PGRST116'; // Supabase error code for "no rows returned"
+      error.code = 'NOT_FOUND'; // No rows returned
       return { data: null, error };
     }
 
@@ -568,7 +568,7 @@ class FirestoreQueryBuilder<T extends DocumentData = DocumentData> implements Pr
 }
 
 /**
- * Supabase-compatible insert builder for Firestore
+ * Firestore insert builder
  * Implements PromiseLike so it can be awaited directly
  */
 class FirestoreInsertBuilder<T extends DocumentData = DocumentData> implements PromiseLike<MutationResult<T[]>> {
@@ -646,7 +646,7 @@ class FirestoreInsertBuilder<T extends DocumentData = DocumentData> implements P
 }
 
 /**
- * Supabase-compatible update builder for Firestore
+ * Firestore update builder
  * Implements PromiseLike so it can be awaited directly
  */
 class FirestoreUpdateBuilder<T extends DocumentData = DocumentData> implements PromiseLike<MutationResult<T[]>> {
@@ -762,7 +762,7 @@ class FirestoreUpdateBuilder<T extends DocumentData = DocumentData> implements P
 }
 
 /**
- * Supabase-compatible delete builder for Firestore
+ * Firestore delete builder
  * Implements PromiseLike so it can be awaited directly
  */
 class FirestoreDeleteBuilder implements PromiseLike<{ error: Error | null }> {
@@ -832,8 +832,8 @@ class FirestoreDeleteBuilder implements PromiseLike<{ error: Error | null }> {
 }
 
 /**
- * Supabase-compatible Storage bucket builder for Firebase Storage
- * Provides upload, getPublicUrl, and remove methods matching Supabase API
+ * Firebase Storage bucket builder
+ * Provides upload, getPublicUrl, and remove methods
  */
 class FirebaseStorageBucket {
   private bucketName: string;
@@ -846,7 +846,7 @@ class FirebaseStorageBucket {
 
   /**
    * Upload a file to Firebase Storage
-   * Mimics Supabase's storage.from(bucket).upload(path, file, options)
+   * Upload a file to the bucket
    */
   async upload(
     filePath: string,
@@ -916,7 +916,7 @@ class FirebaseStorageBucket {
 
   /**
    * Get the public URL for a file
-   * Mimics Supabase's storage.from(bucket).getPublicUrl(path)
+   * Get public URL for a file
    */
   getPublicUrl(filePath: string): { data: { publicUrl: string } } {
     const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
@@ -930,7 +930,7 @@ class FirebaseStorageBucket {
 
   /**
    * Remove files from storage
-   * Mimics Supabase's storage.from(bucket).remove([paths])
+   * Remove files from the bucket
    */
   async remove(filePaths: string[]): Promise<{ error: Error | null }> {
     try {
@@ -968,7 +968,7 @@ class FirebaseStorageBucket {
 }
 
 /**
- * Supabase-compatible Storage client for Firebase Storage
+ * Firebase Storage client
  */
 class FirebaseStorageClient {
   private useAdmin: boolean;
@@ -983,8 +983,8 @@ class FirebaseStorageClient {
 }
 
 /**
- * Supabase-compatible Firestore client
- * Provides a familiar API for easy migration from Supabase
+ * Firestore client
+ * Provides a chainable query API
  */
 class FirestoreClient {
   private useAdmin: boolean;
@@ -1048,7 +1048,7 @@ class FirestoreClient {
     return this.useAdmin ? getAdminFirestoreDb() : getClientFirestore();
   }
 
-  // Firebase Storage access (Supabase-compatible API)
+  // Firebase Storage access (storage API)
   get storage(): FirebaseStorageClient {
     if (!this._storage) {
       this._storage = new FirebaseStorageClient(this.useAdmin);
@@ -1057,7 +1057,7 @@ class FirestoreClient {
   }
 }
 
-// Export client instances (matching Supabase pattern)
+// Export client instances (matching query builder pattern)
 export const firebase = new FirestoreClient(false);
 export const firebaseAdmin = new FirestoreClient(true);
 

@@ -40,11 +40,15 @@
     "@perkos/util-x402-headers": "^1.0.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@solana/web3.js": "1.98.4",
+    "@stellar/stellar-sdk": "^14.6.1",
     "@tanstack/react-query": "5.90.16",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@wagmi/core": "^3.2.1",
+    "@x402/core": "^2.6.0",
+    "@x402/fetch": "^2.6.0",
+    "@x402/stellar": "^2.6.0",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -66,7 +70,8 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
     "viem": "^2.44.1",
-    "wagmi": "^3.3.1"
+    "wagmi": "^3.3.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.1.2",

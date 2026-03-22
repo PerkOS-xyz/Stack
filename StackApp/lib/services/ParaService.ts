@@ -227,7 +227,7 @@ export class ParaService {
 
       // Create a Para Account using the server SDK
       console.log("Calling createParaAccount...");
-      const account = await createParaAccount(this.para);
+      const account = await createParaAccount(this.para as any);
       console.log(`Para account created with address: ${account.address}`);
 
       // Get the chain configuration from our chains.ts
@@ -238,7 +238,7 @@ export class ParaService {
 
       // Create the Para Viem WalletClient
       console.log("Creating Para Viem WalletClient...");
-      const walletClient = createParaViemClient(this.para, {
+      const walletClient = createParaViemClient(this.para as any, {
         account: account,
         chain: chain,
         transport: http(rpcUrl),
