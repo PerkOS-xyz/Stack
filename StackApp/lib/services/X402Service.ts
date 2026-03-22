@@ -73,6 +73,9 @@ export class X402Service {
       // Optimism
       "eip155:10": "optimism",
       "eip155:11155420": "optimism-sepolia",
+      // Unichain
+      "eip155:130": "unichain",
+      "eip155:1301": "unichain-sepolia",
     };
     return caip2Map[caip2] || null;
   }

@@ -89,6 +89,8 @@ export class DeferredSchemeService {
       "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
       optimism: CHAIN_IDS.OPTIMISM,
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
+      unichain: CHAIN_IDS.UNICHAIN,
+      "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
     };
     return chainIdMap[network];
   }
