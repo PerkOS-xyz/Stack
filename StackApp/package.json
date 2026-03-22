@@ -4,8 +4,7 @@
   "description": "Standards-compliant x402 Payment Facilitator with Next.js App Router supporting Avalanche, Celo, and Base",
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/build-wrapper.js",
-    "build:original": "next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -36,7 +35,7 @@
     "@perkos/service-pricing": "^1.0.1",
     "@perkos/service-x402": "^1.1.1",
     "@perkos/types-x402": "^1.1.1",
-    "@perkos/util-chains": "^1.0.1",
+    "@perkos/util-chains": "^1.1.1",
     "@perkos/util-logger": "^1.0.1",
     "@perkos/util-x402-headers": "^1.0.1",
     "@radix-ui/react-slot": "^1.1.1",

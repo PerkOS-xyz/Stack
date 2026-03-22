@@ -41,7 +41,7 @@ export class DeferredSchemeService {
   constructor(network: SupportedNetwork = config.defaultNetwork) {
     this.network = network;
 
-    const escrowAddress = (config.deferredEscrowAddresses as Record<string, `0x${string}` | undefined>)[network];
+    const escrowAddress = config.deferredEscrowAddresses[network];
     if (!escrowAddress) {
       throw new Error(`Deferred escrow address not configured for network: ${network}`);
     }
@@ -72,7 +72,7 @@ export class DeferredSchemeService {
   }
 
   private getChainIdForNetwork(network: SupportedNetwork): number {
-    const chainIdMap: Partial<Record<SupportedNetwork, number>> = {
+    const chainIdMap: Record<SupportedNetwork, number> = {
       avalanche: CHAIN_IDS.AVALANCHE,
       "avalanche-fuji": CHAIN_IDS.AVALANCHE_FUJI,
       celo: CHAIN_IDS.CELO,
@@ -91,24 +91,8 @@ export class DeferredSchemeService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
-      bsc: CHAIN_IDS.BSC,
-      "bsc-testnet": CHAIN_IDS.BSC_TESTNET,
-      linea: CHAIN_IDS.LINEA,
-      "linea-sepolia": CHAIN_IDS.LINEA_SEPOLIA,
-      gnosis: CHAIN_IDS.GNOSIS,
-      "gnosis-chiado": CHAIN_IDS.GNOSIS_CHIADO,
-      mantle: CHAIN_IDS.MANTLE,
-      "mantle-sepolia": CHAIN_IDS.MANTLE_SEPOLIA,
-      metis: CHAIN_IDS.METIS,
-      "metis-sepolia": CHAIN_IDS.METIS_SEPOLIA,
-      megaeth: CHAIN_IDS.MEGAETH,
-      "megaeth-testnet": CHAIN_IDS.MEGAETH_TESTNET,
-      abstract: CHAIN_IDS.ABSTRACT,
-      "abstract-testnet": CHAIN_IDS.ABSTRACT_TESTNET,
-      goat: CHAIN_IDS.GOAT,
-      "goat-testnet": CHAIN_IDS.GOAT_TESTNET,
     };
-    return chainIdMap[network]!;
+    return chainIdMap[network];
   }
 
   /**
