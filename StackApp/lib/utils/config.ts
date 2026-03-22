@@ -122,9 +122,9 @@ export const config = {
   },
 
   // Facilitator Info
-  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
-  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
-  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "http://localhost:3402",
+  facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "PerkOS Stack",
+  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain payment infrastructure for the agentic economy. x402 facilitator, agent discovery, and ERC-8004 identity across 16 networks.",
+  facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || "https://stack.perkos.xyz",
 
   // ERC-8004 Registry Addresses (by network)
   erc8004Registries: {
