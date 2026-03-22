@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
-import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 import { chains, getNativeTokenSymbol } from "@/lib/utils/chains";
 import { parseEther, formatEther, createPublicClient, http, type Hex } from "viem";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
@@ -29,11 +28,6 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const auth = await verifyAdminRequest(req);
-    if (!auth.authorized) {
-      return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
-
     const body = await req.json();
 
     // Validate input with Zod schema
