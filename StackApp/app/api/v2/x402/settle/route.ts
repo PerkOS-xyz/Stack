@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = rawBody as X402SettleRequest;
+    const body = validation.data as unknown as X402SettleRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload.network;

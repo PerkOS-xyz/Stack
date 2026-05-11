@@ -58,13 +58,15 @@ export const walletId = z
   .string()
   .min(1, "Wallet ID must not be empty");
 
-// x402 version string
+// x402 version: accept protocol-native numbers and stringified numbers from clients
 export const x402Version = z
-  .string()
-  .min(1, "x402Version is required");
+  .coerce.number()
+  .int("x402Version must be an integer")
+  .refine((value) => value === 1 || value === 2, "x402Version must be 1 or 2");
 
 // Payment payload base structure
 export const paymentPayload = z.object({
+  x402Version: x402Version,
   network: z.string().min(1, "paymentPayload.network is required"),
   scheme: z.string().min(1, "paymentPayload.scheme is required"),
   payload: z.unknown().optional(),
