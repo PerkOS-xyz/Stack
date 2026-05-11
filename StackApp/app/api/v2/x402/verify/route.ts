@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = rawBody as X402VerifyRequest;
+    const body = validation.data as unknown as X402VerifyRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload.network;
