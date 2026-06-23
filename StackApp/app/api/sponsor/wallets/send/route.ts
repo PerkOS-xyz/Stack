@@ -4,6 +4,7 @@ import { chains, getNativeTokenSymbol } from "@/lib/utils/chains";
 import { parseEther, formatEther, createPublicClient, http, type Hex } from "viem";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
 import { sendTransactionSchema, validateBody } from "@/lib/validation/schemas";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 // Note: Wallet service import is done dynamically below to support provider switching
 
 interface SponsorWallet {
@@ -38,6 +39,17 @@ export async function POST(req: NextRequest) {
 
     const { walletId, toAddress, amount, network } = validation.data;
     console.log("Send request received:", { walletId, toAddress, amount, network });
+
+    // Authentication: the caller must prove control of a wallet via EIP-191
+    // signature before we touch the DB. This rejects anonymous requests and
+    // prevents wallet enumeration via the 404/200 response difference below.
+    const auth = await verifyWalletSignature(req);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { error: auth.error || "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     // Validate amount (skip if isSendMax is true or amount is "max")
     const isSendMax = body.isSendMax === true || amount === "max";
@@ -83,6 +95,22 @@ export async function POST(req: NextRequest) {
       has_para_wallet_id: !!wallet.para_wallet_id,
       has_para_user_share: !!wallet.para_user_share
     });
+
+    // Authorization: the authenticated signer must own this sponsor wallet.
+    // Without this check, anyone who knows a walletId could drain its funds.
+    if (
+      !wallet.user_wallet_address ||
+      auth.address !== wallet.user_wallet_address.toLowerCase()
+    ) {
+      console.warn("Sponsor wallet ownership mismatch:", {
+        walletId,
+        signer: auth.address,
+      });
+      return NextResponse.json(
+        { error: "Forbidden: you do not own this sponsor wallet" },
+        { status: 403 }
+      );
+    }
 
     // Validate wallet ID exists (field named para_wallet_id for backward compatibility)
     if (!wallet.para_wallet_id) {
