@@ -118,8 +118,13 @@ const nextConfig = {
       '@gemini-wallet/core': false,
       'porto': false,
       'porto/internal': false,
+      // wagmi v3 "tempo" connector pulls Porto's `accounts` module (unused here)
+      'accounts': false,
       '@safe-global/safe-apps-sdk': false,
       '@safe-global/safe-apps-provider': false,
+      // @dynamic-labs realtime transport (ably) — unused for wallet auth, and a
+      // clean install resolves an ably version whose ./modular subpath isn't exported
+      'ably/modular': false,
       // Stub React Native modules (not needed for web)
       '@react-native-async-storage/async-storage': false,
       'react-native': false,
@@ -136,6 +141,8 @@ const nextConfig = {
         '@gemini-wallet/core': false,
         'porto': false,
         'porto/internal': false,
+        'accounts': false,
+        'ably/modular': false,
         '@safe-global/safe-apps-sdk': false,
         '@safe-global/safe-apps-provider': false,
         '@react-native-async-storage/async-storage': false,
@@ -151,6 +158,9 @@ const nextConfig = {
       { message: /Can't resolve '@base-org\/account'/ },
       { message: /Can't resolve '@gemini-wallet\/core'/ },
       { message: /Can't resolve 'porto'/ },
+      { message: /Can't resolve 'accounts'/ },
+      { message: /Package path \.\/modular is not exported from package/ },
+      { module: /node_modules\/ably/ },
       { message: /Can't resolve '@safe-global'/ },
       { message: /Can't resolve '@dynamic-labs-wallet\/node'/ },
       { message: /Can't resolve '@react-native-async-storage\/async-storage'/ },
