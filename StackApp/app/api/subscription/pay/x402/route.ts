@@ -6,6 +6,7 @@ import { parseUnits, formatUnits, type Address } from "viem";
 import { getChainIdFromNetwork, getUSDCAddress, type SupportedNetwork } from "@/lib/utils/chains";
 import { config } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
+import { subscriptionPayX402Schema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,14 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Validate request shape/types before running any payment logic.
+    // (Domain checks below — tier allowlist, amount, signature — still apply.)
+    const validation = validateBody(subscriptionPayX402Schema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const {
       userWalletAddress,
       tier,

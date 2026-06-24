@@ -121,6 +121,44 @@ export const subscriptionPaySchema = z.object({
   transactionHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, "Invalid transaction hash format"),
 });
 
+// Coupon validation request schema (POST /api/coupons/validate)
+export const couponValidateSchema = z.object({
+  code: z.string().min(1, "Coupon code is required"),
+  address: z.string().min(1, "Wallet address is required"),
+  tier: z.string().min(1, "Subscription tier is required"),
+  amount: z.coerce.number().nonnegative("Valid amount is required"),
+});
+
+// Subscription x402 payment schema (POST /api/subscription/pay/x402)
+// Lenient on the nested x402 payload (passthrough) — the route + X402Service
+// verify it cryptographically; this only enforces the request shape/types so
+// malformed bodies are rejected before any payment logic runs.
+export const subscriptionPayX402Schema = z.object({
+  userWalletAddress: z.string().min(1, "userWalletAddress is required"),
+  tier: z.string().min(1, "tier is required"),
+  // @ts-expect-error zod enum typing
+  billingCycle: z.enum(["monthly", "yearly"], {
+    errorMap: () => ({ message: "billingCycle must be 'monthly' or 'yearly'" }),
+  }),
+  network: z.string().min(1, "network is required"),
+  paymentPayload: z
+    .object({
+      payload: z
+        .object({
+          authorization: z
+            .object({
+              from: z.string().min(1, "authorization.from is required"),
+              to: z.string().min(1, "authorization.to is required"),
+              value: z.union([z.string(), z.number()]),
+            })
+            .passthrough(),
+        })
+        .passthrough(),
+    })
+    .passthrough(),
+  coupon: z.object({}).passthrough().nullable().optional(),
+});
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.
