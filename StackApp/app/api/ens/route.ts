@@ -3,8 +3,21 @@ import { firebaseAdmin } from "@/lib/db/firebase";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 
 export const dynamic = "force-dynamic";
+
+// ENS resolution hits a mainnet RPC; throttle per-IP to prevent abuse / DoS.
+function ensRateLimited(req: NextRequest): NextResponse | null {
+  const { allowed } = rateLimit(getClientIp(req), 30, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+  return null;
+}
 
 // Create a client for ENS resolution (mainnet only)
 const publicClient = createPublicClient({
@@ -17,6 +30,8 @@ const publicClient = createPublicClient({
  * Returns cached ENS name or resolves and caches it
  */
 export async function GET(req: NextRequest) {
+  const limited = ensRateLimited(req);
+  if (limited) return limited;
   try {
     const { searchParams } = new URL(req.url);
     const address = searchParams.get("address");
@@ -96,6 +111,8 @@ export async function GET(req: NextRequest) {
  * Batch resolve multiple addresses
  */
 export async function POST(req: NextRequest) {
+  const limited = ensRateLimited(req);
+  if (limited) return limited;
   try {
     const { addresses } = await req.json();
 
