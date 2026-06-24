@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 export const dynamic = "force-dynamic";
 import { useWalletContext, useWalletClient } from "@/lib/wallet/client";
 import { getChainByNetwork, base } from "@/lib/utils/chains";
+import { buildSponsorWalletAuthHeaders } from "@/lib/wallet/ownershipProof";
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast, Toaster } from 'sonner';
@@ -272,42 +273,20 @@ export default function WalletPage() {
         ? '/api/sponsor/wallets/solana-send'
         : '/api/sponsor/wallets/send';
 
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-
       // Both EVM and Solana sends require an EIP-191 ownership proof: every
       // sponsor wallet — including Solana ones — is owned by the connected EVM
       // wallet (user_wallet_address), regardless of the sponsor wallet's chain.
       // The server confirms the caller owns the wallet before moving funds.
-      if (!address) {
-        toast.error('Connect your wallet to authorize this transfer');
-        setSending(false);
-        return;
-      }
+      let authHeaders: Record<string, string>;
       try {
-        const timestamp = Date.now().toString();
-        const message = `PerkOS Sponsor Wallet Access ${timestamp}`;
-        let signature: string;
-        if (walletAccount?.signMessage) {
-          // Para SDK provides an account object with signMessage
-          signature = await walletAccount.signMessage({ message });
-        } else if (walletClient) {
-          // Dynamic or external wallets sign via the viem wallet client
-          signature = await walletClient.signMessage({
-            account: address as `0x${string}`,
-            message,
-          });
-        } else {
-          throw new Error('No signing method available');
-        }
-        headers['X-Wallet-Address'] = address;
-        headers['X-Wallet-Timestamp'] = timestamp;
-        headers['X-Wallet-Signature'] = signature;
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
       } catch (signError) {
         console.error('Failed to sign transfer authorization:', signError);
         toast.error('Signature required to authorize this transfer');
         setSending(false);
         return;
       }
+      const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders };
 
       const response = await fetch(apiUrl, {
         method: 'POST',
