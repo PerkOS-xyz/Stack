@@ -1,8 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 // Note: Wallet service imports are done dynamically in POST handler to avoid
 // loading SDK modules for GET requests that don't need them
+
+/**
+ * Verifies that the request is signed (EIP-191) by `ownerAddress` — i.e. the
+ * caller controls the wallet that owns the resource. Returns an error response
+ * to return directly, or null when authorized. Used by the mutating handlers
+ * (POST/PATCH/DELETE); GET stays public (it only returns sanitized, owner-scoped
+ * data and powers public donation wallets).
+ */
+async function authorizeOwner(
+  req: NextRequest,
+  ownerAddress: string
+): Promise<NextResponse | null> {
+  const auth = await verifyWalletSignature(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: 401 });
+  }
+  if (!ownerAddress || auth.address !== ownerAddress.toLowerCase()) {
+    return NextResponse.json(
+      { error: "Forbidden: signature does not match the wallet owner" },
+      { status: 403 }
+    );
+  }
+  return null;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +105,10 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Authorization: only the wallet owner can create sponsor wallets under their address
+    const authError = await authorizeOwner(req, userWalletAddress);
+    if (authError) return authError;
 
     // Auto-convert legacy EVM chain names to "evm"
     const evmNetworks = ["avalanche", "avalanche-fuji", "base", "base-sepolia", "celo", "celo-alfajores"];
@@ -205,6 +234,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // Authorization: only the wallet owner can delete their wallet
+    const authError = await authorizeOwner(req, userWalletAddress);
+    if (authError) return authError;
+
     // First, verify the wallet exists and belongs to the user
     const { data: existingWallet, error: fetchError } = await firebaseAdmin
       .from("perkos_sponsor_wallets")
@@ -276,6 +309,10 @@ export async function PATCH(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Authorization: only the wallet owner can update their wallet metadata
+    const authError = await authorizeOwner(req, userWalletAddress);
+    if (authError) return authError;
 
     // Build update object with only provided fields
     const updateData: Record<string, unknown> = {};

@@ -1,6 +1,8 @@
 'use client';
 
-import { useWalletContext, useWalletModal } from "@/lib/wallet/client";
+import { useWalletContext, useWalletModal, useWalletClient } from "@/lib/wallet/client";
+import { base } from "@/lib/utils/chains";
+import { buildSponsorWalletAuthHeaders } from "@/lib/wallet/ownershipProof";
 import { useState, useEffect } from 'react';
 
 export const dynamic = "force-dynamic";
@@ -106,6 +108,9 @@ interface AnalyticsSummary {
 export default function DashboardPage() {
   const { address, isConnected } = useWalletContext();
   const { openModal } = useWalletModal();
+  // EVM wallet client used to sign the EIP-191 ownership proof for sponsor-wallet
+  // mutations (create/update/delete). Chain is arbitrary — the proof is off-chain.
+  const { walletClient, account: walletAccount } = useWalletClient({ chain: base });
 
   const [wallets, setWallets] = useState<SponsorWallet[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -214,9 +219,17 @@ export default function DashboardPage() {
 
     setCreatingWallet(true);
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        setCreatingWallet(false);
+        return;
+      }
       const response = await fetch('/api/sponsor/wallets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           userWalletAddress: address,
           network,
@@ -247,9 +260,16 @@ export default function DashboardPage() {
     if (!address) return;
 
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        return;
+      }
       const response = await fetch('/api/sponsor/wallets', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           walletId,
           userWalletAddress: address,
@@ -276,9 +296,17 @@ export default function DashboardPage() {
 
     setDeletingWallet(true);
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        setDeletingWallet(false);
+        return;
+      }
       const response = await fetch('/api/sponsor/wallets', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           walletId,
           userWalletAddress: address,
