@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCouponService } from "@/lib/services/CouponService";
+import { couponValidateSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -17,36 +18,13 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, address, tier, amount } = body;
 
-    // Validate required fields
-    if (!code) {
-      return NextResponse.json(
-        { error: "Coupon code is required" },
-        { status: 400 }
-      );
+    // Validate input shape/types before any lookup
+    const validation = validateBody(couponValidateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-
-    if (!address) {
-      return NextResponse.json(
-        { error: "Wallet address is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!tier) {
-      return NextResponse.json(
-        { error: "Subscription tier is required" },
-        { status: 400 }
-      );
-    }
-
-    if (amount === undefined || amount === null || amount < 0) {
-      return NextResponse.json(
-        { error: "Valid amount is required" },
-        { status: 400 }
-      );
-    }
+    const { code, address, tier, amount } = validation.data;
 
     const couponService = getCouponService();
     const result = await couponService.validateCoupon(code, address, tier, amount);
