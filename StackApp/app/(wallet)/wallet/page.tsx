@@ -274,39 +274,39 @@ export default function WalletPage() {
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
-      // EVM send requires an EIP-191 ownership proof so the server can confirm
-      // the caller owns this sponsor wallet before moving funds.
-      if (!walletIsSolana) {
-        if (!address) {
-          toast.error('Connect your wallet to authorize this transfer');
-          setSending(false);
-          return;
+      // Both EVM and Solana sends require an EIP-191 ownership proof: every
+      // sponsor wallet — including Solana ones — is owned by the connected EVM
+      // wallet (user_wallet_address), regardless of the sponsor wallet's chain.
+      // The server confirms the caller owns the wallet before moving funds.
+      if (!address) {
+        toast.error('Connect your wallet to authorize this transfer');
+        setSending(false);
+        return;
+      }
+      try {
+        const timestamp = Date.now().toString();
+        const message = `PerkOS Sponsor Wallet Access ${timestamp}`;
+        let signature: string;
+        if (walletAccount?.signMessage) {
+          // Para SDK provides an account object with signMessage
+          signature = await walletAccount.signMessage({ message });
+        } else if (walletClient) {
+          // Dynamic or external wallets sign via the viem wallet client
+          signature = await walletClient.signMessage({
+            account: address as `0x${string}`,
+            message,
+          });
+        } else {
+          throw new Error('No signing method available');
         }
-        try {
-          const timestamp = Date.now().toString();
-          const message = `PerkOS Sponsor Wallet Access ${timestamp}`;
-          let signature: string;
-          if (walletAccount?.signMessage) {
-            // Para SDK provides an account object with signMessage
-            signature = await walletAccount.signMessage({ message });
-          } else if (walletClient) {
-            // Dynamic or external wallets sign via the viem wallet client
-            signature = await walletClient.signMessage({
-              account: address as `0x${string}`,
-              message,
-            });
-          } else {
-            throw new Error('No signing method available');
-          }
-          headers['X-Wallet-Address'] = address;
-          headers['X-Wallet-Timestamp'] = timestamp;
-          headers['X-Wallet-Signature'] = signature;
-        } catch (signError) {
-          console.error('Failed to sign transfer authorization:', signError);
-          toast.error('Signature required to authorize this transfer');
-          setSending(false);
-          return;
-        }
+        headers['X-Wallet-Address'] = address;
+        headers['X-Wallet-Timestamp'] = timestamp;
+        headers['X-Wallet-Signature'] = signature;
+      } catch (signError) {
+        console.error('Failed to sign transfer authorization:', signError);
+        toast.error('Signature required to authorize this transfer');
+        setSending(false);
+        return;
       }
 
       const response = await fetch(apiUrl, {

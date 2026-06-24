@@ -3,6 +3,7 @@ import { firebaseAdmin } from "@/lib/db/firebase";
 import { Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction } from "@solana/web3.js";
 import { logApiPerformance } from "@/lib/utils/withApiPerformance";
 import { solanaSendSchema, validateBody } from "@/lib/validation/schemas";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 // Note: Wallet service import is done dynamically below to support provider switching
 
 interface SponsorWallet {
@@ -49,6 +50,19 @@ export async function POST(req: NextRequest) {
     const { walletId, toAddress, amount, network } = validation.data;
     console.log("[Solana Send] Request received:", { walletId, toAddress, amount, network });
 
+    // Authentication: the caller must prove control of the owning wallet via
+    // EIP-191 signature before we touch the DB. Sponsor wallets — including
+    // Solana ones — are owned by the connected EVM wallet (user_wallet_address),
+    // so the proof is EIP-191, the same as the EVM send route. This also rejects
+    // anonymous requests and prevents wallet enumeration via the 404 below.
+    const auth = await verifyWalletSignature(req);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { error: auth.error || "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     // Validate Solana network RPC
     const rpcUrl = SOLANA_RPC_URLS[network];
     if (!rpcUrl) {
@@ -94,6 +108,22 @@ export async function POST(req: NextRequest) {
       has_para_wallet_id: !!wallet.para_wallet_id,
       has_para_user_share: !!wallet.para_user_share
     });
+
+    // Authorization: the authenticated signer must own this sponsor wallet.
+    // Without this check, anyone who knows a walletId could drain its funds.
+    if (
+      !wallet.user_wallet_address ||
+      auth.address !== wallet.user_wallet_address.toLowerCase()
+    ) {
+      console.warn("[Solana Send] Sponsor wallet ownership mismatch:", {
+        walletId,
+        signer: auth.address,
+      });
+      return NextResponse.json(
+        { error: "Forbidden: you do not own this sponsor wallet" },
+        { status: 403 }
+      );
+    }
 
     // Validate wallet address is a Solana address
     if (!isValidSolanaAddress(wallet.sponsor_address)) {
