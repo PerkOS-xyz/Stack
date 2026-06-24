@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { X402SettleRequest } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
+import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,14 @@ export const dynamic = 'force-dynamic';
  * The x402 library expects endpoints at /verify and /settle on the facilitator URL
  */
 export async function POST(request: NextRequest) {
+  // Public facilitator endpoint — throttle per-IP to prevent settlement abuse / DoS.
+  if (!rateLimit(getClientIp(request), 100, 60000).allowed) {
+    return NextResponse.json(
+      { success: false, error: "Too many requests", payer: null, transaction: null, network: null },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   const timestamp = new Date().toISOString();
   const requestId = Math.random().toString(36).substring(7);
 
