@@ -110,14 +110,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate expected price (with coupon discount if applicable)
+    // Calculate expected price (with coupon discount if applicable).
+    // SECURITY: never trust the client-supplied `coupon` pricing. Re-validate
+    // the coupon server-side and recompute the discount from the authoritative
+    // coupon record — otherwise a caller could send `coupon.final_amount: 0.01`
+    // and pay a token amount for any paid tier.
     let expectedPrice = originalPrice;
     let discountAmount = 0;
+    let appliedCoupon: { id?: string; code?: string } | null = null;
 
-    if (coupon) {
-      // Verify the coupon data matches what was sent
-      expectedPrice = coupon.final_amount;
-      discountAmount = coupon.discount_amount;
+    const couponCode: string | undefined = coupon?.code;
+    if (couponCode) {
+      const couponResult = await couponService.validateCoupon(
+        couponCode,
+        userWalletAddress,
+        tier,
+        originalPrice
+      );
+      if (couponResult.valid) {
+        expectedPrice = couponResult.final_amount;
+        discountAmount = couponResult.discount_amount;
+        appliedCoupon = {
+          id: couponResult.coupon?.id,
+          code: couponResult.coupon?.code,
+        };
+      } else {
+        // Invalid/expired/ineligible coupon → charge full price. The client's
+        // authorization (signed for the discounted amount) will then fail the
+        // amount check below, surfacing a clear error.
+        console.warn(
+          `Coupon "${couponCode}" rejected for ${userWalletAddress}: ${couponResult.error}`
+        );
+      }
     }
 
     // Verify the payment recipient is our payment receiver
@@ -275,8 +299,8 @@ export async function POST(req: NextRequest) {
         original_amount: originalPrice,
         discount_amount: discountAmount,
         final_amount: expectedPrice,
-        coupon_code: coupon?.code || null,
-        coupon_id: coupon?.id || null,
+        coupon_code: appliedCoupon?.code || null,
+        coupon_id: appliedCoupon?.id || null,
         network,
         transaction_hash: settleResult.transaction || null,
         payment_status: "completed",
@@ -284,11 +308,11 @@ export async function POST(req: NextRequest) {
 
       console.log(`📄 Invoice created for ${userWalletAddress}:`, invoice.id);
 
-      // If coupon was used, redeem it
-      if (coupon?.id) {
+      // If a server-validated coupon was applied, redeem it
+      if (appliedCoupon?.id) {
         try {
           await couponService.redeemCoupon(
-            coupon.id,
+            appliedCoupon.id,
             userWalletAddress,
             tier,
             billingCycle,
@@ -296,7 +320,7 @@ export async function POST(req: NextRequest) {
             discountAmount,
             expectedPrice
           );
-          console.log(`🎟️ Coupon ${coupon.code} redeemed for ${userWalletAddress}`);
+          console.log(`🎟️ Coupon ${appliedCoupon.code} redeemed for ${userWalletAddress}`);
         } catch (redeemError) {
           // Log but don't fail the payment - coupon redemption is secondary
           console.error("Failed to redeem coupon:", redeemError);
@@ -321,7 +345,7 @@ export async function POST(req: NextRequest) {
         network,
         transactionHash: settleResult.transaction,
         payer: verifyResult.payer,
-        couponApplied: coupon?.code || null,
+        couponApplied: appliedCoupon?.code || null,
         discountAmount: discountAmount,
       },
     });
