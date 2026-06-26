@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiKey } from "@/lib/middleware/apiKeyAuth";
+import { agentWalletCreateSchema, validateBody } from "@/lib/validation/schemas";
 import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,10 @@ export async function POST(req: NextRequest) {
     if (auth.response) return auth.response;
 
     const body = await req.json();
+    const validation = validateBody(agentWalletCreateSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     let { network = "evm", name } = body;
 
     // Validate network

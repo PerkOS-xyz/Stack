@@ -321,6 +321,58 @@ export const vendorRegisterSchema = z
   })
   .passthrough();
 
+// --- v2/agents ---
+// POST /api/v2/agents/onboard (builds an unsigned onboarding tx)
+export const agentOnboardSchema = z
+  .object({
+    network: z.string().optional(),
+    tokenURI: z.string().optional(),
+    metadata: z.unknown().optional(),
+    agentId: z.union([z.string(), z.number()]).optional(),
+    paymentReceiver: z.string().optional(),
+  })
+  .passthrough();
+
+// POST /api/v2/agents/wallets
+export const agentWalletCreateSchema = z
+  .object({
+    network: z.string().optional(),
+    name: z.string().optional(),
+  })
+  .passthrough();
+
+// POST /api/v2/agents/services
+export const agentServiceSchema = z
+  .object({
+    url: z.string().min(1, "url is required"),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    priceUsd: z.union([z.string(), z.number()]).optional(),
+    endpoints: z.array(z.unknown()).optional(),
+    network: z.string().optional(),
+  })
+  .passthrough();
+
+// --- v2/stellar ---
+export const stellarWalletSchema = z
+  .object({ userId: z.string().min(1, "userId is required") })
+  .passthrough();
+
+export const stellarSwapSchema = z
+  .object({
+    userId: z.string().min(1, "userId is required"),
+    xlmAmount: z.union([z.string(), z.number()]),
+  })
+  .passthrough();
+
+export const stellarX402Schema = z
+  .object({
+    userId: z.string().min(1, "userId is required"),
+    targetUrl: z.string().min(1, "targetUrl is required"),
+    method: z.string().optional(),
+  })
+  .passthrough();
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.

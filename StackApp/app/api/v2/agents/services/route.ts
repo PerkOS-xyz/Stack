@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiKey } from "@/lib/middleware/apiKeyAuth";
 import { vendorDiscoveryService } from "@/lib/services/VendorDiscoveryService";
+import { agentServiceSchema, validateBody } from "@/lib/validation/schemas";
 import { getAgentServices } from "@/lib/services/AgentService";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,10 @@ export async function POST(req: NextRequest) {
     if (auth.response) return auth.response;
 
     const body = await req.json();
+    const validation = validateBody(agentServiceSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const { url, name, description, priceUsd, endpoints, network = "base" } = body;
 
     if (!url) {
