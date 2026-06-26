@@ -56,13 +56,14 @@ export async function GET(request: NextRequest) {
     health.checks.database = {
       status: error ? "unhealthy" : "healthy",
       latency: Date.now() - dbStart,
-      error: error?.message,
+      // Do not leak raw DB error details to unauthenticated callers
+      error: error ? "database error" : undefined,
     };
-  } catch (err) {
+  } catch {
     health.checks.database = {
       status: "unhealthy",
       latency: 0,
-      error: err instanceof Error ? err.message : "Database check failed",
+      error: "database check failed",
     };
     health.status = "degraded";
   }
@@ -105,15 +106,15 @@ export async function GET(request: NextRequest) {
         status: "healthy",
         latency,
         blockNumber: Number(blockNumber),
-        rpc: chain.rpcUrls.default.http[0],
+        // RPC URL intentionally omitted — it can embed provider API keys
       });
       health.capabilities.networksHealthy++;
-    } catch (err) {
+    } catch {
       health.checks.networks.push({
         network,
         chainId,
         status: "unhealthy",
-        error: err instanceof Error ? err.message : "RPC check failed",
+        error: "RPC check failed",
       });
     }
   }
