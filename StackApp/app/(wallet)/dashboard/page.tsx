@@ -407,9 +407,17 @@ export default function DashboardPage() {
 
     setAddingRule(true);
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        setAddingRule(false);
+        return;
+      }
       const response = await fetch('/api/sponsor/rules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           walletId: selectedWallet.id,
           ruleType: 'agent_whitelist',
@@ -469,9 +477,17 @@ export default function DashboardPage() {
 
     setAddingRule(true);
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        setAddingRule(false);
+        return;
+      }
       const response = await fetch('/api/sponsor/rules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           walletId: selectedWallet.id,
           ruleType: 'domain_whitelist',
@@ -500,8 +516,16 @@ export default function DashboardPage() {
     if (!selectedWallet) return;
 
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        return;
+      }
       const response = await fetch(`/api/sponsor/rules?ruleId=${ruleId}`, {
         method: 'DELETE',
+        headers: authHeaders,
       });
 
       if (response.ok) {
@@ -520,9 +544,16 @@ export default function DashboardPage() {
     if (!selectedWallet) return;
 
     try {
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await buildSponsorWalletAuthHeaders({ address, walletClient, walletAccount });
+      } catch {
+        toast.error('Signature required to authorize this action');
+        return;
+      }
       const response = await fetch(`/api/sponsor/rules?ruleId=${ruleId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ enabled }),
       });
 

@@ -1,5 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
+import {
+  sponsorRuleCreateSchema,
+  sponsorRuleUpdateSchema,
+  validateBody,
+} from "@/lib/validation/schemas";
+
+export const runtime = "nodejs";
+
+/**
+ * Authorize that the EIP-191 signer owns the sponsor wallet `walletId`.
+ * Returns an error NextResponse to return directly, or null when authorized.
+ * Gas-sponsorship rules govern who/what a wallet sponsors, so only the wallet
+ * owner may create/modify/delete them.
+ */
+async function authorizeWalletOwner(
+  req: NextRequest,
+  walletId: string
+): Promise<NextResponse | null> {
+  const auth = await verifyWalletSignature(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: wallet, error } = await firebaseAdmin
+    .from("perkos_sponsor_wallets")
+    .select("user_wallet_address")
+    .eq("id", walletId)
+    .single();
+
+  if (error || !wallet) {
+    return NextResponse.json({ error: "Sponsor wallet not found" }, { status: 404 });
+  }
+
+  const owner = (wallet.user_wallet_address as string | undefined)?.toLowerCase();
+  if (!owner || auth.address !== owner) {
+    return NextResponse.json(
+      { error: "Forbidden: you do not own this sponsor wallet" },
+      { status: 403 }
+    );
+  }
+  return null;
+}
+
+/** Resolve the owning wallet of a rule, then authorize the caller owns it. */
+async function authorizeRuleOwner(
+  req: NextRequest,
+  ruleId: string
+): Promise<NextResponse | null> {
+  const { data: rule, error } = await firebaseAdmin
+    .from("perkos_sponsor_rules")
+    .select("sponsor_wallet_id")
+    .eq("id", ruleId)
+    .single();
+
+  if (error || !rule) {
+    return NextResponse.json({ error: "Rule not found" }, { status: 404 });
+  }
+  return authorizeWalletOwner(req, rule.sponsor_wallet_id as string);
+}
 
 // GET /api/sponsor/rules?walletId=xxx - Get all rules for a sponsor wallet
 export async function GET(req: NextRequest) {
@@ -45,7 +105,11 @@ export async function GET(req: NextRequest) {
 // POST /api/sponsor/rules - Create a new rule
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // Validate input shape/types up front
+    const validation = validateBody(sponsorRuleCreateSchema, await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const {
       walletId,
       ruleType,
@@ -59,24 +123,11 @@ export async function POST(req: NextRequest) {
       activeDays,
       priority = 0,
       description = "",
-    } = body;
+    } = validation.data;
 
-    // Validate required fields
-    if (!walletId || !ruleType) {
-      return NextResponse.json(
-        { error: "walletId and ruleType are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate rule type
-    const validRuleTypes = ["agent_whitelist", "domain_whitelist", "spending_limit", "time_restriction"];
-    if (!validRuleTypes.includes(ruleType)) {
-      return NextResponse.json(
-        { error: `Invalid rule type. Must be one of: ${validRuleTypes.join(", ")}` },
-        { status: 400 }
-      );
-    }
+    // Authorization: only the sponsor wallet owner can add rules to it
+    const authError = await authorizeWalletOwner(req, walletId);
+    if (authError) return authError;
 
     // Validate agentAddress for agent_whitelist rules
     if (ruleType === "agent_whitelist" && !agentAddress) {
@@ -149,6 +200,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // Authorization: only the owner of the rule's sponsor wallet can delete it
+    const authError = await authorizeRuleOwner(req, ruleId);
+    if (authError) return authError;
+
     const { error } = await firebaseAdmin
       .from("perkos_sponsor_rules")
       .delete()
@@ -187,8 +242,16 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const updateData: any = {};
+    // Authorization: only the owner of the rule's sponsor wallet can update it
+    const authError = await authorizeRuleOwner(req, ruleId);
+    if (authError) return authError;
+
+    const validation = validateBody(sponsorRuleUpdateSchema, await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const body = validation.data;
+    const updateData: Record<string, unknown> = {};
 
     // Only include fields that are provided
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
