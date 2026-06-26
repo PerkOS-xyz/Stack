@@ -215,6 +215,39 @@ export const couponUpdateSchema = z.object({
   expires_at: couponFields.expires_at.optional(),
 });
 
+// Sponsor gas-sponsorship rule fields (POST /api/sponsor/rules)
+export const sponsorRuleCreateSchema = z.object({
+  walletId: z.string().min(1, "walletId is required"),
+  ruleType: z.enum([
+    "agent_whitelist",
+    "domain_whitelist",
+    "spending_limit",
+    "time_restriction",
+  ]),
+  agentAddress: z.string().optional(),
+  domain: z.string().optional(),
+  dailyLimitWei: z.union([z.string(), z.number()]).optional(),
+  monthlyLimitWei: z.union([z.string(), z.number()]).optional(),
+  perTransactionLimitWei: z.union([z.string(), z.number()]).optional(),
+  activeHoursStart: z.coerce.number().int().min(0).max(23).optional(),
+  activeHoursEnd: z.coerce.number().int().min(0).max(23).optional(),
+  activeDays: z.array(z.string()).optional(),
+  priority: z.coerce.number().int().optional(),
+  description: z.string().optional(),
+});
+
+// Sponsor rule partial update (PATCH /api/sponsor/rules?ruleId=)
+export const sponsorRuleUpdateSchema = z.object({
+  enabled: z.boolean().optional(),
+  priority: z.coerce.number().int().optional(),
+  description: z.string().optional(),
+  agentAddress: z.string().optional(),
+  domain: z.string().optional(),
+  dailyLimitWei: z.union([z.string(), z.number()]).optional(),
+  monthlyLimitWei: z.union([z.string(), z.number()]).optional(),
+  perTransactionLimitWei: z.union([z.string(), z.number()]).optional(),
+});
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.
