@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCouponService } from "@/lib/services/CouponService";
 import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
+import { couponUpdateSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,13 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await req.json();
-    const updateData = body;
+
+    // Validate + allowlist fields (zod strips unknown keys -> no mass-assignment)
+    const validation = validateBody(couponUpdateSchema, await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const updateData = validation.data;
 
     const couponService = getCouponService();
 
@@ -86,14 +92,6 @@ export async function PUT(
           { status: 409 }
         );
       }
-    }
-
-    // Validate discount type if provided
-    if (updateData.discount_type && !["percentage", "fixed"].includes(updateData.discount_type)) {
-      return NextResponse.json(
-        { error: "Invalid discount_type. Must be 'percentage' or 'fixed'" },
-        { status: 400 }
-      );
     }
 
     const coupon = await couponService.updateCoupon(id, updateData);
