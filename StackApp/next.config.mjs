@@ -40,6 +40,32 @@ const nextConfig = {
       },
     ];
   },
+  // Baseline security headers on every response (L1). CSP is intentionally
+  // omitted — a strict policy breaks the wallet SDKs (Para/Dynamic/wagmi) and
+  // RPC calls, and needs careful per-origin allowlisting + runtime testing.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          // camera=(self): the wallet page's QR scanner needs it; everything
+          // else powerful is disabled.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(), geolocation=(), browsing-topics=()',
+          },
+        ],
+      },
+    ];
+  },
   // Enforce strict type checking and linting during builds
   typescript: {
     ignoreBuildErrors: false,
