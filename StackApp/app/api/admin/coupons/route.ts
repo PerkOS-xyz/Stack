@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCouponService } from "@/lib/services/CouponService";
 import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
+import { couponCreateSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -60,27 +61,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const body = await req.json();
-    const couponData = body;
-
-    // Validate required fields
-    const requiredFields = ["code", "discount_type", "discount_value", "starts_at", "expires_at"];
-    for (const field of requiredFields) {
-      if (!couponData[field]) {
-        return NextResponse.json(
-          { error: `Missing required field: ${field}` },
-          { status: 400 }
-        );
-      }
+    // Validate + allowlist fields (zod strips unknown keys -> no mass-assignment)
+    const validation = validateBody(couponCreateSchema, await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-
-    // Validate discount type
-    if (!["percentage", "fixed"].includes(couponData.discount_type)) {
-      return NextResponse.json(
-        { error: "Invalid discount_type. Must be 'percentage' or 'fixed'" },
-        { status: 400 }
-      );
-    }
+    const couponData = validation.data;
 
     const couponService = getCouponService();
 
@@ -95,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     const coupon = await couponService.createCoupon({
       ...couponData,
-      created_by: auth.address,
+      created_by: auth.address!, // guaranteed by auth.authorized above
     });
 
     return NextResponse.json({ coupon }, { status: 201 });

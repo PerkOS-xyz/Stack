@@ -185,6 +185,36 @@ export const deferredVoucherSchema = z
   })
   .passthrough();
 
+// Admin coupon fields shared by create/update. zod strips unknown keys by
+// default, so using these schemas (instead of spreading the raw body) prevents
+// mass-assignment of arbitrary fields into the coupon record.
+const couponFields = {
+  code: z.string().min(1, "code is required"),
+  discount_type: z.enum(["percentage", "fixed"]),
+  discount_value: z.coerce.number().nonnegative("discount_value must be >= 0"),
+  starts_at: z.string().min(1, "starts_at is required"),
+  expires_at: z.string().min(1, "expires_at is required"),
+  description: z.string().optional(),
+  assigned_wallet: z.string().nullable().optional(),
+  max_redemptions: z.coerce.number().optional(),
+  applicable_tiers: z.array(z.string()).nullable().optional(),
+  min_amount: z.coerce.number().optional(),
+  enabled: z.boolean().optional(),
+};
+
+// POST /api/admin/coupons
+export const couponCreateSchema = z.object(couponFields);
+
+// PUT /api/admin/coupons/[id] — every field optional (partial update)
+export const couponUpdateSchema = z.object({
+  ...couponFields,
+  code: couponFields.code.optional(),
+  discount_type: couponFields.discount_type.optional(),
+  discount_value: couponFields.discount_value.optional(),
+  starts_at: couponFields.starts_at.optional(),
+  expires_at: couponFields.expires_at.optional(),
+});
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.
