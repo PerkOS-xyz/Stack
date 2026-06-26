@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import type { X402SettleRequest } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   const timestamp = new Date().toISOString();
-  const requestId = Math.random().toString(36).substring(7);
+  const requestId = randomUUID();
 
   console.log('\n' + '💰'.repeat(35));
   console.log(`🟢 [STACK] [${timestamp}] X402 SETTLE REQUEST ${requestId} (root /settle)`);
