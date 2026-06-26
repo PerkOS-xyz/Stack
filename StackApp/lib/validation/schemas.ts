@@ -215,6 +215,34 @@ export const couponUpdateSchema = z.object({
   expires_at: couponFields.expires_at.optional(),
 });
 
+// User profile upsert (POST /api/profile). Validates types/enum so malformed
+// input is rejected with a clean 400 instead of a 500 from `.trim()` on a
+// non-string. The route maps fields explicitly (no mass-assignment) and keeps
+// its own website-URL + handle sanitization.
+const profileHandle = z.string().max(120).nullable().optional();
+export const profileUpsertSchema = z.object({
+  walletAddress: z.string().min(1, "walletAddress is required"),
+  accountType: z
+    .enum(["personal", "community", "organization", "vendor"])
+    .optional(),
+  displayName: z.string().max(200).nullable().optional(),
+  description: z.string().max(4000).nullable().optional(),
+  website: z.string().max(500).nullable().optional(),
+  avatarUrl: z.string().max(2000).nullable().optional(),
+  twitterHandle: profileHandle,
+  githubHandle: profileHandle,
+  discordHandle: profileHandle,
+  farcasterHandle: profileHandle,
+  telegramHandle: profileHandle,
+  instagramHandle: profileHandle,
+  tiktokHandle: profileHandle,
+  twitchHandle: profileHandle,
+  kickHandle: profileHandle,
+  companyName: z.string().max(200).nullable().optional(),
+  companyRegistrationNumber: z.string().max(120).nullable().optional(),
+  isPublic: z.boolean().optional(),
+});
+
 // Sponsor gas-sponsorship rule fields (POST /api/sponsor/rules)
 export const sponsorRuleCreateSchema = z.object({
   walletId: z.string().min(1, "walletId is required"),

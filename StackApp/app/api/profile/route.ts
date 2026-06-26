@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { profileUpsertSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,10 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const validation = validateBody(profileUpsertSchema, await req.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const {
       walletAddress,
       accountType = "personal",
@@ -108,25 +112,7 @@ export async function POST(req: NextRequest) {
       companyName,
       companyRegistrationNumber,
       isPublic = false,
-    } = body;
-
-    // Validate required fields
-    if (!walletAddress) {
-      return NextResponse.json(
-        { error: "walletAddress is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate account type
-    if (!VALID_ACCOUNT_TYPES.includes(accountType)) {
-      return NextResponse.json(
-        {
-          error: `Invalid accountType. Must be one of: ${VALID_ACCOUNT_TYPES.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Validate website URL if provided
     if (website && !isValidUrl(website)) {
