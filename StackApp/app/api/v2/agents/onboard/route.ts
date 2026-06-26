@@ -9,6 +9,7 @@ import {
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
+import { agentOnboardSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,10 @@ export async function OPTIONS() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const validation = validateBody(agentOnboardSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400, headers: corsHeaders });
+    }
     const { network, tokenURI, metadata, agentId, paymentReceiver } = body;
 
     if (!network) {

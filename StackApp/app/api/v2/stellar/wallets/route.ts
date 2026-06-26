@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { StellarWalletService } from "@/lib/services/StellarWalletService";
 import { StellarSwapService } from "@/lib/services/StellarSwapService";
 import { logger } from "@/lib/utils/logger";
+import { stellarWalletSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,10 @@ const swapService = new StellarSwapService();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const validation = validateBody(stellarWalletSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const { userId } = body;
 
     if (!userId || typeof userId !== "string") {

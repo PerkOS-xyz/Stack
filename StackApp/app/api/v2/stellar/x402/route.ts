@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StellarX402PaymentService } from "@/lib/services/StellarX402PaymentService";
 import { logger } from "@/lib/utils/logger";
+import { stellarX402Schema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,10 @@ const paymentService = new StellarX402PaymentService();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const validation = validateBody(stellarX402Schema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const { userId, targetUrl, method } = body;
 
     if (!userId || !targetUrl) {
