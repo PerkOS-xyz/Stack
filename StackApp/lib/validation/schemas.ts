@@ -276,6 +276,51 @@ export const sponsorRuleUpdateSchema = z.object({
   perTransactionLimitWei: z.union([z.string(), z.number()]).optional(),
 });
 
+// Vendor domain claim (POST /api/vendor-domains)
+export const vendorDomainClaimSchema = z.object({
+  userWalletAddress: z.string().min(1, "userWalletAddress is required"),
+  domain_url: z.string().min(1, "domain_url is required"),
+  sponsor_wallet_id: z.string().min(1, "sponsor_wallet_id is required"),
+  verification_method: z.enum(["dns_txt", "meta_tag", "file_upload"]),
+});
+
+// Vendor registration (POST /api/vendors/register) — discovery + direct modes.
+// Validates the shape (incl. the direct-mode `endpoints[]`) so malformed
+// payloads are rejected before the service runs; the route still picks fields
+// explicitly and the service does its own deeper checks.
+export const vendorRegisterSchema = z
+  .object({
+    url: z.string().min(1, "URL is required"),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    category: z
+      .enum(["api", "nft", "defi", "gaming", "dao", "ai", "data", "other"])
+      .optional(),
+    tags: z.array(z.string()).optional(),
+    iconUrl: z.string().optional(),
+    websiteUrl: z.string().optional(),
+    docsUrl: z.string().optional(),
+    walletAddress: z.string().optional(),
+    network: z.string().optional(),
+    priceUsd: z.union([z.string(), z.number()]).optional(),
+    facilitatorUrl: z.string().optional(),
+    endpoints: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1),
+            method: z.enum(["GET", "POST", "PUT", "DELETE"]),
+            description: z.string().optional(),
+            priceUsd: z.union([z.string(), z.number()]),
+            inputSchema: z.object({}).passthrough().optional(),
+            outputSchema: z.object({}).passthrough().optional(),
+          })
+          .passthrough()
+      )
+      .optional(),
+  })
+  .passthrough();
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vendorDiscoveryService } from "@/lib/services/VendorDiscoveryService";
+import { vendorRegisterSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -24,28 +25,10 @@ interface EndpointDefinition {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("[Vendor Registration] Received body:", JSON.stringify(body, null, 2));
-
-    // Validate required field
-    if (!body.url || typeof body.url !== "string") {
-      console.error("[Vendor Registration] Missing URL in request body");
+    const validation = validateBody(vendorRegisterSchema, body);
+    if (!validation.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "URL is required",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate category if provided
-    const validCategories = ["api", "nft", "defi", "gaming", "dao", "ai", "data", "other"];
-    if (body.category && !validCategories.includes(body.category)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Invalid category. Must be one of: ${validCategories.join(", ")}`,
-        },
+        { success: false, error: validation.error },
         { status: 400 }
       );
     }

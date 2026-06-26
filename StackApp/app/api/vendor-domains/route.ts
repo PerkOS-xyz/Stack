@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getVendorOwnershipService } from "@/lib/services/VendorOwnershipService";
 import type { ClaimDomainRequest } from "@/lib/types/vendor-analytics";
+import { vendorDomainClaimSchema, validateBody } from "@/lib/validation/schemas";
 
 // GET - List user's claimed domains
 export async function GET(request: NextRequest) {
@@ -53,37 +54,11 @@ export async function GET(request: NextRequest) {
 // POST - Claim a new domain
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userWalletAddress, domain_url, sponsor_wallet_id, verification_method } = body;
-
-    // Validate required fields
-    if (!userWalletAddress) {
-      return NextResponse.json(
-        { error: "Missing userWalletAddress" },
-        { status: 400 }
-      );
+    const validation = validateBody(vendorDomainClaimSchema, await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-
-    if (!domain_url) {
-      return NextResponse.json(
-        { error: "Missing domain_url" },
-        { status: 400 }
-      );
-    }
-
-    if (!sponsor_wallet_id) {
-      return NextResponse.json(
-        { error: "Missing sponsor_wallet_id" },
-        { status: 400 }
-      );
-    }
-
-    if (!verification_method || !["dns_txt", "meta_tag", "file_upload"].includes(verification_method)) {
-      return NextResponse.json(
-        { error: "Invalid verification_method. Must be dns_txt, meta_tag, or file_upload" },
-        { status: 400 }
-      );
-    }
+    const { userWalletAddress, domain_url, sponsor_wallet_id, verification_method } = validation.data;
 
     const claimRequest: ClaimDomainRequest = {
       domain_url,
