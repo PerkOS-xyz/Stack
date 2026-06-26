@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Address } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
+import { deferredSettleBatchSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { buyer, seller, network: requestNetwork } = await request.json() as {
-      buyer: Address;
-      seller: Address;
-      network?: SupportedNetwork;
-    };
+    const validation = validateBody(deferredSettleBatchSchema, await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const buyer = validation.data.buyer as Address;
+    const seller = validation.data.seller as Address;
 
-    const network = requestNetwork || config.defaultNetwork;
+    const network = (validation.data.network as SupportedNetwork) || config.defaultNetwork;
     const x402Service = new X402Service();
     const deferredScheme = x402Service.getDeferredScheme(network);
 

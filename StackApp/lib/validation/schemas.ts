@@ -159,6 +159,32 @@ export const subscriptionPayX402Schema = z.object({
   coupon: z.object({}).passthrough().nullable().optional(),
 });
 
+// Deferred batch settlement request (POST /api/deferred/settle-batch)
+export const deferredSettleBatchSchema = z.object({
+  buyer: z.string().min(1, "buyer is required"),
+  seller: z.string().min(1, "seller is required"),
+  network: z.string().optional(),
+});
+
+// Deferred voucher storage (POST /api/deferred/vouchers)
+// Lenient — the deferred scheme verifies the voucher signature cryptographically;
+// this only enforces the request shape so malformed payloads are rejected early.
+export const deferredVoucherSchema = z
+  .object({
+    voucher: z
+      .object({
+        id: z.string().min(1, "voucher.id is required"),
+        buyer: z.string().min(1, "voucher.buyer is required"),
+        seller: z.string().min(1, "voucher.seller is required"),
+        asset: z.string().min(1, "voucher.asset is required"),
+        nonce: z.union([z.string(), z.number()]),
+        valueAggregate: z.union([z.string(), z.number()]),
+      })
+      .passthrough(),
+    signature: z.string().min(1, "signature is required"),
+  })
+  .passthrough();
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.

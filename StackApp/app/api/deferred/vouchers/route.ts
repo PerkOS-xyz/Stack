@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { DeferredPayload, Address } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
+import { deferredVoucherSchema, validateBody } from "@/lib/validation/schemas";
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,12 @@ export async function POST(request: NextRequest) {
     const x402Service = new X402Service();
     const { searchParams } = new URL(request.url);
     const network = (searchParams.get("network") || config.defaultNetwork) as SupportedNetwork;
-    const body = await request.json() as DeferredPayload;
+
+    const validation = validateBody(deferredVoucherSchema, await request.json());
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const body = validation.data as unknown as DeferredPayload;
 
     const deferredScheme = x402Service.getDeferredScheme(network);
 
