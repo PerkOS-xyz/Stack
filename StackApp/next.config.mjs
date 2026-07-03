@@ -38,6 +38,10 @@ const nextConfig = {
         source: '/.well-known/x402-payment.json',
         destination: '/api/.well-known/x402-payment.json',
       },
+      {
+        source: '/.well-known/x401.json',
+        destination: '/api/.well-known/x401.json',
+      },
     ];
   },
   // Baseline security headers on every response (L1). CSP is intentionally
