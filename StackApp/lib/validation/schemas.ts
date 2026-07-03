@@ -373,6 +373,27 @@ export const stellarX402Schema = z
   })
   .passthrough();
 
+// ERC-8183 (Agentic Commerce) job action (POST /api/v2/acp/jobs). Builds an
+// UNSIGNED tx for the given action; the on-chain contract enforces the roles.
+export const acpJobActionSchema = z
+  .object({
+    network: z.string().min(1, "network is required"),
+    action: z.enum(["create", "setBudget", "fund", "submit", "complete", "reject", "claimRefund"]),
+    // create
+    provider: z.string().optional(),
+    evaluator: z.string().optional(),
+    expiredAt: z.union([z.string(), z.number()]).optional(),
+    description: z.string().optional(),
+    hook: z.string().optional(),
+    // by-jobId actions
+    jobId: z.union([z.string(), z.number()]).optional(),
+    amount: z.union([z.string(), z.number()]).optional(),
+    expectedBudget: z.union([z.string(), z.number()]).optional(),
+    deliverable: z.string().optional(),
+    reason: z.string().optional(),
+  })
+  .passthrough();
+
 /**
  * Helper to validate request body against a schema.
  * Returns parsed data or a NextResponse with 400 status.
