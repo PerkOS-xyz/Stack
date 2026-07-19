@@ -5,6 +5,7 @@ import { createPublicClient, http, parseUnits, formatUnits, type Address } from 
 import { getChainByNetwork, getUSDCAddress, getChainIdFromNetwork, type SupportedNetwork } from "@/lib/utils/chains";
 import { config } from "@/lib/utils/config";
 import { subscriptionPaySchema, validateBody } from "@/lib/validation/schemas";
+import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get USDC address for this network
+    // Get the configured payment-token address for this network.
     const chainId = getChainIdFromNetwork(network as SupportedNetwork);
     if (!chainId) {
       return NextResponse.json(
@@ -138,17 +139,18 @@ export async function POST(req: NextRequest) {
       );
     }
     const usdcAddress = getUSDCAddress(chainId);
+    const paymentTokenSymbol = getPaymentTokenSymbol(chainId);
     if (!usdcAddress) {
       return NextResponse.json(
-        { error: `USDC not configured for network: ${network}` },
+        { error: `Payment token not configured for network: ${network}` },
         { status: 400 }
       );
     }
 
-    // Verify transaction is to USDC contract (ERC20 transfer)
+    // Verify the transaction targets the configured ERC-20 contract.
     if (transaction.to?.toLowerCase() !== usdcAddress.toLowerCase()) {
       return NextResponse.json(
-        { error: "Invalid transaction: not a USDC transfer" },
+        { error: `Invalid transaction: not a ${paymentTokenSymbol} transfer` },
         { status: 400 }
       );
     }
@@ -176,7 +178,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract and verify amount (USDC has 6 decimals)
+    // Extract and verify amount (supported stablecoins have 6 decimals).
     const transferredAmount = BigInt(transferLog.data);
     const expectedAmount = parseUnits(expectedPrice.toString(), 6);
 
@@ -185,7 +187,7 @@ export async function POST(req: NextRequest) {
     if (transferredAmount < minAmount) {
       return NextResponse.json(
         {
-          error: `Insufficient payment. Expected ${formatUnits(expectedAmount, 6)} USDC, received ${formatUnits(transferredAmount, 6)} USDC`
+          error: `Insufficient payment. Expected ${formatUnits(expectedAmount, 6)} ${paymentTokenSymbol}, received ${formatUnits(transferredAmount, 6)} ${paymentTokenSymbol}`
         },
         { status: 400 }
       );
@@ -214,7 +216,7 @@ export async function POST(req: NextRequest) {
     console.log(`   Tier: ${tier}`);
     console.log(`   Billing: ${billingCycle}`);
     console.log(`   Network: ${network}`);
-    console.log(`   Amount: ${formatUnits(transferredAmount, 6)} USDC`);
+    console.log(`   Amount: ${formatUnits(transferredAmount, 6)} ${paymentTokenSymbol}`);
     console.log(`   TX: ${transactionHash}`);
     console.log(`   Expires: ${expiresAt.toISOString()}`);
 
@@ -229,14 +231,27 @@ export async function POST(req: NextRequest) {
       },
       payment: {
         amount: formatUnits(transferredAmount, 6),
+        asset: paymentTokenSymbol,
         network,
         transactionHash,
       },
     });
   } catch (error) {
     console.error("Error in POST /api/subscription/pay:", error);
+
+    const message = error instanceof Error ? error.message : "";
+    if (
+      message.includes("Transaction receipt with hash") &&
+      message.includes("could not be found")
+    ) {
+      return NextResponse.json(
+        { error: "Transaction not found or not yet confirmed" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: "Payment verification failed" },
       { status: 500 }
     );
   }

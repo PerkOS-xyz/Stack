@@ -8,6 +8,7 @@ import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
 import { useSubscription } from "@/lib/contexts/SubscriptionContext";
+import { config } from "@/lib/utils/config";
 
 interface NavItem {
   href: string;
@@ -34,7 +35,7 @@ const userMenuItems: NavItem[] = [
 // Ethereum mainnet client for ENS lookups
 const ensClient = createPublicClient({
   chain: mainnet,
-  transport: http(),
+  transport: http(config.rpcUrls.ethereum),
 });
 
 export function Header() {

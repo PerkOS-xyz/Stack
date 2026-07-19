@@ -16,6 +16,7 @@ const NETWORK_CONFIG = {
     { name: "Celo", network: "celo", icon: "🟡", chainId: CHAIN_IDS.CELO },
     { name: "Monad", network: "monad", icon: "🟢", chainId: CHAIN_IDS.MONAD },
     { name: "Unichain", network: "unichain", icon: "🦄", chainId: CHAIN_IDS.UNICHAIN },
+    { name: "Robinhood Chain", network: "robinhood", icon: "R", chainId: CHAIN_IDS.ROBINHOOD },
   ],
   testnet: [
     { name: "Avalanche Fuji", network: "avalanche-fuji", icon: "🔺", chainId: CHAIN_IDS.AVALANCHE_FUJI },

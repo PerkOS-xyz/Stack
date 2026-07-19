@@ -90,6 +90,15 @@ export function UnichainIcon({ className = "w-10 h-10" }: { className?: string }
   );
 }
 
+export function RobinhoodChainIcon({ className = "w-10 h-10" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 105 105" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="52.5" cy="52.5" r="52.5" fill="#00C805" />
+      <text x="52.5" y="68" textAnchor="middle" fontSize="48" fontWeight="700" fill="white">R</text>
+    </svg>
+  );
+}
+
 // Chain data with icons
 export const CHAIN_DATA = [
   { name: "Polygon", Icon: PolygonIcon, color: "#8247E5" },
@@ -101,6 +110,7 @@ export const CHAIN_DATA = [
   { name: "Arbitrum", Icon: ArbitrumIcon, color: "#213147" },
   { name: "Monad", Icon: MonadIcon, color: "#836EF9" },
   { name: "Unichain", Icon: UnichainIcon, color: "#F50DB4" },
+  { name: "Robinhood Chain", Icon: RobinhoodChainIcon, color: "#00C805" },
 ] as const;
 
 // Network name to icon mapping (handles both mainnet and testnet variants)
@@ -123,6 +133,7 @@ const NETWORK_ICON_MAP: Record<string, typeof CHAIN_DATA[number]> = {
   "monad-testnet": CHAIN_DATA[7],
   unichain: CHAIN_DATA[8],
   "unichain-sepolia": CHAIN_DATA[8],
+  robinhood: CHAIN_DATA[9],
 };
 
 // Helper to get chain icon component by network name

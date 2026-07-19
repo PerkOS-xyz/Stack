@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getVendorOwnershipService } from "@/lib/services/VendorOwnershipService";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -22,6 +23,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { error: "Missing userWalletAddress" },
         { status: 400 }
+      );
+    }
+    const auth = await verifyWalletSignature(request);
+    if (!auth.authorized || auth.address !== userWalletAddress.toLowerCase()) {
+      return NextResponse.json(
+        { error: auth.error || "Forbidden" },
+        { status: auth.authorized ? 403 : 401 }
       );
     }
 

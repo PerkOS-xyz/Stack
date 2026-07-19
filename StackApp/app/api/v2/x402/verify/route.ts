@@ -10,6 +10,7 @@ import type { SupportedNetwork } from "@/lib/utils/config";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { x402RequestSchema, validateBody } from "@/lib/validation/schemas";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
+import { normalizeX402Request } from "@/lib/utils/x402-normalization";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = validation.data as unknown as X402VerifyRequest;
+    const body = normalizeX402Request(validation.data) as X402VerifyRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload.network;

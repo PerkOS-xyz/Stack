@@ -75,6 +75,7 @@ export const SUPPORTED_CHAIN_IDS = {
   polygon: 137,
   avalanche: 43114,
   celo: 42220,
+  robinhood: 4663,
   // Testnets
   sepolia: 11155111,
   baseSepolia: 84532,
@@ -95,6 +96,7 @@ export function getWalletConfig(): WalletProviderConfig {
     SUPPORTED_CHAIN_IDS.polygon,
     SUPPORTED_CHAIN_IDS.avalanche,
     SUPPORTED_CHAIN_IDS.celo,
+    SUPPORTED_CHAIN_IDS.robinhood,
   ];
 
   switch (provider) {
@@ -121,7 +123,7 @@ export function getWalletConfig(): WalletProviderConfig {
       return {
         provider: "dynamic",
         apiKey: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID || "",
-        serverApiKey: process.env.DYNAMIC_API_KEY,
+        serverApiKey: process.env.DYNAMIC_AUTH_TOKEN,
         environment: process.env.NODE_ENV === "production" ? "production" : "sandbox",
         client: {
           appName: process.env.NEXT_PUBLIC_APP_NAME || "PerkOS Stack",
@@ -130,8 +132,7 @@ export function getWalletConfig(): WalletProviderConfig {
           supportedChains: defaultChains,
         },
         server: {
-          // Dynamic uses Turnkey for embedded wallet signing
-          enabled: !!process.env.DYNAMIC_API_KEY && !!process.env.TURNKEY_API_PRIVATE_KEY,
+          enabled: !!(process.env.DYNAMIC_ENVIRONMENT_ID || process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID) && !!process.env.DYNAMIC_AUTH_TOKEN,
           supportsEVM: true,
           supportsSolana: true,
         },

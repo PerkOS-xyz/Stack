@@ -18,6 +18,20 @@ interface SponsorWallet {
   balance: string;
 }
 
+export function domainMatchesRule(candidate: string, rule: string): boolean {
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/\.$/, "");
+  const candidateDomain = normalize(candidate);
+  const ruleDomain = normalize(rule);
+  if (!candidateDomain || !ruleDomain) return false;
+
+  if (ruleDomain.startsWith("*.")) {
+    const base = ruleDomain.slice(2);
+    return candidateDomain !== base && candidateDomain.endsWith(`.${base}`);
+  }
+
+  return candidateDomain === ruleDomain || candidateDomain.endsWith(`.${ruleDomain}`);
+}
+
 // EIP-3009 transferWithAuthorization ABI
 const TRANSFER_WITH_AUTHORIZATION_ABI = [
   {
@@ -76,6 +90,7 @@ export class ParaTransactionService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
+      robinhood: CHAIN_IDS.ROBINHOOD,
     };
     return chainIdMap[network]!;
   }
@@ -151,20 +166,18 @@ export class ParaTransactionService {
         });
 
         if (domainRules && !domainRuleError) {
-          // Find matching domain rule (exact match or subdomain match)
+          // Exact/subdomain matching with explicit wildcard semantics. Never
+          // use substring matching: `evil-example.com` must not match `example.com`.
           const matchingRule = domainRules.find(rule => {
             if (!rule.domain) return false;
             const ruleDomain = rule.domain.toLowerCase().trim();
             const searchDomain = normalizedDomain.trim();
-            const isMatch = searchDomain === ruleDomain ||
-                   searchDomain.endsWith('.' + ruleDomain) ||
-                   ruleDomain.includes(searchDomain);
+            const isMatch = domainMatchesRule(searchDomain, ruleDomain);
             logger.info("Domain matching check", {
               ruleDomain,
               searchDomain,
               exactMatch: searchDomain === ruleDomain,
               subdomainMatch: searchDomain.endsWith('.' + ruleDomain),
-              partialMatch: ruleDomain.includes(searchDomain),
               isMatch,
             });
             return isMatch;
@@ -196,15 +209,23 @@ export class ParaTransactionService {
 
       // 3. Fall back to direct user_wallet_address lookup
       // Use order + limit instead of .single() to handle users with multiple sponsor wallets
-      // Returns the most recently created wallet by default
+      // A direct fallback is only deterministic when the owner has one EVM
+      // sponsor wallet. Multiple wallets require an explicit agent/domain rule.
       const { data: directWallets, error: directError } = await firebaseAdmin
         .from("perkos_sponsor_wallets")
         .select("*")
         .eq("user_wallet_address", normalizedAddress)
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .order("created_at", { ascending: false });
 
-      const directWallet = directWallets?.[0];
+      const compatibleWallets = (directWallets || []).filter((wallet) => wallet.network === "evm" || !wallet.network);
+      const directWallet = compatibleWallets.length === 1 ? compatibleWallets[0] : undefined;
+
+      if (compatibleWallets.length > 1) {
+        logger.warn("Multiple sponsor wallets require an explicit sponsorship rule", {
+          walletAddress: normalizedAddress,
+          walletCount: compatibleWallets.length,
+        });
+      }
 
       if (directWallet && !directError) {
         logger.info("Found sponsor wallet via direct lookup", {

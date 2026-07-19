@@ -59,7 +59,7 @@ const networks: Record<string, NetworkConfig> = {
   'polygon': { name: 'Polygon', symbol: 'POL', icon: '🟣', chainId: 137 },
   'arbitrum': { name: 'Arbitrum', symbol: 'ETH', icon: '🔷', chainId: 42161 },
   'optimism': { name: 'Optimism', symbol: 'ETH', icon: '🔴', chainId: 10 },
-  'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 10142 },
+  'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 143 },
   // Testnets
   'avalanche-fuji': { name: 'Avalanche Fuji', symbol: 'AVAX', icon: '🔺', chainId: 43113, isTestnet: true },
   'base-sepolia': { name: 'Base Sepolia', symbol: 'ETH', icon: '🔵', chainId: 84532, isTestnet: true },

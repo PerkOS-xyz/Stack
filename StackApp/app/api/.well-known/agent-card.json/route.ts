@@ -1,178 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
-import { X402Service } from "@/lib/services/X402Service";
-import { config, type SupportedNetwork } from "@/lib/utils/config";
-import { firebaseAdmin } from "@/lib/db/firebase";
-import { CHAIN_IDS } from "@/lib/utils/chains";
+import { config } from "@/lib/utils/config";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Agent Card (ActivityPub-style)
- * Standard endpoint: /.well-known/agent-card.json
- *
- * Provides agent metadata with payment capabilities for AI agent discovery.
- * Updated to x402 V2 format with multi-chain support.
+ * A2A v0.3 Agent Card.
+ * Canonical public path: /.well-known/agent-card.json
  */
 export async function GET(request: NextRequest) {
   const baseUrl = new URL(request.url).origin;
-  const x402Service = new X402Service();
-  const supportedKinds = x402Service.getSupported().kinds;
+  const a2aUrl = `${baseUrl}/api/a2a`;
 
-  // Fetch live stats for reputation
-  let stats = { totalTransactions: 0, successRate: 100 };
-  try {
-    const { count: total } = await firebaseAdmin
-      .from("perkos_x402_transactions")
-      .select("*", { count: "exact", head: true });
-    const { count: success } = await firebaseAdmin
-      .from("perkos_x402_transactions")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "success");
-    stats = {
-      totalTransactions: total || 0,
-      successRate: total ? Math.round(((success || 0) / total) * 100) : 100,
-    };
-  } catch {
-    // Use defaults on error
-  }
-
-  // Build payment methods with V2 multi-chain format
-  const paymentMethods = supportedKinds.map((kind) => {
-    const chainId = getChainId(kind.network);
-    return {
-      scheme: kind.scheme,
-      network: kind.network,
-      chainId,
-      asset: config.paymentTokens[kind.network as SupportedNetwork],
-      assetSymbol: "USDC",
-      assetDecimals: 6,
-    };
-  });
-
-  const agentCard = {
-    // ActivityPub context
-    "@context": [
-      "https://www.w3.org/ns/activitystreams",
-      "https://x402.org/context/v2",
-    ],
-
-    // Agent identity
-    id: config.paymentReceiver,
-    type: "Agent",
-    name: config.facilitatorName,
-    summary: config.facilitatorDescription,
-    url: baseUrl,
-
-    // Profile
-    icon: {
-      type: "Image",
-      url: `${baseUrl}/logo.png`,
-      mediaType: "image/png",
-    },
-
-    // x402 V2 capabilities (EIP-8004 compliant)
-    capabilities: [
-      "x402-v2", // V2 protocol support
-      "x402-payment-exact", // EIP-3009 exact payments
-      ...(config.deferredEnabled ? ["x402-payment-deferred"] : []), // EIP-712 deferred
-      "multi-chain", // Multi-chain support
-      "evm-compatible", // EVM chains
-      "erc-8004-discovery", // Agent discovery
-      "erc-8004-reputation", // On-chain reputation (score 0-100, tag filtering)
-      "erc-8004-validation", // Request-response validation model
-      "bazaar-indexable", // Bazaar discovery
-      "gasless-transactions", // Sponsored gas
-    ],
-
-    // Payment configuration (V2 format)
-    paymentMethods,
-
-    // Supported schemes
-    schemes: ["exact", ...(config.deferredEnabled ? ["deferred"] : [])],
-
-    // Networks summary
-    networks: {
-      mainnet: supportedKinds
-        .filter((k) => !isTestnet(k.network))
-        .map((k) => k.network),
-      testnet: supportedKinds
-        .filter((k) => isTestnet(k.network))
-        .map((k) => k.network),
-    },
-
-    // x402 V2 Endpoints
-    endpoints: {
-      x402: `${baseUrl}/api/v2/x402`,
-      verify: `${baseUrl}/api/v2/x402/verify`,
-      settle: `${baseUrl}/api/v2/x402/settle`,
-      supported: `${baseUrl}/api/v2/x402/supported`,
-      discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
-    },
-
-    // Trust indicators (EIP-8004 compliant)
-    trust: {
-      totalTransactions: stats.totalTransactions,
-      successRate: `${stats.successRate}%`,
-      verified: false, // Update when on-chain registry deployed
-      erc8004: {
-        reputation: {
-          enabled: true,
-          model: "score-0-100",
-          features: ["tag1-tag2-filtering", "feedback-uri-hash"],
-        },
-        validation: {
-          enabled: true,
-          model: "request-response",
-          features: ["validator-targeting", "tag-categorization"],
-        },
+  return NextResponse.json(
+    {
+      name: `${config.facilitatorName} Registration Agent`,
+      description:
+        "Helps humans and autonomous agents prepare ERC-8004 registrations, verify on-chain identities, check 8004scan indexing, and integrate x402 payments.",
+      protocolVersion: "0.3.0",
+      version: "1.0.0",
+      url: a2aUrl,
+      preferredTransport: "JSONRPC",
+      additionalInterfaces: [{ url: a2aUrl, transport: "JSONRPC" }],
+      provider: {
+        organization: "PerkOS",
+        url: "https://perkos.xyz",
       },
+      iconUrl: `${baseUrl}/logo.png`,
+      documentationUrl: `${baseUrl}/agents/register`,
+      capabilities: {
+        streaming: false,
+        pushNotifications: false,
+        stateTransitionHistory: false,
+      },
+      defaultInputModes: ["text/plain", "application/json"],
+      defaultOutputModes: ["text/plain", "application/json"],
+      skills: [
+        {
+          id: "prepare-erc8004-registration",
+          name: "Prepare ERC-8004 registration",
+          description:
+            "Builds canonical registration-v1 metadata and executable unsigned calldata for an official ERC-8004 Identity Registry.",
+          tags: ["erc-8004", "identity", "registration", "onchain"],
+          examples: [
+            "Register my agent on Monad testnet",
+            "Prepare an ERC-8004 registration for https://agent.example",
+          ],
+        },
+        {
+          id: "check-agent-discovery",
+          name: "Check agent discovery",
+          description:
+            "Checks an ERC-8004 identity and reports whether 8004scan has indexed it, with actionable metadata and endpoint guidance.",
+          tags: ["8004scan", "discovery", "indexing", "health"],
+          examples: ["Is agent 42 on chain 10143 visible in 8004scan?"],
+        },
+        {
+          id: "configure-x402",
+          name: "Configure x402 payments",
+          description:
+            "Returns Stack x402 v2 facilitator endpoints, supported payment methods, and onboarding configuration.",
+          tags: ["x402", "payments", "facilitator", "stablecoins"],
+          examples: ["Configure x402 payments for my Base service"],
+        },
+      ],
+      supportsAuthenticatedExtendedCard: false,
     },
-
-    // Protocol version
-    protocolVersion: {
-      x402: "2.0.0",
-      spec: "1",
-    },
-
-    // Metadata
-    published: new Date().toISOString(),
-  };
-
-  return NextResponse.json(agentCard, {
-    headers: {
-      "Content-Type": "application/ld+json",
-      "Cache-Control": "public, max-age=300",
-    },
-  });
-}
-
-function getChainId(network: string): number | null {
-  const chainIdMap: Record<string, number> = {
-    avalanche: CHAIN_IDS.AVALANCHE,
-    "avalanche-fuji": CHAIN_IDS.AVALANCHE_FUJI,
-    celo: CHAIN_IDS.CELO,
-    "celo-sepolia": CHAIN_IDS.CELO_SEPOLIA,
-    base: CHAIN_IDS.BASE,
-    "base-sepolia": CHAIN_IDS.BASE_SEPOLIA,
-    ethereum: CHAIN_IDS.ETHEREUM,
-    sepolia: CHAIN_IDS.SEPOLIA,
-    polygon: CHAIN_IDS.POLYGON,
-    "polygon-amoy": CHAIN_IDS.POLYGON_AMOY,
-    monad: CHAIN_IDS.MONAD,
-    "monad-testnet": CHAIN_IDS.MONAD_TESTNET,
-    arbitrum: CHAIN_IDS.ARBITRUM,
-    "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
-    optimism: CHAIN_IDS.OPTIMISM,
-    "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
-  };
-  return chainIdMap[network] || null;
-}
-
-function isTestnet(network: string): boolean {
-  return (
-    network.includes("fuji") ||
-    network.includes("sepolia") ||
-    network.includes("amoy") ||
-    network.includes("testnet")
+    {
+      headers: {
+        "Cache-Control": "public, max-age=300",
+        "X-A2A-Protocol-Version": "0.3.0",
+      },
+    }
   );
 }

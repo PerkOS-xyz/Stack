@@ -3,12 +3,14 @@ import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
+import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
 
 export const dynamic = "force-dynamic";
 
 /**
  * x402 V2 Payment Configuration
- * Standard endpoint: /.well-known/x402-payment.json
+ * PerkOS discovery endpoint (the x402 core spec does not standardize this
+ * well-known path).
  *
  * Provides payment configuration for x402 protocol integration.
  * Updated to V2 format with multi-chain support and CAIP identifiers.
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
       caip2: chainId ? `eip155:${chainId}` : null,
       asset: {
         address: tokenAddress,
-        symbol: "USDC",
+        symbol: chainId ? getPaymentTokenSymbol(chainId) : "USDC",
         decimals: 6,
         caip19: chainId ? `eip155:${chainId}/erc20:${tokenAddress}` : null,
       },
@@ -63,7 +65,7 @@ export async function GET(request: NextRequest) {
     // Protocol identification
     "@context": "https://x402.org/payment/v2",
     specVersion: "2.0.0",
-    protocolVersion: 1,
+    protocolVersion: 2,
 
     // Facilitator identity
     facilitator: {
@@ -134,7 +136,6 @@ export async function GET(request: NextRequest) {
       "multi-chain",
       "evm-compatible",
       "gasless-transactions",
-      "batch-settlement",
       "real-time-verification",
     ],
 
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
     version: {
       x402: "2.0.0",
       api: "v2",
-      spec: "1",
+      spec: "2",
     },
 
     // Metadata
@@ -194,6 +195,7 @@ function getChainId(network: string): number | null {
     "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
     optimism: CHAIN_IDS.OPTIMISM,
     "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
+    robinhood: CHAIN_IDS.ROBINHOOD,
   };
   return chainIdMap[network] || null;
 }

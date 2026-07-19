@@ -33,10 +33,7 @@ import { useWalletContext } from "../context/WalletContext";
 
 // Provider-specific hooks (lazy loaded on client-side only)
 type UseViemClientType = (config: { address?: `0x${string}`; walletClientConfig?: { chain: Chain; transport: ReturnType<typeof http> } }) => { viemClient: { account: Account } | null; isLoading: boolean };
-type UseDynamicContextType = () => { primaryWallet: { connector?: { getWalletClient?: () => Promise<WalletClient> } } | null };
-
 let useViemClientPara: UseViemClientType | null = null;
-let useDynamicContextDynamic: UseDynamicContextType | null = null;
 let sdkInitialized = false;
 
 // Initialize SDK hooks only on client-side (avoid SSR issues with CJS/ESM)
@@ -51,14 +48,6 @@ function initializeProviderHooks() {
       useViemClientPara = paraSdk.useViemClient;
     } catch (e) {
       console.warn("[useWalletClient] Para SDK hooks not available");
-    }
-  } else if (ACTIVE_PROVIDER === "dynamic") {
-    try {
-      // Dynamic SDK context hook - use ESM import to avoid CJS issues
-      const dynamicSdk = require("@dynamic-labs/sdk-react-core");
-      useDynamicContextDynamic = dynamicSdk.useDynamicContext;
-    } catch (e) {
-      console.warn("[useWalletClient] Dynamic SDK not available");
     }
   }
 }
@@ -100,7 +89,7 @@ export function useWalletClient(config: UseWalletClientConfig): UseWalletClientR
   initializeProviderHooks();
 
   const { chain } = config;
-  const { isConnected, address } = useWalletContext();
+  const { isConnected, address, getWalletClient } = useWalletContext();
 
   const [externalClient, setExternalClient] = useState<WalletClient | null>(null);
   const [dynamicClient, setDynamicClient] = useState<WalletClient | null>(null);
@@ -119,26 +108,18 @@ export function useWalletClient(config: UseWalletClientConfig): UseWalletClientR
     : { viemClient: null, isLoading: false };
 
   // Dynamic SDK client
-  const dynamicContext = useDynamicContextDynamic ? useDynamicContextDynamic() : { primaryWallet: null };
-
   // Setup Dynamic wallet client
   useEffect(() => {
     async function setupDynamicClient() {
-      if (ACTIVE_PROVIDER !== "dynamic" || !dynamicContext.primaryWallet?.connector) {
+      if (ACTIVE_PROVIDER !== "dynamic" || !getWalletClient) {
         setDynamicClient(null);
         return;
       }
 
       setIsLoadingDynamic(true);
       try {
-        const connector = dynamicContext.primaryWallet.connector;
-        if (connector && "getWalletClient" in connector && typeof connector.getWalletClient === "function") {
-          const client = await connector.getWalletClient();
-          setDynamicClient(client as WalletClient);
-        } else {
-          // Fallback: create client from connector's provider
-          setDynamicClient(null);
-        }
+        const client = await getWalletClient();
+        setDynamicClient(client as WalletClient);
       } catch (error) {
         console.error("[useWalletClient] Error getting Dynamic wallet client:", error);
         setDynamicClient(null);
@@ -148,7 +129,7 @@ export function useWalletClient(config: UseWalletClientConfig): UseWalletClientR
     }
 
     setupDynamicClient();
-  }, [dynamicContext.primaryWallet, chain]);
+  }, [getWalletClient, chain]);
 
   // Check if using external wallet (no Para client and not Dynamic)
   const isParaWallet = ACTIVE_PROVIDER === "para" && !!paraClient.viemClient;

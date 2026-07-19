@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vendorDiscoveryService } from "@/lib/services/VendorDiscoveryService";
 import { vendorRegisterSchema, validateBody } from "@/lib/validation/schemas";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,9 @@ interface EndpointDefinition {
  * POST /api/vendors/register
  * Register a new vendor - supports two modes:
  * 1. Discovery mode: provide URL, Stack discovers /.well-known/x402
- * 2. Direct mode: provide full definition with endpoints
+ * 2. Direct mode: provide full definition with endpoints. Requires the wallet
+ *    auth headers and signature message
+ *    `PerkOS Vendor Registration {url} {X-Wallet-Timestamp}`.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +38,16 @@ export async function POST(request: NextRequest) {
 
     // Check if this is a direct registration (with endpoints defined)
     if (body.endpoints && Array.isArray(body.endpoints)) {
+      const auth = await verifyWalletSignature(request, `Vendor Registration ${body.url}`);
+      if (!auth.authorized) {
+        return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: 401 });
+      }
+      if (!body.walletAddress || auth.address !== body.walletAddress.toLowerCase()) {
+        return NextResponse.json(
+          { success: false, error: "Signature does not match vendor walletAddress" },
+          { status: 403 }
+        );
+      }
       // Direct registration mode - vendor provides full definition
       console.log("[Vendor Registration] Direct mode - endpoints count:", body.endpoints.length);
       const result = await vendorDiscoveryService.registerVendorDirect({
@@ -48,6 +61,7 @@ export async function POST(request: NextRequest) {
         docsUrl: body.docsUrl,
         // Direct registration fields
         walletAddress: body.walletAddress,
+        ownerAddress: auth.address,
         network: body.network,
         priceUsd: body.priceUsd,
         facilitatorUrl: body.facilitatorUrl,

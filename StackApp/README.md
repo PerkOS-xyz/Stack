@@ -1,54 +1,36 @@
 # PerkOS Stack - x402 V2 Middleware
 
-**The most complete x402 V2 implementation available.** Enterprise-grade payment infrastructure for AI agents with full protocol compliance, multi-chain support, and production-ready features.
+Multi-chain x402 facilitator for AI agents. Stack implements the canonical x402 v2 envelope and HTTP settlement header for the `exact` scheme, preserves v1 compatibility, and adds a PerkOS-specific deferred voucher scheme.
 
 [![x402 V2](https://img.shields.io/badge/x402-V2.0.0-blue)](https://x402.org)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Compliant-green)](https://eips.ethereum.org/EIPS/eip-8004)
-[![Networks](https://img.shields.io/badge/Networks-16-purple)]()
+[![Networks](https://img.shields.io/badge/Networks-19-purple)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ## Why PerkOS Stack?
 
-### Competitive Advantages Over Other x402 Implementations
+### Key capabilities
 
-| Feature | PerkOS Stack | Coinbase x402 | Others |
-|---------|--------------|---------------|--------|
-| **x402 V2 Protocol** | Full compliance | Partial | None |
-| **Multi-Chain Support** | 16 networks | 1-2 networks | Limited |
-| **Payment Schemes** | Exact + Deferred | Exact only | Varies |
-| **ERC-8004 Discovery** | Full implementation | None | None |
-| **Bazaar Indexable** | Yes | No | No |
-| **V2 Response Headers** | Complete | Basic | None |
-| **CAIP-2/CAIP-19** | Full support | None | None |
-| **Live Reputation Stats** | Real-time | None | None |
-| **Gasless Transactions** | Built-in (Thirdweb) | Manual | None |
-| **Request Tracing** | V2 Request IDs | None | None |
-| **Health Monitoring** | Comprehensive | Basic | Basic |
-| **Settlement Receipts** | V2 format w/ explorer links | Basic | None |
-| **Open Source** | Yes | Yes | Varies |
-
-### Key Differentiators
-
-1. **Full x402 V2 Compliance**
-   - Complete V2 HTTP response headers
-   - CAIP-2/CAIP-19 chain identifiers
-   - V2 discovery metadata format
-   - Backward compatible with V1
+1. **x402 v2 exact payments**
+   - Canonical `PaymentPayload.accepted` envelope
+   - `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` transport compatibility
+   - CAIP-2 network identifiers
+   - Backward compatible with v1 and the previous PerkOS v2 envelope
 
 2. **AI Agent Discovery (ERC-8004)**
-   - Trustless agent registration
+   - ERC-721 agent identity and verified `agentWallet`
    - Live reputation tracking
    - ActivityPub-compatible metadata
    - Bazaar marketplace indexing
 
 3. **Enterprise Multi-Chain**
-   - 16 EVM networks supported
+   - 19 EVM networks supported
    - Unified API across all chains
    - Automatic chain ID resolution
    - Block explorer integration
 
 4. **Production-Ready Infrastructure**
-   - Thirdweb gasless transactions
+   - Dynamic/Para server-wallet gas sponsorship
    - Real-time health monitoring
    - Database-backed analytics
    - Upgradeable smart contracts (UUPS)
@@ -56,13 +38,13 @@
 ## Features
 
 ### Protocol Support
-- **x402 V2.0.0** - Full protocol compliance with V2 headers and metadata
+- **x402 V2** - Canonical exact-scheme facilitator flow; `upto` and the official `batch-settlement` scheme are not yet implemented
 - **EIP-3009** - Exact scheme with transferWithAuthorization
 - **EIP-712** - Deferred scheme with typed structured data
 - **ERC-8004** - Trustless agent discovery standard
 
 ### Discovery & Metadata (V2)
-- **Bazaar Discovery** - AI agent marketplace indexing
+- **Discovery metadata** - PerkOS well-known metadata plus facilitator capability discovery
 - **Agent Card** - ActivityPub-style metadata
 - **CAIP Standards** - Chain-agnostic identifiers
 - **Live Reputation** - Real-time transaction stats
@@ -72,16 +54,16 @@
 - **TypeScript** - Full type safety
 - **Viem 2.x** - Modern Ethereum interactions
 - **Supabase** - PostgreSQL database
-- **Thirdweb** - Gasless transaction sponsorship
+- **Dynamic / Para** - Server-wallet transaction sponsorship
 
-### Supported Networks (16)
+### Supported Networks (19)
 
-PerkOS Stack supports 16 EVM networks with native Circle USDC integration:
+PerkOS Stack supports 19 EVM networks with configured USDC or USDG payment tokens:
 
 #### Mainnet Networks
 
-| Network | Chain ID | Native | USDC Address (Circle) |
-|---------|----------|--------|----------------------|
+| Network | Chain ID | Native | Payment token |
+|---------|----------|--------|---------------|
 | Ethereum | 1 | ETH | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 | Avalanche | 43114 | AVAX | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
 | Base | 8453 | ETH | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
@@ -89,12 +71,14 @@ PerkOS Stack supports 16 EVM networks with native Circle USDC integration:
 | Arbitrum | 42161 | ETH | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
 | Optimism | 10 | ETH | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` |
 | Celo | 42220 | CELO | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
-| Monad | 10142 | MON | *Coming soon* |
+| Monad | 143 | MON | `0x754704Bc059F8C67012fEd69BC8A327a5aafb603` |
+| Unichain | 130 | ETH | USDC `0x078D782b760474a361dDA0AF3839290b0EF57AD6` |
+| Robinhood Chain | 4663 | ETH | USDG `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` |
 
 #### Testnet Networks
 
-| Network | Chain ID | Native | USDC Address (Circle) |
-|---------|----------|--------|----------------------|
+| Network | Chain ID | Native | Payment token |
+|---------|----------|--------|---------------|
 | Sepolia | 11155111 | ETH | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
 | Avalanche Fuji | 43113 | AVAX | `0x5425890298aed601595a70AB815c96711a31Bc65` |
 | Base Sepolia | 84532 | ETH | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
@@ -102,9 +86,10 @@ PerkOS Stack supports 16 EVM networks with native Circle USDC integration:
 | Arbitrum Sepolia | 421614 | ETH | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
 | OP Sepolia | 11155420 | ETH | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
 | Celo Sepolia | 11142220 | CELO | *TBD* |
-| Monad Testnet | 10143 | MON | *Coming soon* |
+| Monad Testnet | 10143 | MON | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
+| Unichain Sepolia | 1301 | ETH | *TBD* |
 
-> **Note**: All USDC addresses are official Circle-issued tokens. See [Circle's developer docs](https://developers.circle.com/stablecoins/docs/usdc-on-main-networks) for verification.
+> **Robinhood Chain note**: USDG support is mainnet-only because no canonical testnet USDG address is published. The integration is independent and is not affiliated with or endorsed by Robinhood. Contract and network details come from [Robinhood Chain's official documentation](https://docs.robinhood.com/chain/contracts/).
 
 ## Quick Start
 
@@ -191,21 +176,17 @@ This opens an interactive visualization showing what's in each bundle.
 
 ## x402 V2 Protocol Details
 
-### V2 Response Headers
+### HTTP transport headers
 
-All x402 endpoints return standardized V2 headers:
+The standard v2 transport uses base64-encoded JSON in these headers:
 
 ```
-X-x402-Version: 2.0.0
-X-x402-Request-Id: x402-m4k5p2-a8f3b1
-X-x402-Network: base
-X-x402-Chain-Id: 8453
-X-x402-CAIP2: eip155:8453
-X-x402-Scheme: exact
-X-x402-Valid: true
-X-x402-Payer: 0x...
-X-x402-Transaction: 0x...  (settle only)
+PAYMENT-REQUIRED: <base64 PaymentRequired>   # resource server -> client
+PAYMENT-SIGNATURE: <base64 PaymentPayload>  # client -> resource server
+PAYMENT-RESPONSE: <base64 SettleResponse>    # resource server -> client
 ```
+
+Stack's `X-x402-*` headers are additional observability metadata, not protocol headers.
 
 ### V2 Settlement Receipt
 

@@ -36,6 +36,27 @@ const ERC8004_TESTNET_ADDRESSES = {
   validation: undefined as Address | undefined, // Not officially deployed yet
 };
 
+// Networks explicitly listed by the official ERC-8004 deployment repository.
+// CREATE2 makes addresses deterministic, but does not prove code was deployed.
+const ERC8004_OFFICIAL_NETWORKS = new Set([
+  "ethereum", "sepolia",
+  "base", "base-sepolia",
+  "avalanche", "avalanche-fuji",
+  "celo", "celo-sepolia",
+  "polygon", "polygon-amoy",
+  "monad", "monad-testnet",
+  "arbitrum", "arbitrum-sepolia",
+  "optimism", "optimism-sepolia",
+  "bsc", "bsc-testnet",
+  "linea", "linea-sepolia",
+  "gnosis",
+  "mantle", "mantle-sepolia",
+  "metis", "metis-sepolia",
+  "megaeth", "megaeth-testnet",
+  "abstract", "abstract-testnet",
+  "goat",
+]);
+
 // Supported networks
 export type SupportedNetwork =
   | "avalanche" | "avalanche-fuji"
@@ -47,6 +68,7 @@ export type SupportedNetwork =
   | "arbitrum" | "arbitrum-sepolia"
   | "optimism" | "optimism-sepolia"
   | "unichain" | "unichain-sepolia"
+  | "robinhood"
   | "bsc" | "bsc-testnet"
   | "linea" | "linea-sepolia"
   | "gnosis" | "gnosis-chiado"
@@ -78,11 +100,17 @@ function getErc8004AddressesForNetwork(network: string): {
 
   // Allow env var override for validation (not yet officially deployed)
   const networkUpper = network.toUpperCase().replace(/-/g, '_');
+  const identityOverride = process.env[`NEXT_PUBLIC_${networkUpper}_IDENTITY_REGISTRY`] as Address | undefined;
+  const reputationOverride = process.env[`NEXT_PUBLIC_${networkUpper}_REPUTATION_REGISTRY`] as Address | undefined;
   const validationOverride = process.env[`NEXT_PUBLIC_${networkUpper}_VALIDATION_REGISTRY`] as Address | undefined;
 
+  if (!ERC8004_OFFICIAL_NETWORKS.has(network) && !identityOverride && !reputationOverride) {
+    return { identity: undefined, reputation: undefined, validation: validationOverride };
+  }
+
   return {
-    identity: base.identity,
-    reputation: base.reputation,
+    identity: identityOverride || base.identity,
+    reputation: reputationOverride || base.reputation,
     validation: validationOverride || base.validation,
   };
 }
@@ -111,6 +139,7 @@ export const config = {
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
     unichain: process.env.NEXT_PUBLIC_UNICHAIN_RPC_URL || "https://mainnet.unichain.org",
     "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_RPC_URL || "https://sepolia.unichain.org",
+    robinhood: process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL || "https://rpc.mainnet.chain.robinhood.com",
     bsc: process.env.NEXT_PUBLIC_BSC_RPC_URL || "https://bsc-dataseed.binance.org",
     "bsc-testnet": process.env.NEXT_PUBLIC_BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545",
     linea: process.env.NEXT_PUBLIC_LINEA_RPC_URL || "https://rpc.linea.build",
@@ -143,14 +172,15 @@ export const config = {
     sepolia: (process.env.NEXT_PUBLIC_SEPOLIA_PAYMENT_TOKEN || "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238") as Address,
     polygon: (process.env.NEXT_PUBLIC_POLYGON_PAYMENT_TOKEN || "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359") as Address,
     "polygon-amoy": (process.env.NEXT_PUBLIC_POLYGON_AMOY_PAYMENT_TOKEN || "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582") as Address,
-    monad: (process.env.NEXT_PUBLIC_MONAD_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
-    "monad-testnet": (process.env.NEXT_PUBLIC_MONAD_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    monad: (process.env.NEXT_PUBLIC_MONAD_PAYMENT_TOKEN || "0x754704Bc059F8C67012fEd69BC8A327a5aafb603") as Address,
+    "monad-testnet": (process.env.NEXT_PUBLIC_MONAD_TESTNET_PAYMENT_TOKEN || "0x534b2f3A21130d7a60830c2Df862319e593943A3") as Address,
     arbitrum: (process.env.NEXT_PUBLIC_ARBITRUM_PAYMENT_TOKEN || "0xaf88d065e77c8cC2239327C5EDb3A432268e5831") as Address,
     "arbitrum-sepolia": (process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_PAYMENT_TOKEN || "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d") as Address,
     optimism: (process.env.NEXT_PUBLIC_OPTIMISM_PAYMENT_TOKEN || "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85") as Address,
     "optimism-sepolia": (process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_PAYMENT_TOKEN || "0x5fd84259d66Cd46123540766Be93DFE6D43130D7") as Address,
     unichain: (process.env.NEXT_PUBLIC_UNICHAIN_PAYMENT_TOKEN || "0x078D782b760474a361dDA0AF3839290b0EF57AD6") as Address,
     "unichain-sepolia": (process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    robinhood: (process.env.NEXT_PUBLIC_ROBINHOOD_PAYMENT_TOKEN || "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168") as Address,
     bsc: (process.env.NEXT_PUBLIC_BSC_PAYMENT_TOKEN || "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d") as Address,
     "bsc-testnet": (process.env.NEXT_PUBLIC_BSC_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
     linea: (process.env.NEXT_PUBLIC_LINEA_PAYMENT_TOKEN || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff") as Address,
@@ -193,6 +223,7 @@ export const config = {
     "optimism-sepolia": process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
     unichain: process.env.NEXT_PUBLIC_UNICHAIN_ESCROW_ADDRESS as Address | undefined,
     "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
+    robinhood: process.env.NEXT_PUBLIC_ROBINHOOD_ESCROW_ADDRESS as Address | undefined,
     bsc: process.env.NEXT_PUBLIC_BSC_ESCROW_ADDRESS as Address | undefined,
     "bsc-testnet": process.env.NEXT_PUBLIC_BSC_TESTNET_ESCROW_ADDRESS as Address | undefined,
     linea: process.env.NEXT_PUBLIC_LINEA_ESCROW_ADDRESS as Address | undefined,
@@ -213,7 +244,7 @@ export const config = {
 
   // Facilitator Info
   facilitatorName: process.env.NEXT_PUBLIC_FACILITATOR_NAME || "Stack",
-  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payment infrastructure for Web3 agents",
+  facilitatorDescription: process.env.NEXT_PUBLIC_FACILITATOR_DESCRIPTION || "Multi-chain x402 payments and ERC-8004 registration infrastructure for humans and autonomous agents",
   facilitatorUrl: process.env.NEXT_PUBLIC_FACILITATOR_URL || process.env.NEXT_PUBLIC_APP_URL || "https://stack.perkos.xyz",
 } as const;
 
@@ -236,7 +267,7 @@ export function isDeferredEnabledForNetwork(network: SupportedNetwork): boolean 
 
 /**
  * Get ERC-8004 registry addresses for a network.
- * Uses hardcoded CREATE2 deterministic addresses (same on all chains).
+ * Uses official deployment addresses, with explicit per-network overrides.
  */
 export function getErc8004Registries(network: SupportedNetwork): {
   identity: Address | undefined;
@@ -248,7 +279,8 @@ export function getErc8004Registries(network: SupportedNetwork): {
 
 /**
  * Check if ERC-8004 registries are available on a network.
- * Identity and Reputation are always available (CREATE2 deployed on 25+ chains).
+ * Identity and Reputation are available only on officially listed networks or
+ * when explicit per-network overrides are configured.
  * Validation is not yet officially deployed.
  */
 export function hasErc8004Registries(network: SupportedNetwork): boolean {

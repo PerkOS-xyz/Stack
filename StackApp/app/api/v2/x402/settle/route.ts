@@ -11,6 +11,9 @@ import type { SupportedNetwork } from "@/lib/utils/config";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { x402RequestSchema, validateBody } from "@/lib/validation/schemas";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
+import { normalizeX402Request } from "@/lib/utils/x402-normalization";
+import { authenticateApiKey } from "@/lib/middleware/apiKeyAuth";
+import { firebaseAdmin } from "@/lib/db/firebase";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = validation.data as unknown as X402SettleRequest;
+    const body = normalizeX402Request(validation.data) as X402SettleRequest;
 
     // Extract network and scheme for headers
     const network = body.paymentPayload.network;
@@ -82,37 +85,39 @@ export async function POST(request: NextRequest) {
       paymentAsset = body.paymentRequirements.asset;
     }
 
-    // Extract vendor domain from request headers for domain-based rules
-    // Priority: 1) Origin header, 2) Referer header, 3) resource URL from paymentRequirements
-    const origin = request.headers.get("origin");
-    const referer = request.headers.get("referer");
+    // Domain sponsorship is authorization, not browser metadata. Origin,
+    // Referer, and the caller-provided resource URL are forgeable, so only an
+    // authenticated API key tied to a verified domain claim may activate it.
     let vendorDomain: string | undefined;
-
-    if (origin) {
+    if (request.headers.get("X-API-Key")) {
+      const auth = await authenticateApiKey(request);
+      if (!auth.agent) {
+        return NextResponse.json(
+          { success: false, errorReason: auth.error || "Invalid API key", payer: null, transaction: null, network },
+          { status: 401, headers: { ...corsHeaders, "X-Request-Id": requestId } }
+        );
+      }
       try {
-        const originUrl = new URL(origin);
-        vendorDomain = originUrl.host; // Includes port if present
-        console.log("Vendor Domain (from Origin):", vendorDomain);
-      } catch { /* ignore parse errors */ }
-    } else if (referer) {
-      try {
-        const refererUrl = new URL(referer);
-        vendorDomain = refererUrl.host;
-        console.log("Vendor Domain (from Referer):", vendorDomain);
-      } catch { /* ignore parse errors */ }
-    }
-
-    // Fallback: Extract domain from resource URL in paymentRequirements
-    // This handles server-to-server calls where Origin/Referer aren't present
-    if (!vendorDomain && body.paymentRequirements?.resource) {
-      try {
-        // Import the helper to get the resource URL (handles both V1 string and V2 object)
         const { getResourceUrl } = await import("@/lib/types/x402");
         const resourceUrlStr = getResourceUrl(body.paymentRequirements);
         if (resourceUrlStr) {
-          const resourceUrl = new URL(resourceUrlStr);
-          vendorDomain = resourceUrl.host;
-          console.log("Vendor Domain (from resource):", vendorDomain);
+          const resourceHost = new URL(resourceUrlStr).hostname.toLowerCase();
+          const { data: claims } = await firebaseAdmin
+            .from("perkos_user_vendor_domains")
+            .select("domain_url")
+            .eq("user_wallet_address", auth.agent.walletAddress.toLowerCase())
+            .eq("verification_status", "verified")
+            .eq("is_active", true);
+          const verified = claims?.some((claim) => {
+            try {
+              const value = String(claim.domain_url);
+              const host = new URL(value.includes("://") ? value : `https://${value}`).hostname.toLowerCase();
+              return host === resourceHost;
+            } catch {
+              return false;
+            }
+          });
+          if (verified) vendorDomain = resourceHost;
         }
       } catch { /* ignore parse errors */ }
     }
@@ -167,6 +172,14 @@ export async function POST(request: NextRequest) {
       transaction: result.transaction,
     });
 
+    headers["PAYMENT-RESPONSE"] = Buffer.from(JSON.stringify({
+      success: result.success,
+      ...(result.errorReason ? { errorReason: result.errorReason } : {}),
+      ...(result.payer ? { payer: result.payer } : {}),
+      transaction: result.transaction || "",
+      network: result.network || network,
+    })).toString("base64");
+
     // Create V2 receipt
     const receipt = createV2Receipt({
       requestId,
@@ -187,7 +200,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!result.success) {
-      return NextResponse.json(v2Response, { status: 400, headers: { ...corsHeaders, ...headers } });
+      return NextResponse.json(v2Response, { status: 402, headers: { ...corsHeaders, ...headers } });
     }
 
     return NextResponse.json(v2Response, { headers: { ...corsHeaders, ...headers } });

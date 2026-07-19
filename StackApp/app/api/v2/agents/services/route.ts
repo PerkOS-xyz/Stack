@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
       name: name || undefined,
       description: description || undefined,
       walletAddress: auth.agent.walletAddress,
+      ownerAddress: auth.agent.walletAddress,
       network,
       priceUsd: priceUsd || endpoints[0]?.priceUsd,
       endpoints: endpoints.map((ep: { path: string; method?: string; description?: string; priceUsd: string; inputSchema?: object; outputSchema?: object }) => ({

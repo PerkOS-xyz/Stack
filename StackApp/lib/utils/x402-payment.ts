@@ -1,7 +1,7 @@
 /**
  * x402 Payment Utilities for EIP-712 signing
  *
- * Implements EIP-3009 TransferWithAuthorization for USDC payments
+ * Implements EIP-3009 TransferWithAuthorization for supported stablecoins.
  */
 
 import { type Address, parseUnits, keccak256, toHex, concat, pad } from "viem";
@@ -19,7 +19,7 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   ],
 } as const;
 
-// USDC token names by chain ID (for EIP-712 domain)
+// Payment token names by chain ID (for EIP-712 domain)
 // Most Circle native USDC uses "USD Coin", but Celo native USDC returns "USDC"
 // IMPORTANT: This must match the actual name() value returned by the contract
 const USDC_TOKEN_NAMES: Record<number, string> = {
@@ -31,10 +31,13 @@ const USDC_TOKEN_NAMES: Record<number, string> = {
   42161: "USD Coin",     // Arbitrum
   10: "USD Coin",        // Optimism
   1: "USD Coin",         // Ethereum
+  143: "USDC",           // Monad (native USDC returns "USDC" from name())
+  4663: "Global Dollar", // Robinhood Chain USDG (verified on-chain)
   // Testnets
   84532: "USD Coin",     // Base Sepolia
   43113: "USD Coin",     // Avalanche Fuji
   44787: "USDC",         // Celo Alfajores (testnet)
+  10143: "USDC",         // Monad Testnet (native USDC returns "USDC")
 };
 
 // EIP-712 domain versions by chain ID
@@ -49,10 +52,13 @@ const EIP712_DOMAIN_VERSIONS: Record<number, string> = {
   137: "2",    // Polygon
   42161: "2",  // Arbitrum
   10: "2",     // Optimism
+  143: "2",    // Monad (verified on-chain)
+  4663: "1",   // Robinhood Chain USDG (verified against DOMAIN_SEPARATOR)
   // Testnets
   84532: "2",  // Base Sepolia
   43113: "2",  // Avalanche Fuji
   44787: "2",  // Celo Alfajores (assuming same as mainnet)
+  10143: "2",  // Monad Testnet (verified on-chain)
 };
 
 /**
@@ -71,14 +77,20 @@ export function getTokenName(chainId: number): string {
   return USDC_TOKEN_NAMES[chainId] || "USD Coin";
 }
 
+/** Get the payment-token symbol used for receipts and transaction logs. */
+export function getPaymentTokenSymbol(chainId: number): string {
+  return chainId === 4663 ? "USDG" : "USDC";
+}
+
 /**
  * Payment requirements from x402 protocol
  */
 export interface PaymentRequirements {
   scheme: "exact" | "deferred";
   network: string;
-  maxAmountRequired: string;
-  resource: string;
+  amount: string;
+  maxAmountRequired?: string;
+  resource?: string | { url: string; description?: string; mimeType?: string };
   description?: string;
   payTo: string;
   maxTimeoutSeconds?: number;
@@ -116,7 +128,7 @@ export function generateNonce(): `0x${string}` {
 }
 
 /**
- * Create EIP-712 domain for USDC TransferWithAuthorization
+ * Create an EIP-712 domain for TransferWithAuthorization.
  */
 export function createEIP712Domain(
   network: SupportedNetwork,
@@ -135,7 +147,7 @@ export function createEIP712Domain(
 
   const address = usdcAddress || (getUSDCAddress(chainId) as Address);
   if (!address) {
-    throw new Error(`USDC address not found for network: ${network}`);
+    throw new Error(`Payment token address not found for network: ${network}`);
   }
 
   // Use provided token name, or look up from chain ID, or default
@@ -182,12 +194,20 @@ export function getValidAfter(): bigint {
 /**
  * Format payment envelope for x402 v2 protocol
  */
-export function formatPaymentPayload(envelope: PaymentEnvelope) {
+export function formatPaymentPayload(
+  envelope: PaymentEnvelope,
+  requirements: Omit<PaymentRequirements, "resource">,
+  resource?: { url: string; description?: string; mimeType?: string }
+) {
   return {
     x402Version: 2,
-    scheme: "exact",
-    network: envelope.network,
-    payload: envelope,
+    ...(resource ? { resource } : {}),
+    accepted: requirements,
+    payload: {
+      signature: envelope.signature,
+      authorization: envelope.authorization,
+    },
+    extensions: {},
   };
 }
 

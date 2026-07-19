@@ -40,6 +40,7 @@ export interface WalletContextValue {
   openUserProfile?: () => void; // Opens user wallet dashboard (for connected users)
   disconnect: () => Promise<void>;
   switchChain?: (chainId: number) => Promise<void>;
+  getWalletClient?: () => Promise<unknown>;
 
   // Error State
   error: Error | null;

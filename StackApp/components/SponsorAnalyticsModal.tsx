@@ -71,7 +71,8 @@ const SUPPORTED_NETWORKS = [
   { chainId: '42161', name: 'Arbitrum', symbol: 'ETH', icon: '🔷', testnet: false },
   { chainId: '10', name: 'Optimism', symbol: 'ETH', icon: '🔴', testnet: false },
   { chainId: '42220', name: 'Celo', symbol: 'CELO', icon: '🟡', testnet: false },
-  { chainId: '10143', name: 'Monad', symbol: 'MON', icon: '🟣', testnet: false },
+  { chainId: '143', name: 'Monad', symbol: 'MON', icon: '🟣', testnet: false },
+  { chainId: '4663', name: 'Robinhood Chain', symbol: 'ETH', icon: 'R', testnet: false },
   // Testnets
   { chainId: '11155111', name: 'Sepolia', symbol: 'ETH', icon: '⟠', testnet: true },
   { chainId: '84532', name: 'Base Sepolia', symbol: 'ETH', icon: '🔵', testnet: true },

@@ -1,28 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, http, type Address } from "viem";
+import { createPublicClient, encodeFunctionData, http, type Address, type Hex } from "viem";
 import { type SupportedNetwork, getErc8004Registries, hasErc8004Registries, getRpcUrl } from "@/lib/utils/config";
 import { getChainByNetwork } from "@/lib/utils/chains";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
+import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
 
 export const dynamic = "force-dynamic";
 
 export async function OPTIONS() {
   return corsOptions();
 }
-
-// Minimal ABI matching the official IdentityRegistryUpgradeable contract
-const IDENTITY_ABI = [
-  { name: "name", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
-  { name: "symbol", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
-  { name: "tokenURI", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "string" }] },
-  { name: "ownerOf", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
-  { name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }], outputs: [{ type: "uint256" }] },
-  { name: "getAgentWallet", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }], outputs: [{ type: "address" }] },
-  { name: "getMetadata", type: "function", stateMutability: "view", inputs: [{ name: "agentId", type: "uint256" }, { name: "metadataKey", type: "string" }], outputs: [{ type: "bytes" }] },
-  { name: "getVersion", type: "function", stateMutability: "pure", inputs: [], outputs: [{ type: "string" }] },
-  { name: "isAuthorizedOrOwner", type: "function", stateMutability: "view", inputs: [{ name: "spender", type: "address" }, { name: "agentId", type: "uint256" }], outputs: [{ type: "bool" }] },
-] as const;
 
 /**
  * GET /api/erc8004/identity
@@ -86,7 +74,7 @@ export async function GET(req: NextRequest) {
       try {
         const wallet = await client.readContract({
           address: registries.identity as Address,
-          abi: IDENTITY_ABI,
+          abi: IDENTITY_REGISTRY_ABI,
           functionName: "getAgentWallet",
           args: [BigInt(agentId)],
         });
@@ -111,14 +99,14 @@ export async function GET(req: NextRequest) {
       try {
         const tokenURI = await client.readContract({
           address: registries.identity as Address,
-          abi: IDENTITY_ABI,
+          abi: IDENTITY_REGISTRY_ABI,
           functionName: "tokenURI",
           args: [BigInt(agentId)],
         });
 
         const ownerAddress = await client.readContract({
           address: registries.identity as Address,
-          abi: IDENTITY_ABI,
+          abi: IDENTITY_REGISTRY_ABI,
           functionName: "ownerOf",
           args: [BigInt(agentId)],
         });
@@ -127,7 +115,7 @@ export async function GET(req: NextRequest) {
         try {
           wallet = await client.readContract({
             address: registries.identity as Address,
-            abi: IDENTITY_ABI,
+            abi: IDENTITY_REGISTRY_ABI,
             functionName: "getAgentWallet",
             args: [BigInt(agentId)],
           });
@@ -156,7 +144,7 @@ export async function GET(req: NextRequest) {
     if (owner) {
       const balance = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_ABI,
+        abi: IDENTITY_REGISTRY_ABI,
         functionName: "balanceOf",
         args: [owner as Address],
       });
@@ -174,20 +162,20 @@ export async function GET(req: NextRequest) {
     try {
       version = await client.readContract({
         address: registries.identity as Address,
-        abi: IDENTITY_ABI,
+        abi: IDENTITY_REGISTRY_ABI,
         functionName: "getVersion",
       }) as string;
     } catch { /* may not exist */ }
 
     const name = await client.readContract({
       address: registries.identity as Address,
-      abi: IDENTITY_ABI,
+      abi: IDENTITY_REGISTRY_ABI,
       functionName: "name",
     });
 
     const symbol = await client.readContract({
       address: registries.identity as Address,
-      abi: IDENTITY_ABI,
+      abi: IDENTITY_REGISTRY_ABI,
       functionName: "symbol",
     });
 
@@ -248,21 +236,62 @@ export async function POST(req: NextRequest) {
     }
 
     const registries = getErc8004Registries(network as SupportedNetwork);
+    const chain = getChainByNetwork(network);
+    if (!chain || !registries.identity) {
+      return NextResponse.json(
+        { error: `Chain config not found for ${network}` },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    const transaction = (data: Hex, details: { function: string; args: unknown[]; description: string }) => ({
+      to: registries.identity as Address,
+      data,
+      value: "0",
+      chainId: chain.id,
+      network,
+      ...details,
+    });
 
     // Register new agent
     if (action === "register") {
       const { tokenURI, metadata } = body;
-      const registrationData = {
-        to: registries.identity,
-        network,
+      if (tokenURI) {
+        try { new URL(tokenURI); } catch {
+          return NextResponse.json({ error: "tokenURI must be a valid URL" }, { status: 400, headers: corsHeaders });
+        }
+      }
+      if (metadata !== undefined && !Array.isArray(metadata)) {
+        return NextResponse.json({ error: "metadata must be an array" }, { status: 400, headers: corsHeaders });
+      }
+
+      const hasMetadata = Array.isArray(metadata) && metadata.length > 0;
+      if (hasMetadata && metadata.some((entry: unknown) => {
+        if (!entry || typeof entry !== "object") return true;
+        const value = entry as Record<string, unknown>;
+        return typeof value.metadataKey !== "string" ||
+          value.metadataKey.length === 0 ||
+          value.metadataKey === "agentWallet" ||
+          typeof value.metadataValue !== "string" ||
+          !/^0x(?:[a-fA-F0-9]{2})*$/.test(value.metadataValue);
+      })) {
+        return NextResponse.json(
+          { error: "Each metadata entry needs a non-reserved metadataKey and hex metadataValue" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      const data = tokenURI && hasMetadata
+        ? encodeFunctionData({ abi: IDENTITY_REGISTRY_ABI, functionName: "register", args: [tokenURI, metadata] })
+        : tokenURI
+          ? encodeFunctionData({ abi: IDENTITY_REGISTRY_ABI, functionName: "register", args: [tokenURI] })
+          : encodeFunctionData({ abi: IDENTITY_REGISTRY_ABI, functionName: "register", args: [] });
+      const registrationData = transaction(data, {
         function: tokenURI
-          ? (metadata?.length > 0 ? "register(string,tuple[])" : "register(string)")
+          ? (hasMetadata ? "register(string,tuple[])" : "register(string)")
           : "register()",
-        args: tokenURI
-          ? (metadata?.length > 0 ? [tokenURI, metadata] : [tokenURI])
-          : [],
+        args: tokenURI ? (hasMetadata ? [tokenURI, metadata] : [tokenURI]) : [],
         description: "Register as an agent in the ERC-8004 Identity Registry",
-      };
+      });
 
       return NextResponse.json({
         success: true,
@@ -274,22 +303,32 @@ export async function POST(req: NextRequest) {
     // Set agent URI
     if (action === "setURI") {
       const { agentId, newURI } = body;
-      if (!agentId || !newURI) {
+      if (agentId === undefined || !newURI) {
         return NextResponse.json(
           { error: "agentId and newURI required for setURI" },
           { status: 400, headers: corsHeaders }
         );
       }
+      if (!/^(0|[1-9]\d*)$/.test(String(agentId))) {
+        return NextResponse.json({ error: "agentId must be a non-negative integer" }, { status: 400, headers: corsHeaders });
+      }
+      try { new URL(newURI); } catch {
+        return NextResponse.json({ error: "newURI must be a valid URL" }, { status: 400, headers: corsHeaders });
+      }
+
+      const data = encodeFunctionData({
+        abi: IDENTITY_REGISTRY_ABI,
+        functionName: "setAgentURI",
+        args: [BigInt(agentId), newURI],
+      });
 
       return NextResponse.json({
         success: true,
-        transaction: {
-          to: registries.identity,
-          network,
+        transaction: transaction(data, {
           function: "setAgentURI(uint256,string)",
           args: [agentId, newURI],
           description: `Update URI for agent ${agentId}`,
-        },
+        }),
         message: "Sign and submit this transaction to update agent URI",
 }, { headers: corsHeaders });
     }
@@ -297,22 +336,31 @@ export async function POST(req: NextRequest) {
     // Set agent wallet (EIP-712 signature verified)
     if (action === "setWallet") {
       const { agentId, newWallet, deadline, signature } = body;
-      if (!agentId || !newWallet || !deadline || !signature) {
+      if (agentId === undefined || !newWallet || !deadline || !signature) {
         return NextResponse.json(
           { error: "agentId, newWallet, deadline, and signature required for setWallet" },
           { status: 400, headers: corsHeaders }
         );
       }
+      if (!/^(0|[1-9]\d*)$/.test(String(agentId)) || !/^[1-9]\d*$/.test(String(deadline))) {
+        return NextResponse.json({ error: "agentId or deadline has an invalid format" }, { status: 400, headers: corsHeaders });
+      }
+      if (!/^0x[a-fA-F0-9]{40}$/.test(newWallet) || !/^0x(?:[a-fA-F0-9]{2})+$/.test(signature)) {
+        return NextResponse.json({ error: "newWallet or signature has an invalid format" }, { status: 400, headers: corsHeaders });
+      }
+      const data = encodeFunctionData({
+        abi: IDENTITY_REGISTRY_ABI,
+        functionName: "setAgentWallet",
+        args: [BigInt(agentId), newWallet as Address, BigInt(deadline), signature as Hex],
+      });
 
       return NextResponse.json({
         success: true,
-        transaction: {
-          to: registries.identity,
-          network,
+        transaction: transaction(data, {
           function: "setAgentWallet(uint256,address,uint256,bytes)",
           args: [agentId, newWallet, deadline, signature],
           description: `Set wallet for agent ${agentId} to ${newWallet}`,
-        },
+        }),
         message: "Sign and submit this transaction to set agent wallet",
 }, { headers: corsHeaders });
     }
@@ -320,22 +368,28 @@ export async function POST(req: NextRequest) {
     // Unset agent wallet
     if (action === "unsetWallet") {
       const { agentId } = body;
-      if (!agentId) {
+      if (agentId === undefined) {
         return NextResponse.json(
           { error: "agentId required for unsetWallet" },
           { status: 400, headers: corsHeaders }
         );
       }
+      if (!/^(0|[1-9]\d*)$/.test(String(agentId))) {
+        return NextResponse.json({ error: "agentId must be a non-negative integer" }, { status: 400, headers: corsHeaders });
+      }
+      const data = encodeFunctionData({
+        abi: IDENTITY_REGISTRY_ABI,
+        functionName: "unsetAgentWallet",
+        args: [BigInt(agentId)],
+      });
 
       return NextResponse.json({
         success: true,
-        transaction: {
-          to: registries.identity,
-          network,
+        transaction: transaction(data, {
           function: "unsetAgentWallet(uint256)",
           args: [agentId],
           description: `Remove wallet for agent ${agentId}`,
-        },
+        }),
         message: "Sign and submit this transaction to remove agent wallet",
 }, { headers: corsHeaders });
     }

@@ -9,6 +9,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getVendorOwnershipService } from "@/lib/services/VendorOwnershipService";
 import type { ClaimDomainRequest } from "@/lib/types/vendor-analytics";
 import { vendorDomainClaimSchema, validateBody } from "@/lib/validation/schemas";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
+
+async function authorize(request: NextRequest, owner: string) {
+  const auth = await verifyWalletSignature(request);
+  return auth.authorized && auth.address === owner.toLowerCase() ? null :
+    NextResponse.json({ error: auth.error || "Forbidden" }, { status: auth.authorized ? 403 : 401 });
+}
 
 // GET - List user's claimed domains
 export async function GET(request: NextRequest) {
@@ -23,6 +30,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+    const authError = await authorize(request, userWalletAddress);
+    if (authError) return authError;
 
     const vendorOwnershipService = getVendorOwnershipService();
 
@@ -59,6 +68,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
     const { userWalletAddress, domain_url, sponsor_wallet_id, verification_method } = validation.data;
+    const authError = await authorize(request, userWalletAddress);
+    if (authError) return authError;
 
     const claimRequest: ClaimDomainRequest = {
       domain_url,

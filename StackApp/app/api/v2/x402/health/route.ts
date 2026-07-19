@@ -162,6 +162,7 @@ function getChainId(network: string): number | null {
     "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
     optimism: CHAIN_IDS.OPTIMISM,
     "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
+    robinhood: CHAIN_IDS.ROBINHOOD,
   };
   return chainIdMap[network] || null;
 }

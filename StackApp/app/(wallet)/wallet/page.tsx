@@ -46,7 +46,7 @@ const networks: Record<string, NetworkConfig> = {
   'polygon': { name: 'Polygon', symbol: 'POL', icon: '🟣', chainId: 137, explorer: 'https://polygonscan.com' },
   'arbitrum': { name: 'Arbitrum', symbol: 'ETH', icon: '🔷', chainId: 42161, explorer: 'https://arbiscan.io' },
   'optimism': { name: 'Optimism', symbol: 'ETH', icon: '🔴', chainId: 10, explorer: 'https://optimistic.etherscan.io' },
-  'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 10142, explorer: 'https://monadexplorer.com' },
+  'monad': { name: 'Monad', symbol: 'MON', icon: '🟡', chainId: 143, explorer: 'https://monadscan.com' },
   // EVM Testnets
   'avalanche-fuji': { name: 'Avalanche Fuji', symbol: 'AVAX', icon: '🔺', chainId: 43113, explorer: 'https://testnet.snowtrace.io', isTestnet: true },
   'base-sepolia': { name: 'Base Sepolia', symbol: 'ETH', icon: '🔵', chainId: 84532, explorer: 'https://sepolia.basescan.org', isTestnet: true },

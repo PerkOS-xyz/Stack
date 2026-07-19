@@ -10,6 +10,8 @@ import { getChainByNetwork } from "@/lib/utils/chains";
 import { verifyAgentIdentity } from "@/lib/services/AgentIdentityService";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { agentOnboardSchema, validateBody } from "@/lib/validation/schemas";
+import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
+import { encodeFunctionData, type Address, type Hex } from "viem";
 
 export const dynamic = "force-dynamic";
 
@@ -37,41 +39,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400, headers: corsHeaders });
     }
-    const { network, tokenURI, metadata, agentId, paymentReceiver } = body;
-
-    if (!network) {
-      return NextResponse.json(
-        { error: "network parameter required" },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    // Validate optional fields
-    if (agentId !== undefined && agentId !== null) {
-      const parsed = Number(agentId);
-      if (!Number.isInteger(parsed) || parsed <= 0) {
-        return NextResponse.json(
-          { error: "agentId must be a positive integer" },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-    }
-    if (tokenURI !== undefined && tokenURI !== null) {
-      try { new URL(tokenURI); } catch {
-        return NextResponse.json(
-          { error: "tokenURI must be a valid URL" },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-    }
-    if (paymentReceiver !== undefined && paymentReceiver !== null) {
-      if (!/^0x[a-fA-F0-9]{40}$/.test(paymentReceiver)) {
-        return NextResponse.json(
-          { error: "paymentReceiver must be a valid Ethereum address (0x + 40 hex chars)" },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-    }
+    const { network, tokenURI, metadata, agentId, paymentReceiver } = validation.data;
 
     const supportedNetwork = network as SupportedNetwork;
 
@@ -95,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Check if agent already exists on-chain
     let alreadyRegistered = false;
-    if (agentId) {
+    if (agentId !== undefined) {
       const identity = await verifyAgentIdentity(agentId, supportedNetwork);
       alreadyRegistered = identity.exists;
     }
@@ -103,9 +71,36 @@ export async function POST(request: NextRequest) {
     // Build ERC-8004 registration transaction (if not already registered)
     let registrationTx = null;
     if (!alreadyRegistered) {
-      const hasMetadata = metadata && metadata.length > 0;
+      const hasMetadata = Boolean(metadata?.length);
+      let data: Hex;
+      if (tokenURI && hasMetadata) {
+        data = encodeFunctionData({
+          abi: IDENTITY_REGISTRY_ABI,
+          functionName: "register",
+          args: [tokenURI, metadata!.map((entry) => ({
+            metadataKey: entry.metadataKey,
+            metadataValue: entry.metadataValue as Hex,
+          }))],
+        });
+      } else if (tokenURI) {
+        data = encodeFunctionData({
+          abi: IDENTITY_REGISTRY_ABI,
+          functionName: "register",
+          args: [tokenURI],
+        });
+      } else {
+        data = encodeFunctionData({
+          abi: IDENTITY_REGISTRY_ABI,
+          functionName: "register",
+          args: [],
+        });
+      }
+
       registrationTx = {
-        to: registries.identity,
+        to: registries.identity as Address,
+        data,
+        value: "0",
+        chainId: chain.id,
         network,
         function: tokenURI
           ? (hasMetadata ? "register(string,tuple[])" : "register(string)")
@@ -143,7 +138,22 @@ export async function POST(request: NextRequest) {
       erc8004: {
         identityRegistry: registries.identity,
         reputationRegistry: registries.reputation,
+        registry: `eip155:${chain.id}:${registries.identity}`,
+        chainId: chain.id,
         network,
+        registryExplorer: chain.blockExplorers?.default
+          ? `${chain.blockExplorers.default.url}/address/${registries.identity}`
+          : null,
+        indexer: {
+          name: "8004scan",
+          statusEndpoint: `${baseUrl}/api/v2/agents/discovery?chainId=${chain.id}${agentId !== undefined ? `&agentId=${agentId}` : ""}`,
+          note: "8004scan indexes the official registry automatically after the mint is confirmed and its agentURI is publicly resolvable.",
+        },
+      },
+      wallet: {
+        onchainAgentWallet: "The registry initializes agentWallet to the transaction signer.",
+        x402PaymentReceiver: paymentReceiver || config.paymentReceiver,
+        requiresWalletProof: Boolean(paymentReceiver),
       },
       message: alreadyRegistered
         ? "Agent already registered. x402 config provided."
