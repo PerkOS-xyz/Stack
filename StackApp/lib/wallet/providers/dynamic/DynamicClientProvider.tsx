@@ -31,6 +31,36 @@ import {
 } from "@dynamic-labs/sdk-react-core";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { SolanaWalletConnectors } from "@dynamic-labs/solana";
+import {
+  ERC8004_REGISTRATION_NETWORKS,
+  getChainByNetwork,
+} from "../../../utils/chains";
+
+const EXISTING_DYNAMIC_ERC8004_NETWORKS = new Set([
+  "base", "base-sepolia", "ethereum", "sepolia", "monad", "monad-testnet",
+  "polygon", "polygon-amoy", "arbitrum", "arbitrum-sepolia", "optimism",
+  "optimism-sepolia", "avalanche", "avalanche-fuji", "celo", "celo-sepolia",
+]);
+
+const additionalErc8004WalletNetworks = ERC8004_REGISTRATION_NETWORKS
+  .filter((option) => !EXISTING_DYNAMIC_ERC8004_NETWORKS.has(option.value))
+  .map((option) => {
+    const chain = getChainByNetwork(option.value);
+    if (!chain) throw new Error(`Missing chain configuration for ${option.value}`);
+
+    return {
+      chainId: chain.id,
+      networkId: chain.id,
+      name: chain.name,
+      vanityName: option.label,
+      nativeCurrency: chain.nativeCurrency,
+      rpcUrls: [...chain.rpcUrls.default.http],
+      blockExplorerUrls: chain.blockExplorers?.default
+        ? [chain.blockExplorers.default.url]
+        : [],
+      iconUrls: [],
+    };
+  });
 
 /**
  * Dynamic Wallet Bridge
@@ -271,7 +301,7 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               name: "Sepolia",
               vanityName: "Sepolia",
               nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-              rpcUrls: ["https://rpc.sepolia.org"],
+              rpcUrls: ["https://11155111.rpc.thirdweb.com"],
               blockExplorerUrls: ["https://sepolia.etherscan.io"],
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg"],
             },
@@ -332,7 +362,7 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               name: "Polygon Amoy",
               vanityName: "Polygon Amoy",
               nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
-              rpcUrls: ["https://rpc-amoy.polygon.technology"],
+              rpcUrls: ["https://polygon-amoy-bor-rpc.publicnode.com"],
               blockExplorerUrls: ["https://amoy.polygonscan.com"],
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_polygon.jpg"],
             },
@@ -411,15 +441,16 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_celo.jpg"],
             },
             {
-              chainId: 44787,
-              networkId: 44787,
-              name: "Celo Alfajores",
-              vanityName: "Alfajores",
+              chainId: 11142220,
+              networkId: 11142220,
+              name: "Celo Sepolia",
+              vanityName: "Celo Sepolia",
               nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
-              rpcUrls: ["https://alfajores-forno.celo-testnet.org"],
-              blockExplorerUrls: ["https://alfajores.celoscan.io"],
+              rpcUrls: ["https://forno.celo-sepolia.celo-testnet.org"],
+              blockExplorerUrls: ["https://celo-sepolia.blockscout.com"],
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_celo.jpg"],
             },
+            ...additionalErc8004WalletNetworks,
           ],
         },
       }}

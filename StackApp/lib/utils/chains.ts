@@ -7,7 +7,26 @@
  */
 
 import { defineChain, type Chain } from "viem";
-import { monad as viemMonad, monadTestnet as viemMonadTestnet } from "viem/chains";
+import {
+  abstract,
+  abstractTestnet,
+  bsc,
+  bscTestnet,
+  gnosis,
+  goat,
+  linea,
+  lineaSepolia,
+  mantle,
+  mantleSepoliaTestnet,
+  megaeth,
+  megaethTestnet,
+  metis,
+  metisSepolia,
+  monad as viemMonad,
+  monadTestnet as viemMonadTestnet,
+  polygonAmoy as viemPolygonAmoy,
+  sepolia as viemSepolia,
+} from "viem/chains";
 import * as shared from "@perkos/util-chains";
 
 export {
@@ -18,9 +37,7 @@ export {
   base,
   baseSepolia,
   ethereum,
-  sepolia,
   polygon,
-  polygonAmoy,
   arbitrum,
   arbitrumSepolia,
   optimism,
@@ -44,6 +61,58 @@ export const MONAD_TESTNET_USDC_ADDRESS =
 // (10142). Use viem's current definitions until the shared package catches up.
 export const monad = viemMonad;
 export const monadTestnet = viemMonadTestnet;
+export const sepolia = viemSepolia;
+export const polygonAmoy = defineChain({
+  ...viemPolygonAmoy,
+  rpcUrls: {
+    default: { http: ["https://polygon-amoy-bor-rpc.publicnode.com"] },
+    public: { http: ["https://polygon-amoy-bor-rpc.publicnode.com"] },
+  },
+});
+
+/**
+ * Official ERC-8004 deployments that Stack can register against today.
+ *
+ * This deliberately remains narrower than every chain listed by 8004scan:
+ * each entry must also have a usable viem chain definition and wallet RPC.
+ * `x402Configured` means Stack has a non-zero payment token configured on the
+ * same network; ERC-8004 registration itself does not depend on x402.
+ */
+export const ERC8004_REGISTRATION_NETWORKS = [
+  { value: "monad-testnet", label: "Monad Testnet", testnet: true, x402Configured: true },
+  { value: "base-sepolia", label: "Base Sepolia", testnet: true, x402Configured: true },
+  { value: "sepolia", label: "Ethereum Sepolia", testnet: true, x402Configured: true },
+  { value: "polygon-amoy", label: "Polygon Amoy", testnet: true, x402Configured: true },
+  { value: "arbitrum-sepolia", label: "Arbitrum Sepolia", testnet: true, x402Configured: true },
+  { value: "optimism-sepolia", label: "OP Sepolia", testnet: true, x402Configured: true },
+  { value: "avalanche-fuji", label: "Avalanche Fuji", testnet: true, x402Configured: true },
+  { value: "celo-sepolia", label: "Celo Sepolia", testnet: true, x402Configured: false },
+  { value: "bsc-testnet", label: "BSC Testnet", testnet: true, x402Configured: false },
+  { value: "linea-sepolia", label: "Linea Sepolia", testnet: true, x402Configured: false },
+  { value: "mantle-sepolia", label: "Mantle Sepolia", testnet: true, x402Configured: false },
+  { value: "metis-sepolia", label: "Metis Sepolia", testnet: true, x402Configured: false },
+  { value: "megaeth-testnet", label: "MegaETH Testnet", testnet: true, x402Configured: false },
+  { value: "abstract-testnet", label: "Abstract Testnet", testnet: true, x402Configured: false },
+  { value: "monad", label: "Monad", testnet: false, x402Configured: true },
+  { value: "base", label: "Base", testnet: false, x402Configured: true },
+  { value: "ethereum", label: "Ethereum", testnet: false, x402Configured: true },
+  { value: "polygon", label: "Polygon", testnet: false, x402Configured: true },
+  { value: "arbitrum", label: "Arbitrum", testnet: false, x402Configured: true },
+  { value: "optimism", label: "Optimism", testnet: false, x402Configured: true },
+  { value: "avalanche", label: "Avalanche", testnet: false, x402Configured: true },
+  { value: "celo", label: "Celo", testnet: false, x402Configured: true },
+  { value: "bsc", label: "BNB Smart Chain", testnet: false, x402Configured: true },
+  { value: "linea", label: "Linea", testnet: false, x402Configured: true },
+  { value: "gnosis", label: "Gnosis", testnet: false, x402Configured: true },
+  { value: "mantle", label: "Mantle", testnet: false, x402Configured: true },
+  { value: "metis", label: "Metis", testnet: false, x402Configured: true },
+  { value: "megaeth", label: "MegaETH", testnet: false, x402Configured: false },
+  { value: "abstract", label: "Abstract", testnet: false, x402Configured: false },
+  { value: "goat", label: "GOAT Network", testnet: false, x402Configured: false },
+] as const;
+
+export type Erc8004RegistrationNetwork =
+  (typeof ERC8004_REGISTRATION_NETWORKS)[number]["value"];
 
 export const robinhood = defineChain({
   id: 4663,
@@ -68,15 +137,47 @@ export const robinhood = defineChain({
 
 export const chains: Record<string, Chain> = {
   ...shared.chains,
+  sepolia,
+  "polygon-amoy": polygonAmoy,
   monad,
   "monad-testnet": monadTestnet,
+  bsc,
+  "bsc-testnet": bscTestnet,
+  linea,
+  "linea-sepolia": lineaSepolia,
+  gnosis,
+  mantle,
+  "mantle-sepolia": mantleSepoliaTestnet,
+  metis,
+  "metis-sepolia": metisSepolia,
+  megaeth,
+  "megaeth-testnet": megaethTestnet,
+  abstract,
+  "abstract-testnet": abstractTestnet,
+  goat,
   robinhood,
 };
 
 export const networkToChain: Record<string, Chain> = {
   ...shared.networkToChain,
+  sepolia,
+  "polygon-amoy": polygonAmoy,
   monad,
   "monad-testnet": monadTestnet,
+  bsc,
+  "bsc-testnet": bscTestnet,
+  linea,
+  "linea-sepolia": lineaSepolia,
+  gnosis,
+  mantle,
+  "mantle-sepolia": mantleSepoliaTestnet,
+  metis,
+  "metis-sepolia": metisSepolia,
+  megaeth,
+  "megaeth-testnet": megaethTestnet,
+  abstract,
+  "abstract-testnet": abstractTestnet,
+  goat,
   robinhood,
 };
 
