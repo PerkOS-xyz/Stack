@@ -12,21 +12,13 @@ import {
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useWalletClient, useWalletContext } from "@/lib/wallet/client";
-import { getChainByNetwork } from "@/lib/utils/chains";
+import {
+  ERC8004_REGISTRATION_NETWORKS,
+  getChainByNetwork,
+} from "@/lib/utils/chains";
 import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
 
 const REGISTRATION_TYPE = "https://eips.ethereum.org/EIPS/eip-8004#registration-v1";
-
-const networkOptions = [
-  { value: "monad-testnet", label: "Monad Testnet" },
-  { value: "base-sepolia", label: "Base Sepolia" },
-  { value: "celo-sepolia", label: "Celo Sepolia" },
-  { value: "avalanche-fuji", label: "Avalanche Fuji" },
-  { value: "monad", label: "Monad" },
-  { value: "base", label: "Base" },
-  { value: "celo", label: "Celo" },
-  { value: "avalanche", label: "Avalanche" },
-] as const;
 
 interface PreparedTransaction {
   to: Address;
@@ -58,6 +50,10 @@ export default function RegisterAgentPage() {
   } | null>(null);
 
   const chain = useMemo(() => getChainByNetwork(network), [network]);
+  const selectedNetwork = useMemo(
+    () => ERC8004_REGISTRATION_NETWORKS.find((option) => option.value === network),
+    [network]
+  );
   const wallet = useWalletContext();
   const { walletClient, canSign } = useWalletClient({ chain: chain! });
 
@@ -212,9 +208,33 @@ export default function RegisterAgentPage() {
 
             <form onSubmit={register} className="mt-8 space-y-5">
               <label className="block text-sm text-slate-300">Network
-                <select value={network} onChange={(event) => setNetwork(event.target.value)} className={inputClass} disabled={busy}>
-                  {networkOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                <select
+                  value={network}
+                  onChange={(event) => {
+                    const nextNetwork = event.target.value;
+                    const nextOption = ERC8004_REGISTRATION_NETWORKS.find(
+                      (option) => option.value === nextNetwork
+                    );
+                    setNetwork(nextNetwork);
+                    setX402Support(nextOption?.x402Configured === true);
+                  }}
+                  className={inputClass}
+                  disabled={busy}
+                >
+                  <optgroup label="Testnets">
+                    {ERC8004_REGISTRATION_NETWORKS.filter((option) => option.testnet).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Mainnets">
+                    {ERC8004_REGISTRATION_NETWORKS.filter((option) => !option.testnet).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </optgroup>
                 </select>
+                <span className="mt-2 block text-xs text-slate-500">
+                  30 official EVM deployments currently supported; all are indexed by 8004scan.
+                </span>
               </label>
               <label className="block text-sm text-slate-300">Agent name
                 <input required maxLength={160} value={name} onChange={(event) => setName(event.target.value)} className={inputClass} placeholder="My autonomous agent" disabled={busy} />
@@ -232,8 +252,18 @@ export default function RegisterAgentPage() {
                 <input type="url" value={image} onChange={(event) => setImage(event.target.value)} className={inputClass} placeholder="https://agent.example/icon.png" disabled={busy} />
               </label>
               <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 text-sm text-slate-300">
-                <input type="checkbox" checked={x402Support} onChange={(event) => setX402Support(event.target.checked)} className="mt-1" disabled={busy} />
-                <span>Publish x402 payment support and use the connected wallet as the verified agent wallet.</span>
+                <input
+                  type="checkbox"
+                  checked={x402Support}
+                  onChange={(event) => setX402Support(event.target.checked)}
+                  className="mt-1"
+                  disabled={busy || !selectedNetwork?.x402Configured}
+                />
+                <span>
+                  {selectedNetwork?.x402Configured
+                    ? "Publish x402 payment support and use the connected wallet as the verified agent wallet."
+                    : "ERC-8004 registration is available on this network, but Stack does not yet have an x402 payment asset configured there."}
+                </span>
               </label>
               <button type="submit" disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 px-5 py-3 font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
                 {!wallet.isConnected ? "Connect wallet to continue" : busy ? "Registration in progress…" : "Register agent"}
