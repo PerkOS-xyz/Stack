@@ -9,7 +9,7 @@ import { CHAIN_IDS } from "@/lib/utils/chains";
 
 export const dynamic = "force-dynamic";
 
-// Network metadata for all 16 supported networks (8 mainnet + 8 testnet)
+// Network metadata for supported mainnets and testnets.
 const NETWORK_METADATA: Record<
   string,
   { name: string; chainId: number; symbol: string; color: string; icon: string }
@@ -78,6 +78,13 @@ const NETWORK_METADATA: Record<
     color: "#F50DB4",
     icon: "🦄",
   },
+  robinhood: {
+    name: "Robinhood Chain",
+    chainId: CHAIN_IDS.ROBINHOOD,
+    symbol: "ETH",
+    color: "#00C805",
+    icon: "R",
+  },
   // Testnet networks
   "avalanche-fuji": {
     name: "Avalanche Fuji",
@@ -145,7 +152,7 @@ const NETWORK_METADATA: Record<
 };
 
 // Lists of network keys for filtering
-const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad", "unichain"];
+const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad", "unichain", "robinhood"];
 const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "celo-sepolia", "monad-testnet", "unichain-sepolia"];
 
 interface NetworkAggregation {

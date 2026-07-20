@@ -199,7 +199,7 @@ Connect to **16 EVM networks** without managing multiple RPC connections:
 | Arbitrum (42161)  | Arbitrum Sepolia (421614) |
 | Optimism (10)     | OP Sepolia (11155420)     |
 | Celo (42220)      | Celo Sepolia (11142220)   |
-| Monad (10142)     | Monad Testnet (10143)     |
+| Monad (143)       | Monad Testnet (10143)     |
 
 **All with official Circle USDC addresses configured.**
 
@@ -706,7 +706,7 @@ FROM perkos_sponsor_wallet_analytics;
 | Arbitrum  | 42161    | ETH    | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
 | Optimism  | 10       | ETH    | `0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85` |
 | Celo      | 42220    | CELO   | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
-| Monad     | 10142    | MON    | _Coming soon_                                |
+| Monad     | 143      | MON    | `0x754704Bc059F8C67012fEd69BC8A327a5aafb603` |
 
 ### Testnet Networks (8)
 
@@ -719,7 +719,7 @@ FROM perkos_sponsor_wallet_analytics;
 | Arbitrum Sepolia | 421614   | ETH    | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
 | OP Sepolia       | 11155420 | ETH    | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
 | Celo Sepolia     | 11142220 | CELO   | _TBD_                                        |
-| Monad Testnet    | 10143    | MON    | _Coming soon_                                |
+| Monad Testnet    | 10143    | MON    | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
 
 > All USDC addresses are official Circle-issued tokens.
 

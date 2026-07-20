@@ -41,6 +41,9 @@ const USDC_ADDRESSES: Record<string, Address> = {
   "arbitrum": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   "optimism": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
   "avalanche": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  "monad": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+  "monad-testnet": "0x534b2f3A21130d7a60830c2Df862319e593943A3",
+  "robinhood": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
 };
 
 export class PricingService {

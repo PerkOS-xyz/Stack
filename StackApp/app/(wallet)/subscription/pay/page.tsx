@@ -40,6 +40,7 @@ import {
   getValidAfter,
   formatPaymentPayload,
   encodePaymentHeader,
+  getPaymentTokenSymbol,
   type PaymentEnvelope,
 } from "@/lib/utils/x402-payment";
 
@@ -81,6 +82,7 @@ const NETWORK_INFO: Record<string, { name: string; icon: string; color: string }
   "arbitrum-sepolia": { name: "Arbitrum Sepolia", icon: "🔷", color: "from-sky-400 to-sky-500" },
   optimism: { name: "Optimism", icon: "🔴", color: "from-rose-500 to-rose-600" },
   "optimism-sepolia": { name: "Optimism Sepolia", icon: "🔴", color: "from-rose-400 to-rose-500" },
+  robinhood: { name: "Robinhood Chain", icon: "R", color: "from-green-500 to-emerald-600" },
 };
 
 // Helper to get chain ID from network name
@@ -88,7 +90,7 @@ const getChainId = (network: SupportedNetwork): number | undefined => {
   return getChainIdFromNetwork(network);
 };
 
-// Filter networks to only show mainnets with USDC configured
+// Filter networks to only show mainnets with a configured payment stablecoin.
 const PAYMENT_NETWORKS = SUPPORTED_NETWORKS.filter((network) => {
   const chainId = getChainId(network);
   if (!chainId) return false;
@@ -177,7 +179,10 @@ function SubscriptionPaymentPageContent() {
     async function fetchRequirements() {
       if (!tier) return;
       try {
-        const response = await fetch(`/api/subscription/pay?tier=${tier}&billingCycle=${billingParam}`);
+        const response = await fetch(
+          `/api/subscription/pay?tier=${tier}&billingCycle=${billingParam}`,
+          { cache: "no-store" }
+        );
         const data = await response.json();
         if (data.success && data.requirements) {
           setPaymentReceiver(data.requirements.paymentReceiver);
@@ -189,7 +194,7 @@ function SubscriptionPaymentPageContent() {
     fetchRequirements();
   }, [tier, billingParam]);
 
-  // Fetch USDC balance
+  // Fetch payment-token balance.
   const fetchBalance = useCallback(async () => {
     if (!address || !selectedNetwork) return;
 
@@ -218,7 +223,7 @@ function SubscriptionPaymentPageContent() {
 
       setUsdcBalance(balance as bigint);
     } catch (err) {
-      console.error("Error fetching USDC balance:", err);
+      console.error("Error fetching payment-token balance:", err);
       setUsdcBalance(null);
     } finally {
       setIsLoadingBalance(false);
@@ -249,9 +254,10 @@ function SubscriptionPaymentPageContent() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Get USDC address for current network
+  // Get the payment-token address and display symbol for the current network.
   const currentChainId = getChainId(selectedNetwork);
   const currentUsdcAddress = currentChainId ? getUSDCAddress(currentChainId) : undefined;
+  const paymentTokenSymbol = currentChainId ? getPaymentTokenSymbol(currentChainId) : "USDC";
 
   // Copy payment address to clipboard
   const copyPaymentAddress = async () => {
@@ -313,7 +319,7 @@ function SubscriptionPaymentPageContent() {
     setError(null);
 
     try {
-      // Get USDC address for current network
+      // Get the payment-token address for the current network.
       const chainId = getChainId(selectedNetwork);
       if (!chainId) {
         throw new Error("Invalid network selected");
@@ -321,10 +327,10 @@ function SubscriptionPaymentPageContent() {
 
       const usdcAddress = getUSDCAddress(chainId) as Address;
       if (!usdcAddress) {
-        throw new Error("USDC not available on this network");
+        throw new Error(`${paymentTokenSymbol} not available on this network`);
       }
 
-      // Parse price to USDC atomic units (6 decimals) - use discounted price if coupon applied
+      // Parse the USD price to stablecoin atomic units (6 decimals).
       const amountInUSDC = parsePriceToUSDC(finalPrice);
 
       // Generate random nonce
@@ -343,7 +349,7 @@ function SubscriptionPaymentPageContent() {
         nonce,
       };
 
-      // Create EIP-712 domain for USDC
+      // Create the token-specific EIP-712 domain.
       const domain = createEIP712Domain(selectedNetwork, usdcAddress);
 
       console.log("[Payment] Signing EIP-712 authorization:", {
@@ -441,8 +447,27 @@ function SubscriptionPaymentPageContent() {
         signature,
       };
 
-      // Format as x402 v2 payload
-      const paymentPayload = formatPaymentPayload(envelope);
+      const paymentTerms = {
+        scheme: "exact" as const,
+        network: `eip155:${chainId}`,
+        amount: amountInUSDC.toString(),
+        payTo: paymentReceiver as Address,
+        maxTimeoutSeconds: 3600,
+        asset: usdcAddress,
+        extra: {
+          name: domain.name,
+          version: domain.version,
+          symbol: paymentTokenSymbol,
+        },
+      };
+
+      // Canonical x402 v2 payload: the selected requirements live in
+      // `accepted`, while the EIP-3009 proof stays in `payload`.
+      const paymentPayload = formatPaymentPayload(envelope, paymentTerms, {
+        url: `${window.location.origin}/api/subscription/pay/x402`,
+        description: `Subscription payment for ${tier}`,
+        mimeType: "application/json",
+      });
 
       console.log("[Payment] Submitting payment for verification...");
 
@@ -511,7 +536,7 @@ function SubscriptionPaymentPageContent() {
         }
         // Insufficient funds
         else if (message.includes("insufficient") || message.includes("balance")) {
-          errorMessage = "Insufficient USDC balance for this transaction.";
+          errorMessage = `Insufficient ${paymentTokenSymbol} balance for this transaction.`;
         }
         // Generic RPC errors
         else if (message.includes("rpc error") || message.includes("internal error")) {
@@ -875,7 +900,7 @@ function SubscriptionPaymentPageContent() {
                       <span className="text-slate-400 text-sm">Total due today</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-white">${finalPrice.toFixed(2)}</span>
-                        <span className="text-slate-400 text-sm ml-1">USDC</span>
+                        <span className="text-slate-400 text-sm ml-1">{paymentTokenSymbol}</span>
                       </div>
                     </div>
                     {appliedCoupon && (
@@ -952,7 +977,7 @@ function SubscriptionPaymentPageContent() {
                       </div>
                     </div>
 
-                    {/* USDC Balance */}
+                    {/* Payment-token balance */}
                     <div className="mb-6 flex-1">
                       <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
                         Your Balance
@@ -970,7 +995,7 @@ function SubscriptionPaymentPageContent() {
                                 {isLoadingBalance ? (
                                   <span className="text-slate-500">Loading...</span>
                                 ) : (
-                                  <>{formatBalance(usdcBalance)} <span className="text-slate-400 font-normal">USDC</span></>
+                                  <>{formatBalance(usdcBalance)} <span className="text-slate-400 font-normal">{paymentTokenSymbol}</span></>
                                 )}
                               </p>
                               <p className="text-slate-500 text-xs">
@@ -996,7 +1021,7 @@ function SubscriptionPaymentPageContent() {
                               <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                               </svg>
-                              Insufficient balance. You need ${price} USDC.
+                              Insufficient balance. You need ${price} {paymentTokenSymbol}.
                             </p>
                           </div>
                         )}
@@ -1079,7 +1104,7 @@ function SubscriptionPaymentPageContent() {
                         <div className="bg-pink-500/5 border border-pink-500/20 rounded-xl p-4">
                           <h4 className="text-pink-400 font-medium mb-3 flex items-center text-sm">
                             <span className="w-6 h-6 rounded-full bg-pink-500/20 flex items-center justify-center mr-2 text-xs font-bold">1</span>
-                            Send USDC to this address
+                            Send {paymentTokenSymbol} to this address
                           </h4>
                           <div className="bg-slate-900/60 rounded-lg p-3">
                             <div className="flex items-center justify-between gap-3">
@@ -1102,7 +1127,7 @@ function SubscriptionPaymentPageContent() {
                               </button>
                             </div>
                             <div className="mt-2 text-xs text-slate-500">
-                              Amount: <span className="text-white font-semibold">${finalPrice.toFixed(2)} USDC</span> on {NETWORK_INFO[selectedNetwork]?.name || selectedNetwork}
+                              Amount: <span className="text-white font-semibold">${finalPrice.toFixed(2)} {paymentTokenSymbol}</span> on {NETWORK_INFO[selectedNetwork]?.name || selectedNetwork}
                               {appliedCoupon && <span className="text-emerald-400 ml-1">(with coupon)</span>}
                             </div>
                           </div>
@@ -1195,7 +1220,7 @@ function SubscriptionPaymentPageContent() {
                               Processing Payment...
                             </span>
                           ) : (
-                            <>Sign & Pay ${finalPrice.toFixed(2)} USDC</>
+                            <>Sign & Pay ${finalPrice.toFixed(2)} {paymentTokenSymbol}</>
                           )}
                         </button>
 
@@ -1212,7 +1237,7 @@ function SubscriptionPaymentPageContent() {
                           disabled={isSigning || isProcessing}
                           className="w-full py-2 text-slate-500 hover:text-slate-300 text-xs transition-colors disabled:opacity-50"
                         >
-                          Already sent USDC? Verify with transaction hash →
+                          Already sent {paymentTokenSymbol}? Verify with transaction hash →
                         </button>
 
                         {/* Security Note */}

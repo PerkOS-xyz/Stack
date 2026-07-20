@@ -7,6 +7,8 @@ import { getChainIdFromNetwork, getUSDCAddress, type SupportedNetwork } from "@/
 import { config } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { subscriptionPayX402Schema, validateBody } from "@/lib/validation/schemas";
+import { getEIP712Version, getPaymentTokenSymbol, getTokenName } from "@/lib/utils/x402-payment";
+import type { X402SettleRequest, X402VerifyRequest } from "@/lib/types/x402";
 
 export const dynamic = "force-dynamic";
 
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get USDC address for this network
+    // Get the configured payment-token address for this network.
     const chainId = getChainIdFromNetwork(network as SupportedNetwork);
     if (!chainId) {
       return NextResponse.json(
@@ -163,9 +165,10 @@ export async function POST(req: NextRequest) {
       );
     }
     const usdcAddress = getUSDCAddress(chainId);
+    const paymentTokenSymbol = getPaymentTokenSymbol(chainId);
     if (!usdcAddress) {
       return NextResponse.json(
-        { error: `USDC not configured for network: ${network}` },
+        { error: `Payment token not configured for network: ${network}` },
         { status: 400 }
       );
     }
@@ -189,7 +192,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify the amount (USDC has 6 decimals)
+    // Verify the amount (supported stablecoins have 6 decimals).
     const expectedAmount = parseUnits(expectedPrice.toString(), 6);
     const paymentAmount = BigInt(authorization.value);
 
@@ -198,7 +201,7 @@ export async function POST(req: NextRequest) {
     if (paymentAmount < minAmount) {
       return NextResponse.json(
         {
-          error: `Insufficient payment. Expected ${formatUnits(expectedAmount, 6)} USDC, received ${formatUnits(paymentAmount, 6)} USDC`
+          error: `Insufficient payment. Expected ${formatUnits(expectedAmount, 6)} ${paymentTokenSymbol}, received ${formatUnits(paymentAmount, 6)} ${paymentTokenSymbol}`
         },
         { status: 400 }
       );
@@ -207,13 +210,17 @@ export async function POST(req: NextRequest) {
     // Create payment requirements for x402 verification
     const paymentRequirements = {
       scheme: "exact" as const,
-      network: network,
-      maxAmountRequired: expectedAmount.toString(),
+      network: `eip155:${chainId}`,
+      amount: expectedAmount.toString(),
       resource: `/api/subscription/pay/x402`,
-      description: `Subscription payment for ${tierConfig.displayName} (${billingCycle})`,
       payTo: paymentReceiver as Address,
       maxTimeoutSeconds: 3600,
       asset: usdcAddress as Address,
+      extra: {
+        name: getTokenName(chainId),
+        version: getEIP712Version(chainId),
+        symbol: paymentTokenSymbol,
+      },
     };
 
     // Use X402Service for verification and settlement
@@ -234,7 +241,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Verify the payment
-    const verifyResult = await x402Service.verify(x402Request);
+    const verifyResult = await x402Service.verify(x402Request as unknown as X402VerifyRequest);
 
     if (!verifyResult.isValid) {
       console.error("Payment verification failed:", verifyResult.invalidReason);
@@ -247,7 +254,7 @@ export async function POST(req: NextRequest) {
     console.log(`Payment verified for ${userWalletAddress}`);
 
     // Settle the payment on-chain
-    const settleResult = await x402Service.settle(x402Request);
+    const settleResult = await x402Service.settle(x402Request as unknown as X402SettleRequest);
 
     if (!settleResult.success) {
       console.error("Payment settlement failed:", settleResult.errorReason);

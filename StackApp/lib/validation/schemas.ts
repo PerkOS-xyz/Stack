@@ -20,6 +20,7 @@ const SUPPORTED_NETWORKS = [
   "arbitrum", "arbitrum-sepolia",
   "optimism", "optimism-sepolia",
   "unichain", "unichain-sepolia",
+  "robinhood",
   "bsc", "bsc-testnet",
   "linea", "linea-sepolia",
   "gnosis", "gnosis-chiado",
@@ -39,7 +40,7 @@ export const networkParam = z.enum(SUPPORTED_NETWORKS, {
 // Agent ID: positive integer string
 export const agentId = z
   .string()
-  .regex(/^[1-9]\d*$/, "Agent ID must be a positive integer string");
+  .regex(/^(0|[1-9]\d*)$/, "Agent ID must be a non-negative integer string");
 
 // Amount: positive number string (allows decimals)
 export const amount = z
@@ -64,18 +65,55 @@ export const x402Version = z
   .int("x402Version must be an integer")
   .refine((value) => value === 1 || value === 2, "x402Version must be 1 or 2");
 
-// Payment payload base structure
-export const paymentPayload = z.object({
-  x402Version: x402Version,
-  network: z.string().min(1, "paymentPayload.network is required"),
-  scheme: z.string().min(1, "paymentPayload.scheme is required"),
-  payload: z.unknown().optional(),
+const x402V2Requirements = z.object({
+  scheme: z.string().min(1, "scheme is required"),
+  network: z.string().regex(/^[a-z0-9-]+:[a-zA-Z0-9-]+$/, "x402 v2 network must use CAIP-2 format"),
+  amount: z.string().regex(/^\d+$/, "amount must be atomic units"),
+  asset: z.string().min(1, "asset is required"),
+  payTo: z.string().min(1, "payTo is required"),
+  maxTimeoutSeconds: z.number().int().positive(),
+  extra: z.record(z.string(), z.unknown()).nullish(),
 });
+
+// Accept the canonical v2 payload (`accepted`) plus the legacy flat shape
+// during migration. X402Service normalizes both before cryptographic checks.
+export const paymentPayload = z
+  .object({
+    x402Version: x402Version,
+    network: z.string().min(1).optional(),
+    scheme: z.string().min(1).optional(),
+    accepted: x402V2Requirements.optional(),
+    resource: z
+      .object({
+        url: z.string().url(),
+        description: z.string().optional(),
+        mimeType: z.string().optional(),
+        serviceName: z.string().max(32).optional(),
+        tags: z.array(z.string().max(32)).max(5).optional(),
+        iconUrl: z.string().url().optional(),
+      })
+      .optional(),
+    payload: z.record(z.string(), z.unknown()),
+    extensions: z.record(z.string(), z.unknown()).nullish(),
+  })
+  .passthrough()
+  .superRefine((value, ctx) => {
+    const canonicalV2 = value.x402Version === 2 && value.accepted;
+    const legacyEnvelope = value.network && value.scheme;
+    if (!canonicalV2 && !legacyEnvelope) {
+      ctx.addIssue({
+        code: "custom",
+        message: "paymentPayload must contain canonical v2 accepted fields or legacy network/scheme fields",
+      });
+    }
+  });
 
 // Payment requirements base structure
 export const paymentRequirements = z.object({
   network: z.string().optional(),
+  scheme: z.string().optional(),
   payTo: z.string().optional(),
+  amount: z.unknown().optional(),
   maxAmountRequired: z.unknown().optional(),
   asset: z.string().optional(),
   resource: z.unknown().optional(),
@@ -107,6 +145,15 @@ export const x402RequestSchema = z.object({
   x402Version: x402Version,
   paymentPayload: paymentPayload,
   paymentRequirements: paymentRequirements,
+}).superRefine((value, ctx) => {
+  if (value.x402Version === 2 && value.paymentPayload.accepted) {
+    const parsed = x402V2Requirements.safeParse(value.paymentRequirements);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        ctx.addIssue({ ...issue, path: ["paymentRequirements", ...issue.path] });
+      }
+    }
+  }
 });
 
 // Subscription payment schema
@@ -243,6 +290,15 @@ export const profileUpsertSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
+const sponsorDomain = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(
+    /^(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?::\d{1,5})?$/,
+    "domain must be a hostname, optional port, or *.wildcard hostname without protocol/path"
+  );
+
 // Sponsor gas-sponsorship rule fields (POST /api/sponsor/rules)
 export const sponsorRuleCreateSchema = z.object({
   walletId: z.string().min(1, "walletId is required"),
@@ -253,7 +309,7 @@ export const sponsorRuleCreateSchema = z.object({
     "time_restriction",
   ]),
   agentAddress: z.string().optional(),
-  domain: z.string().optional(),
+  domain: sponsorDomain.optional(),
   dailyLimitWei: z.union([z.string(), z.number()]).optional(),
   monthlyLimitWei: z.union([z.string(), z.number()]).optional(),
   perTransactionLimitWei: z.union([z.string(), z.number()]).optional(),
@@ -270,7 +326,7 @@ export const sponsorRuleUpdateSchema = z.object({
   priority: z.coerce.number().int().optional(),
   description: z.string().optional(),
   agentAddress: z.string().optional(),
-  domain: z.string().optional(),
+  domain: sponsorDomain.optional(),
   dailyLimitWei: z.union([z.string(), z.number()]).optional(),
   monthlyLimitWei: z.union([z.string(), z.number()]).optional(),
   perTransactionLimitWei: z.union([z.string(), z.number()]).optional(),
@@ -325,13 +381,23 @@ export const vendorRegisterSchema = z
 // POST /api/v2/agents/onboard (builds an unsigned onboarding tx)
 export const agentOnboardSchema = z
   .object({
-    network: z.string().optional(),
-    tokenURI: z.string().optional(),
-    metadata: z.unknown().optional(),
-    agentId: z.union([z.string(), z.number()]).optional(),
-    paymentReceiver: z.string().optional(),
+    network: networkParam,
+    tokenURI: z.string().url().max(32_768).optional(),
+    metadata: z
+      .array(
+        z.object({
+          metadataKey: z.string().min(1).max(128).refine((key) => key !== "agentWallet", {
+            message: "agentWallet is a reserved metadata key",
+          }),
+          metadataValue: z.string().regex(/^0x(?:[a-fA-F0-9]{2})*$/, "metadataValue must be hex bytes"),
+        })
+      )
+      .max(32)
+      .optional(),
+    agentId: z.union([z.string().regex(/^(0|[1-9]\d*)$/), z.number().int().nonnegative()]).optional(),
+    paymentReceiver: ethereumAddress.optional(),
   })
-  .passthrough();
+  .strict();
 
 // POST /api/v2/agents/wallets
 export const agentWalletCreateSchema = z

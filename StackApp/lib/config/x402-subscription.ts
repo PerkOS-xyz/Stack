@@ -8,6 +8,7 @@
 import { SUBSCRIPTION_TIERS, type SubscriptionTier } from "./subscriptions";
 import { getUSDCAddress, getChainIdFromNetwork, type SupportedNetwork } from "@/lib/utils/chains";
 import { networkToCAIP2 } from "@/lib/utils/x402-headers";
+import { getEIP712Version, getPaymentTokenSymbol, getTokenName } from "@/lib/utils/x402-payment";
 
 // Payment recipient (treasury wallet)
 const TREASURY_ADDRESS = process.env.TREASURY_WALLET || process.env.NEXT_PUBLIC_TREASURY_WALLET;
@@ -44,12 +45,12 @@ export function getTierPriceUsd(tier: SubscriptionTier, yearly: boolean = false)
 }
 
 /**
- * Get subscription tier price in USDC atomic units (6 decimals)
+ * Get subscription tier price in stablecoin atomic units (6 decimals)
  * $29 = 29_000_000 atomic units
  */
 export function getTierPriceAtomicUnits(tier: SubscriptionTier, yearly: boolean = false): string {
   const priceUsd = getTierPriceUsd(tier, yearly);
-  // USDC has 6 decimals, so multiply by 1_000_000
+  // Supported payment stablecoins use 6 decimals.
   const atomicUnits = Math.floor(priceUsd * 1_000_000);
   return atomicUnits.toString();
 }
@@ -80,8 +81,9 @@ export function buildSubscriptionPaymentRequirements(
     maxTimeoutSeconds: 60, // Allow more time for subscription payments
     asset: usdcAddress,
     extra: {
-      name: "USD Coin",
-      version: "2",
+      name: chainId ? getTokenName(chainId) : "USD Coin",
+      version: chainId ? getEIP712Version(chainId) : "2",
+      symbol: chainId ? getPaymentTokenSymbol(chainId) : "USDC",
       tier,
       yearly,
     },
@@ -96,4 +98,5 @@ export const SUBSCRIPTION_SUPPORTED_NETWORKS: SupportedNetwork[] = [
   "base-sepolia",
   "avalanche",
   "avalanche-fuji",
+  "robinhood",
 ];

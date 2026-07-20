@@ -60,8 +60,9 @@ export async function GET(req: NextRequest) {
       .eq("wallet_address", address.toLowerCase())
       .single();
 
-    if (error && (error as { code?: string }).code !== "PGRST116") {
-      // PGRST116 = no rows returned
+    const errorCode = (error as { code?: string } | null)?.code;
+    if (error && errorCode !== "PGRST116" && errorCode !== "NOT_FOUND") {
+      // PGRST116 = Supabase no rows; NOT_FOUND = local Firestore adapter
       console.error("Error fetching profile:", error);
       return NextResponse.json(
         { error: "Failed to fetch profile" },

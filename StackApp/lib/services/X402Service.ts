@@ -12,6 +12,7 @@ import { StellarExactSchemeService } from "./StellarExactSchemeService";
 import { config, type SupportedNetwork } from "../utils/config";
 import { SUPPORTED_NETWORKS } from "../utils/chains";
 import { logger } from "../utils/logger";
+import { normalizeX402Request } from "../utils/x402-normalization";
 
 export class X402Service {
   private exactSchemes: Map<SupportedNetwork, ExactSchemeService> = new Map();
@@ -77,7 +78,7 @@ export class X402Service {
       "eip155:137": "polygon",
       "eip155:80002": "polygon-amoy",
       // Monad
-      "eip155:10142": "monad",
+      "eip155:143": "monad",
       "eip155:10143": "monad-testnet",
       // Arbitrum
       "eip155:42161": "arbitrum",
@@ -88,6 +89,8 @@ export class X402Service {
       // Unichain
       "eip155:130": "unichain",
       "eip155:1301": "unichain-sepolia",
+      // Robinhood Chain
+      "eip155:4663": "robinhood",
       // Stellar (CAIP-2 maps to itself since it's not an EVM legacy network)
       "stellar:pubnet": "stellar:pubnet" as SupportedNetwork,
     };
@@ -138,6 +141,7 @@ export class X402Service {
    * Verify payment payload
    */
   async verify(request: X402VerifyRequest): Promise<VerifyResponse> {
+    request = normalizeX402Request(request) as X402VerifyRequest;
     const { paymentPayload, paymentRequirements } = request;
 
     // Validate versions - support both V1 and V2
@@ -243,6 +247,7 @@ export class X402Service {
    * @param vendorDomain Optional domain of the vendor making the request (for domain_whitelist rules)
    */
   async settle(request: X402SettleRequest, vendorDomain?: string): Promise<SettleResponse> {
+    request = normalizeX402Request(request) as X402SettleRequest;
     const { paymentPayload, paymentRequirements } = request;
 
     // Validate versions - support both V1 and V2

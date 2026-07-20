@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
     unichain: CHAIN_IDS.UNICHAIN,
     "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
+    robinhood: CHAIN_IDS.ROBINHOOD,
   };
 
   return NextResponse.json({

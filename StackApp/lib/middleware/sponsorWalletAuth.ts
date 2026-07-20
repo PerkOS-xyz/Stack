@@ -13,7 +13,7 @@ import { verifyMessage } from 'viem';
  *
  * Mirrors the EIP-191 pattern in `adminAuth.ts`.
  */
-export async function verifyWalletSignature(request: Request): Promise<{
+export async function verifyWalletSignature(request: Request, purpose?: string): Promise<{
   authorized: boolean;
   address?: string;
   error?: string;
@@ -35,8 +35,12 @@ export async function verifyWalletSignature(request: Request): Promise<{
     return { authorized: false, error: 'Timestamp expired or invalid' };
   }
 
-  // Verify EIP-191 signature: message format is "PerkOS Sponsor Wallet Access {timestamp}"
-  const message = `PerkOS Sponsor Wallet Access ${timestamp}`;
+  // Purpose-bound messages prevent a signature collected for one operation
+  // from authorizing a different route. Existing sponsor UI keeps the legacy
+  // message when no purpose is supplied.
+  const message = purpose
+    ? `PerkOS ${purpose} ${timestamp}`
+    : `PerkOS Sponsor Wallet Access ${timestamp}`;
   try {
     const valid = await verifyMessage({
       address: address as `0x${string}`,

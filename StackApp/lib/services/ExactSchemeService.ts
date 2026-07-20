@@ -16,7 +16,7 @@ import { config, type SupportedNetwork } from "../utils/config";
 import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { networkToCAIP2 } from "../utils/x402-headers";
-import { getEIP712Version, getTokenName } from "../utils/x402-payment";
+import { getEIP712Version, getPaymentTokenSymbol, getTokenName } from "../utils/x402-payment";
 import { getParaTransactionService } from "./ParaTransactionService";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
 
@@ -58,6 +58,7 @@ export class ExactSchemeService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
+      robinhood: CHAIN_IDS.ROBINHOOD,
     };
     return chainIdMap[network]!;
   }
@@ -387,7 +388,7 @@ export class ExactSchemeService {
               sponsorAddress: sponsorWallet.sponsor_address,
               amountWei: authorization.value,
               assetAddress: requirements.asset,
-              assetSymbol: "USDC",
+              assetSymbol: getPaymentTokenSymbol(this.getChainIdForNetwork(this.network)),
               network: this.network,
               scheme: "exact",
               status: "success",
@@ -428,7 +429,7 @@ export class ExactSchemeService {
               sponsorAddress: sponsorWallet.sponsor_address,
               amountWei: authorization.value,
               assetAddress: requirements.asset,
-              assetSymbol: "USDC",
+              assetSymbol: getPaymentTokenSymbol(this.getChainIdForNetwork(this.network)),
               network: this.network,
               scheme: "exact",
               status: "success",
@@ -500,7 +501,7 @@ export class ExactSchemeService {
           // Invalid URL, leave vendor info undefined
         }
 
-        // Log the x402 transaction (USDC payment)
+        // Log the x402 stablecoin payment.
         await loggingService.logTransaction({
           transactionHash: result.transactionHash,
           payerAddress: authorization.from,
@@ -508,7 +509,7 @@ export class ExactSchemeService {
           sponsorAddress: sponsorWallet.sponsor_address,
           amountWei: authorization.value,
           assetAddress: requirements.asset,
-          assetSymbol: "USDC",
+          assetSymbol: getPaymentTokenSymbol(chainId),
           network: this.network,
           scheme: "exact",
           status: "success",
@@ -571,8 +572,8 @@ export class ExactSchemeService {
 
     // Validate amount - use V2 helper for both amount and maxAmountRequired fields
     const value = BigInt(auth.value);
-    const maxAmount = BigInt(getPaymentAmount(requirements));
-    if (value > maxAmount) {
+    const requiredAmount = BigInt(getPaymentAmount(requirements));
+    if (value !== requiredAmount) {
       return false;
     }
 
@@ -587,8 +588,8 @@ export class ExactSchemeService {
     try {
       const chainId = this.getChainIdForNetwork(this.network);
       const domain = {
-        name: getTokenName(chainId), // Network-specific: Celo uses "USDC", others use "USD Coin"
-        version: getEIP712Version(chainId), // Network-specific: Celo uses "1", others use "2"
+        name: getTokenName(chainId),
+        version: getEIP712Version(chainId),
         chainId,
         verifyingContract: tokenAddress,
       };

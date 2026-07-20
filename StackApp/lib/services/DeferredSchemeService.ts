@@ -91,6 +91,7 @@ export class DeferredSchemeService {
       "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
+      robinhood: CHAIN_IDS.ROBINHOOD,
       bsc: 56,
       "bsc-testnet": 97,
       linea: 59144,

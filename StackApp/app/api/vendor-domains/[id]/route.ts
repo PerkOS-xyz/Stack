@@ -9,9 +9,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getVendorOwnershipService } from "@/lib/services/VendorOwnershipService";
 import { getRateLimitService } from "@/lib/services/RateLimitService";
+import { verifyWalletSignature } from "@/lib/middleware/sponsorWalletAuth";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+async function authorize(request: NextRequest, owner: string) {
+  const auth = await verifyWalletSignature(request);
+  return auth.authorized && auth.address === owner.toLowerCase() ? null :
+    NextResponse.json({ error: auth.error || "Forbidden" }, { status: auth.authorized ? 403 : 401 });
 }
 
 // GET - Get domain details with rate limit status
@@ -27,6 +34,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
+    const authError = await authorize(request, userWalletAddress);
+    if (authError) return authError;
 
     const vendorOwnershipService = getVendorOwnershipService();
     const rateLimitService = getRateLimitService();
@@ -75,6 +84,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
+    const authError = await authorize(request, userWalletAddress);
+    if (authError) return authError;
 
     const vendorOwnershipService = getVendorOwnershipService();
     const success = await vendorOwnershipService.removeDomain(userWalletAddress, id);
@@ -112,6 +123,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
+    const authError = await authorize(request, userWalletAddress);
+    if (authError) return authError;
 
     // Validate rate limit values if provided
     const limits: {

@@ -29,6 +29,7 @@ const ASSET_SYMBOLS: Record<string, string> = {
   "0xaf88d065e77c8cC2239327C5EDb3A432268e5831": "USDC", // Arbitrum
   "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85": "USDC", // Optimism
   "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E": "USDC", // Avalanche
+  "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168": "USDG", // Robinhood Chain
 };
 
 export abstract class BasePricingStrategy implements PricingStrategy {

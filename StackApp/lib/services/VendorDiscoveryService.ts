@@ -111,6 +111,8 @@ interface VendorRegistrationRequest {
  */
 interface VendorDirectRegistrationRequest extends VendorRegistrationRequest {
   walletAddress: string;
+  /** Authenticated wallet controlling this registration. */
+  ownerAddress?: string;
   network: string;
   priceUsd?: string;
   facilitatorUrl?: string;
@@ -475,6 +477,7 @@ export class VendorDiscoveryService {
       priceUsd,
       facilitatorUrl,
       endpoints,
+      ownerAddress,
     } = request;
 
     console.log("[VendorDirectRegistration] Request:", {
@@ -489,6 +492,9 @@ export class VendorDiscoveryService {
     if (!walletAddress) {
       console.error("[VendorDirectRegistration] Missing walletAddress");
       return { success: false, error: "Wallet address is required for direct registration" };
+    }
+    if (!ownerAddress || ownerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+      return { success: false, error: "Authenticated owner must match walletAddress" };
     }
     if (!network) {
       console.error("[VendorDirectRegistration] Missing network");
@@ -508,7 +514,7 @@ export class VendorDiscoveryService {
     console.log("[VendorDirectRegistration] Checking for existing vendor...");
     const { data: existingVendor } = await firebaseAdmin
       .from("perkos_vendors")
-      .select("id, total_transactions, successful_transactions, total_volume, average_response_time_ms")
+      .select("id, wallet_address, total_transactions, successful_transactions, total_volume, average_response_time_ms")
       .eq("url", normalizedUrl)
       .single();
 
@@ -516,6 +522,12 @@ export class VendorDiscoveryService {
     let isUpdate = false;
 
     if (existingVendor) {
+      if (
+        existingVendor.wallet_address &&
+        String(existingVendor.wallet_address).toLowerCase() !== ownerAddress.toLowerCase()
+      ) {
+        return { success: false, error: "Vendor URL is owned by another wallet" };
+      }
       // Re-registration: Update existing vendor
       isUpdate = true;
       console.log("[VendorDirectRegistration] Vendor exists, updating registration:", existingVendor.id);

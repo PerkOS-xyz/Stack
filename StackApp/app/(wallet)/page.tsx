@@ -77,10 +77,11 @@ const blockExplorers: Record<string, string> = {
   "arbitrum-sepolia": "https://sepolia.arbiscan.io/tx/",
   optimism: "https://optimistic.etherscan.io/tx/",
   "optimism-sepolia": "https://sepolia-optimism.etherscan.io/tx/",
-  monad: "https://explorer.monad.xyz/tx/",
-  "monad-testnet": "https://testnet.explorer.monad.xyz/tx/",
+  monad: "https://monadscan.com/tx/",
+  "monad-testnet": "https://testnet.monadexplorer.com/tx/",
   unichain: "https://uniscan.xyz/tx/",
   "unichain-sepolia": "https://sepolia.uniscan.xyz/tx/",
+  robinhood: "https://robinhoodchain.blockscout.com/tx/",
 };
 
 const getExplorerUrl = (network: string, hash: string): string => {
@@ -302,7 +303,7 @@ export default function Home() {
             <p className={`text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 font-light leading-relaxed transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               x402 protocol, agent identity, and multi-chain settlement for the agentic economy.
               <br className="hidden sm:block" />
-              <span className="text-gray-500">16 networks. Sub-cent micropayments. Instant settlement.</span>
+              <span className="text-gray-500">{SUPPORTED_NETWORKS.length} networks. Sub-cent micropayments. Instant settlement.</span>
             </p>
 
             {/* CTA buttons */}
@@ -961,10 +962,10 @@ export default function Home() {
                   {"  "}<span className="text-pink-400">method</span><span className="text-gray-500">:</span> <span className="text-emerald-400">&apos;POST&apos;</span><span className="text-gray-500">,</span>{"\n"}
                   {"  "}<span className="text-pink-400">headers</span><span className="text-gray-500">: {`{`}</span> <span className="text-emerald-400">&apos;Content-Type&apos;</span><span className="text-gray-500">:</span> <span className="text-emerald-400">&apos;application/json&apos;</span> <span className="text-gray-500">{`}`},</span>{"\n"}
                   {"  "}<span className="text-pink-400">body</span><span className="text-gray-500">:</span> <span className="text-amber-400">JSON</span><span className="text-gray-500">.</span><span className="text-amber-400">stringify</span><span className="text-gray-500">({`{`}</span>{"\n"}
-                  {"    "}<span className="text-pink-400">x402Version</span><span className="text-gray-500">:</span> <span className="text-amber-400">1</span><span className="text-gray-500">,</span>{"\n"}
+                  {"    "}<span className="text-pink-400">x402Version</span><span className="text-gray-500">:</span> <span className="text-amber-400">2</span><span className="text-gray-500">,</span>{"\n"}
                   {"    "}<span className="text-pink-400">paymentPayload</span><span className="text-gray-500">: {`{`}</span>{"\n"}
-                  {"      "}<span className="text-pink-400">network</span><span className="text-gray-500">:</span> <span className="text-emerald-400">&apos;avalanche&apos;</span><span className="text-gray-500">,</span>{"\n"}
-                  {"      "}<span className="text-pink-400">scheme</span><span className="text-gray-500">:</span> <span className="text-emerald-400">&apos;exact&apos;</span><span className="text-gray-500">,</span>{"\n"}
+                  {"      "}<span className="text-pink-400">x402Version</span><span className="text-gray-500">:</span> <span className="text-amber-400">2</span><span className="text-gray-500">,</span>{"\n"}
+                  {"      "}<span className="text-pink-400">accepted</span><span className="text-gray-500">:</span> <span className="text-pink-400">paymentRequirements</span><span className="text-gray-500">,</span>{"\n"}
                   {"      "}<span className="text-pink-400">payload</span><span className="text-gray-500">: {`{ ... }`}</span>{"\n"}
                   {"    "}<span className="text-gray-500">{`}`},</span>{"\n"}
                   {"    "}<span className="text-pink-400">paymentRequirements</span><span className="text-gray-500">: {`{ ... }`}</span>{"\n"}

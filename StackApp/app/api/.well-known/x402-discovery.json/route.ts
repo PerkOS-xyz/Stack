@@ -3,17 +3,14 @@ import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { X402Service } from "@/lib/services/X402Service";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS, SUPPORTED_NETWORKS } from "@/lib/utils/chains";
+import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
 
 export const dynamic = "force-dynamic";
 
 /**
  * x402 V2 Discovery Extension
- * Standard endpoint: /.well-known/x402-discovery.json
- *
- * Enables AI agents to automatically discover services, understand pricing,
- * and initiate payments. This endpoint follows the x402 V2 Bazaar discovery spec.
- *
- * @see https://www.x402.org/writing/x402-v2-launch
+ * PerkOS discovery metadata. Bazaar discovery itself is an x402 extension and
+ * uses facilitator discovery APIs; this well-known path is not a core endpoint.
  */
 export async function GET(request: NextRequest) {
   const baseUrl = new URL(request.url).origin;
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest) {
       caip2: chainId ? `eip155:${chainId}` : null, // CAIP-2 format for multi-chain
       asset: {
         address: config.paymentTokens[kind.network as SupportedNetwork],
-        symbol: "USDC",
+        symbol: chainId ? getPaymentTokenSymbol(chainId) : "USDC",
         decimals: 6,
         caip19: chainId
           ? `eip155:${chainId}/erc20:${config.paymentTokens[kind.network as SupportedNetwork]}`
@@ -92,7 +89,7 @@ export async function GET(request: NextRequest) {
     "@context": "https://x402.org/discovery/v2",
     "@type": "x402Facilitator",
     specVersion: "2.0.0",
-    protocolVersion: 1,
+    protocolVersion: 2,
 
     // Facilitator identity
     facilitator: {
@@ -118,10 +115,12 @@ export async function GET(request: NextRequest) {
 
     // Discovery endpoints
     discovery: {
-      agentCard: `${baseUrl}/api/.well-known/agent-card.json`,
-      erc8004: `${baseUrl}/api/.well-known/erc-8004.json`,
-      x402Payment: `${baseUrl}/api/.well-known/x402-payment.json`,
-      x402Discovery: `${baseUrl}/api/.well-known/x402-discovery.json`,
+      agentCard: `${baseUrl}/.well-known/agent-card.json`,
+      erc8004: `${baseUrl}/.well-known/erc-8004.json`,
+      x402Payment: `${baseUrl}/.well-known/x402-payment.json`,
+      x402Discovery: `${baseUrl}/.well-known/x402-discovery.json`,
+      erc8004Onboarding: `${baseUrl}/api/v2/agents/onboard`,
+      erc8004IndexStatus: `${baseUrl}/api/v2/agents/discovery`,
     },
 
     // Capabilities (V2 format)
@@ -130,11 +129,11 @@ export async function GET(request: NextRequest) {
       features: [
         "multi-chain", // Supports multiple blockchain networks
         "evm-compatible", // EVM chain support
-        "gasless-transactions", // Sponsored gas via Thirdweb
-        "batch-settlement", // Batch deferred voucher settlement
+        "gas-sponsored-settlement", // PerkOS server-wallet sponsorship
+        "perkos-deferred", // Custom voucher scheme; not x402 batch-settlement
         "real-time-verification", // Instant payment verification
         "agent-discovery", // ERC-8004 compliant discovery
-        "bazaar-indexable", // Can be crawled by Bazaar
+        "erc-8004-registration-preparation",
       ],
       paymentMethods: networkConfigs,
     },
@@ -192,6 +191,11 @@ export async function GET(request: NextRequest) {
       documentation: `${baseUrl}/docs`,
       examples: `${baseUrl}/examples`,
       changelog: `${baseUrl}/changelog`,
+      bazaar: {
+        status: "requires-route-extension",
+        note: "Official x402 Bazaar listing is not crawler-based. Each paid resource must declare the bazaar extension through a Bazaar-capable facilitator.",
+        currentOfficialEvmNetworks: ["eip155:8453", "eip155:84532"],
+      },
     },
 
     // Metadata
@@ -230,6 +234,7 @@ function getChainId(network: string): number | null {
     "arbitrum-sepolia": CHAIN_IDS.ARBITRUM_SEPOLIA,
     optimism: CHAIN_IDS.OPTIMISM,
     "optimism-sepolia": CHAIN_IDS.OPTIMISM_SEPOLIA,
+    robinhood: CHAIN_IDS.ROBINHOOD,
   };
   return chainIdMap[network] || null;
 }

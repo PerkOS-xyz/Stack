@@ -125,11 +125,19 @@ export default function AgentsPage() {
         <div className="container mx-auto px-4 py-12 flex-1">
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
-                Community Web3 Agents
-              </h2>
-              <p className="text-gray-400">Track community members and service providers across all networks</p>
+            <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent mb-2">
+                  Community Web3 Agents
+                </h2>
+                <p className="text-gray-400">Track x402 participants and register verifiable ERC-8004 agents.</p>
+              </div>
+              <Link
+                href="/agents/register"
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 px-5 py-3 font-semibold text-white shadow-lg shadow-pink-950/30 transition hover:brightness-110"
+              >
+                Register an ERC-8004 agent
+              </Link>
             </div>
 
             {/* Tabs and Time Range */}

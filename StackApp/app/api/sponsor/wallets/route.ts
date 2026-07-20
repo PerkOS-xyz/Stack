@@ -204,8 +204,10 @@ export async function POST(req: NextRequest) {
     console.log(`   Network: ${network}`);
     console.log(`   Public: ${isPublic}`);
 
+    const { para_wallet_id: _walletId, para_user_share: _keyMaterial, ...safeWallet } = wallet as Record<string, unknown>;
+
     return NextResponse.json({
-      wallet,
+      wallet: safeWallet,
       message: "Server wallet created successfully",
     });
   } catch (error) {

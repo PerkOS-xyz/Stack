@@ -95,6 +95,18 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
     ? parseInt(String(network), 10)
     : (activeWallet?.chain === "SOL" || activeWallet?.chain === "solana" ? 101 : undefined);
 
+  const getWalletClient = React.useMemo(() => {
+    const connector = activeWallet?.connector as
+      | { getWalletClient?: () => Promise<unknown> }
+      | undefined;
+
+    if (!connector?.getWalletClient) {
+      return undefined;
+    }
+
+    return () => connector.getWalletClient!();
+  }, [activeWallet]);
+
   // Debug final connection state
   React.useEffect(() => {
     console.log("[DynamicWalletBridge] Final state:", {
@@ -152,6 +164,7 @@ function DynamicWalletBridge({ children }: { children: ReactNode }) {
         }
       }
     },
+    getWalletClient,
     error: null,
   };
 
@@ -261,6 +274,46 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               rpcUrls: ["https://rpc.sepolia.org"],
               blockExplorerUrls: ["https://sepolia.etherscan.io"],
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg"],
+            },
+            // Monad
+            {
+              chainId: 143,
+              networkId: 143,
+              name: "Monad",
+              vanityName: "Monad",
+              nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://rpc.monad.xyz",
+              ],
+              blockExplorerUrls: ["https://monadscan.com"],
+              iconUrls: ["https://monadscan.com/favicon.ico"],
+            },
+            {
+              chainId: 10143,
+              networkId: 10143,
+              name: "Monad Testnet",
+              vanityName: "Monad Testnet",
+              nativeCurrency: { name: "Testnet MON", symbol: "MON", decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_MONAD_TESTNET_RPC_URL ||
+                  "https://testnet-rpc.monad.xyz",
+              ],
+              blockExplorerUrls: ["https://testnet.monadexplorer.com"],
+              iconUrls: ["https://testnet.monadexplorer.com/favicon.ico"],
+            },
+            // Robinhood Chain
+            {
+              chainId: 4663,
+              networkId: 4663,
+              name: "Robinhood Chain",
+              vanityName: "Robinhood Chain",
+              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL ||
+                  "https://rpc.mainnet.chain.robinhood.com",
+              ],
+              blockExplorerUrls: ["https://robinhoodchain.blockscout.com"],
+              iconUrls: ["https://robinhoodchain.blockscout.com/favicon.ico"],
             },
             // Polygon
             {

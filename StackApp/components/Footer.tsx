@@ -20,7 +20,7 @@ export function Footer() {
               PerkOS
             </a>
             <a
-              href="https://x402.gitbook.io/x402"
+              href="https://docs.x402.org"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-pink-400 transition-colors text-sm"

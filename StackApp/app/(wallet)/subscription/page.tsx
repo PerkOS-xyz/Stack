@@ -60,7 +60,9 @@ export default function SubscriptionPage() {
       }
 
       try {
-        const response = await fetch(`/api/subscription?address=${address}`);
+        const response = await fetch(`/api/subscription?address=${address}`, {
+          cache: "no-store",
+        });
         if (response.ok) {
           const result = await response.json();
           // API returns { success: true, data: { ... } }

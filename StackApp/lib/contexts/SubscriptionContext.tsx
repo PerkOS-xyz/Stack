@@ -108,9 +108,21 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/subscription?address=${address}`, {
+      let response = await fetch(`/api/subscription?address=${address}`, {
         signal: abortControllerRef.current.signal,
+        cache: "no-store",
       });
+
+      // During a cold Next.js dev compile the route can briefly return the
+      // framework 404 before its API chunk is ready. Retry once so a valid
+      // connected account does not surface a false subscription error.
+      if (response.status === 404) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        response = await fetch(`/api/subscription?address=${address}`, {
+          signal: abortControllerRef.current.signal,
+          cache: "no-store",
+        });
+      }
 
       if (!response.ok) {
         if (response.status === 429) {

@@ -16,7 +16,7 @@ export {
   // Utility Functions
   encodeMetadataValue,
   decodeMetadataValue,
-} from "@perkos/contracts-erc8004";
+} from "./abis";
 
 // ============ Identity Types ============
 

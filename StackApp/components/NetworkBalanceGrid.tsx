@@ -83,6 +83,14 @@ const NETWORK_CONFIG: Record<string, {
     bgGradient: 'from-pink-500/10 to-pink-600/5',
     stablecoins: ['USDC'],
   },
+  'robinhood': {
+    name: 'Robinhood Chain',
+    icon: 'R',
+    color: 'text-green-400',
+    borderColor: 'border-green-500/30',
+    bgGradient: 'from-green-500/10 to-emerald-600/5',
+    stablecoins: ['USDG'],
+  },
   // Testnets
   'avalanche-fuji': {
     name: 'Avalanche Fuji',
