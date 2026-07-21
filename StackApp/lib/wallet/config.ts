@@ -75,11 +75,13 @@ export const SUPPORTED_CHAIN_IDS = {
   polygon: 137,
   avalanche: 43114,
   celo: 42220,
+  unichain: 130,
   robinhood: 4663,
   // Testnets
   sepolia: 11155111,
   baseSepolia: 84532,
   avalancheFuji: 43113,
+  unichainSepolia: 1301,
 };
 
 /**
@@ -96,6 +98,7 @@ export function getWalletConfig(): WalletProviderConfig {
     SUPPORTED_CHAIN_IDS.polygon,
     SUPPORTED_CHAIN_IDS.avalanche,
     SUPPORTED_CHAIN_IDS.celo,
+    SUPPORTED_CHAIN_IDS.unichain,
     SUPPORTED_CHAIN_IDS.robinhood,
   ];
 

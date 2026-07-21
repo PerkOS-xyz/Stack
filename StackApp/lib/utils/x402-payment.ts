@@ -6,6 +6,7 @@
 
 import { type Address, parseUnits, keccak256, toHex, concat, pad } from "viem";
 import { getChainIdFromNetwork, getUSDCAddress, type SupportedNetwork } from "./chains";
+import { getNetworkCapabilityByChainId } from "./network-capabilities";
 
 // EIP-712 types for TransferWithAuthorization (EIP-3009)
 export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
@@ -19,54 +20,13 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   ],
 } as const;
 
-// Payment token names by chain ID (for EIP-712 domain)
-// Most Circle native USDC uses "USD Coin", but Celo native USDC returns "USDC"
-// IMPORTANT: This must match the actual name() value returned by the contract
-const USDC_TOKEN_NAMES: Record<number, string> = {
-  // Mainnets
-  8453: "USD Coin",      // Base
-  43114: "USD Coin",     // Avalanche
-  42220: "USDC",         // Celo (native USDC returns "USDC" from name())
-  137: "USD Coin",       // Polygon
-  42161: "USD Coin",     // Arbitrum
-  10: "USD Coin",        // Optimism
-  1: "USD Coin",         // Ethereum
-  143: "USDC",           // Monad (native USDC returns "USDC" from name())
-  4663: "Global Dollar", // Robinhood Chain USDG (verified on-chain)
-  // Testnets
-  84532: "USD Coin",     // Base Sepolia
-  43113: "USD Coin",     // Avalanche Fuji
-  44787: "USDC",         // Celo Alfajores (testnet)
-  10143: "USDC",         // Monad Testnet (native USDC returns "USDC")
-};
-
-// EIP-712 domain versions by chain ID
-// All Circle native USDC implementations use version "2"
-// Verified by querying contract.version() on-chain
-const EIP712_DOMAIN_VERSIONS: Record<number, string> = {
-  // Mainnets
-  1: "2",      // Ethereum
-  8453: "2",   // Base
-  43114: "2",  // Avalanche
-  42220: "2",  // Celo (verified: contract.version() returns "2")
-  137: "2",    // Polygon
-  42161: "2",  // Arbitrum
-  10: "2",     // Optimism
-  143: "2",    // Monad (verified on-chain)
-  4663: "1",   // Robinhood Chain USDG (verified against DOMAIN_SEPARATOR)
-  // Testnets
-  84532: "2",  // Base Sepolia
-  43113: "2",  // Avalanche Fuji
-  44787: "2",  // Celo Alfajores (assuming same as mainnet)
-  10143: "2",  // Monad Testnet (verified on-chain)
-};
-
 /**
  * Get EIP-712 domain version for a chain
- * All Circle native USDC uses version "2" (verified on-chain)
+ * Values come from the payment capability catalog and must match the token's
+ * on-chain DOMAIN_SEPARATOR exactly.
  */
 export function getEIP712Version(chainId: number): string {
-  return EIP712_DOMAIN_VERSIONS[chainId] || "2";
+  return getNetworkCapabilityByChainId(chainId)?.tokenVersion || "2";
 }
 
 /**
@@ -74,12 +34,12 @@ export function getEIP712Version(chainId: number): string {
  * Celo native USDC returns "USDC" from name(), others return "USD Coin"
  */
 export function getTokenName(chainId: number): string {
-  return USDC_TOKEN_NAMES[chainId] || "USD Coin";
+  return getNetworkCapabilityByChainId(chainId)?.tokenName || "USD Coin";
 }
 
 /** Get the payment-token symbol used for receipts and transaction logs. */
 export function getPaymentTokenSymbol(chainId: number): string {
-  return chainId === 4663 ? "USDG" : "USDC";
+  return getNetworkCapabilityByChainId(chainId)?.symbol || "USDC";
 }
 
 /**
@@ -151,7 +111,7 @@ export function createEIP712Domain(
   }
 
   // Use provided token name, or look up from chain ID, or default
-  const name = tokenName || USDC_TOKEN_NAMES[chainId] || "USD Coin";
+  const name = tokenName || getTokenName(chainId);
 
   return {
     name,

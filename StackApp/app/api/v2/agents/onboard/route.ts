@@ -12,6 +12,7 @@ import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { agentOnboardSchema, validateBody } from "@/lib/validation/schemas";
 import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
 import { encodeFunctionData, type Address, type Hex } from "viem";
+import { isAgentReadyNetwork } from "@/lib/utils/network-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400, headers: corsHeaders });
     }
     const { network, tokenURI, metadata, agentId, paymentReceiver } = validation.data;
+
+    if (!isAgentReadyNetwork(network)) {
+      return NextResponse.json(
+        { error: `${network} is not agent-ready. Stack requires both x402 exact payments and an official ERC-8004 Identity Registry.` },
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
     const supportedNetwork = network as SupportedNetwork;
 

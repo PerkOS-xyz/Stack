@@ -535,11 +535,11 @@ export default function Home() {
                 <div className="text-5xl mb-6 text-purple-400 font-light">🪪</div>
                 <h3 className="text-2xl font-bold text-white mb-3">Agent Identity</h3>
                 <p className="text-gray-400 mb-6 leading-relaxed">
-                  ERC-721 agent registration on 25+ chains. Register, lookup, and manage wallets with a single on-chain identity.
+                  Payment-ready ERC-8004 registration on 15 chains, linked to all 18 x402 payment rails.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">ERC-721 NFTs</span>
-                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">25+ Chains</span>
+                  <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">18 x402 Rails</span>
                   <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-400">CREATE2</span>
                 </div>
               </div>
