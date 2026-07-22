@@ -117,14 +117,25 @@ export class ParaTransactionService {
 
       const { data: agentRules, error: agentRuleError } = await firebaseAdmin
         .from("perkos_sponsor_rules")
-        .select("sponsor_wallet_id")
+        .select("sponsor_wallet_id, priority")
         .eq("rule_type", "agent_whitelist")
         .eq("agent_address", normalizedAddress)
-        .eq("enabled", true)
-        .order("priority", { ascending: false })
-        .limit(1);
+        .eq("enabled", true);
 
-      const agentRule = agentRules?.[0];
+      if (agentRuleError) {
+        logger.warn("Agent whitelist lookup failed", {
+          walletAddress: normalizedAddress,
+          error: agentRuleError.message,
+        });
+      }
+
+      // Sort in memory so the critical settlement path does not depend on a
+      // Firestore composite index for priority ordering.
+      const agentRule = !agentRuleError
+        ? [...(agentRules || [])].sort(
+            (left, right) => (right.priority || 0) - (left.priority || 0),
+          )[0]
+        : undefined;
 
       if (agentRule && !agentRuleError) {
         // Found an agent whitelist rule - get the sponsor wallet
