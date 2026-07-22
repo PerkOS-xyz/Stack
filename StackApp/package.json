@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@buildersgarden/siwa": "0.0.24",
     "@cosmjs/encoding": "^0.38.1",
     "@dynamic-labs-wallet/node": "^0.0.247",
     "@dynamic-labs-wallet/node-evm": "^0.0.247",

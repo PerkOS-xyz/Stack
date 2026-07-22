@@ -4,7 +4,8 @@ import { generateRequestId } from "@/lib/utils/x402-headers";
 export const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Agent-Id, X-API-Key, X-PAYMENT, PAYMENT-SIGNATURE, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
+  'Access-Control-Allow-Headers': 'Content-Type, Content-Digest, Signature, Signature-Input, X-Agent-Id, X-API-Key, X-SIWA-Receipt, X-PAYMENT, PAYMENT-SIGNATURE, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
+  'Access-Control-Expose-Headers': 'X-SIWA-Receipt, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
 };
 
 // Restricted CORS for admin and sponsor routes
