@@ -119,7 +119,9 @@ export class ParaTransactionService {
         .from("perkos_sponsor_rules")
         .select("sponsor_wallet_id")
         .eq("rule_type", "agent_whitelist")
-        .eq("agent_address", normalizedAddress)
+        // Addresses are case-insensitive. Existing rules may contain a
+        // checksummed address, so use an insensitive match during lookup.
+        .ilike("agent_address", normalizedAddress)
         .eq("enabled", true)
         .order("priority", { ascending: false })
         .limit(1);

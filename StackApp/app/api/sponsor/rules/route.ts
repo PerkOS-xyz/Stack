@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
       .insert({
         sponsor_wallet_id: walletId,
         rule_type: ruleType,
-        agent_address: agentAddress || null,
+        agent_address: agentAddress?.toLowerCase() || null,
         domain: domain || null,
         daily_limit_wei: dailyLimitWei || null,
         monthly_limit_wei: monthlyLimitWei || null,
@@ -257,7 +257,9 @@ export async function PATCH(req: NextRequest) {
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
     if (body.priority !== undefined) updateData.priority = body.priority;
     if (body.description !== undefined) updateData.description = body.description;
-    if (body.agentAddress !== undefined) updateData.agent_address = body.agentAddress;
+    if (body.agentAddress !== undefined) {
+      updateData.agent_address = body.agentAddress.toLowerCase();
+    }
     if (body.domain !== undefined) updateData.domain = body.domain;
     if (body.dailyLimitWei !== undefined) updateData.daily_limit_wei = body.dailyLimitWei;
     if (body.monthlyLimitWei !== undefined) updateData.monthly_limit_wei = body.monthlyLimitWei;
