@@ -107,6 +107,9 @@ Only tokens explicitly allowlisted by the ERC-8183 administrator can fund jobs.
 For Robinhood Chain Testnet, the intended test token is USDG at
 `0x7E955252E15c84f5768B83c41a71F9eba181802F`.
 
+The live Robinhood Testnet deployment and full lifecycle receipts are recorded
+in [ROBINHOOD-TESTNET-ERC8183-DEPLOYMENT.md](./ROBINHOOD-TESTNET-ERC8183-DEPLOYMENT.md).
+
 ## Sponsor rule migration
 
 Historical sponsor rules can be normalized safely with a dry run followed by
