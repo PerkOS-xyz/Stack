@@ -88,7 +88,12 @@ PerkOS Stack supports 18 EVM networks with configured USDC or USDG payment token
 | Monad Testnet | 10143 | MON | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
 | Unichain Sepolia | 1301 | ETH | `0x31d0220469e10c4E71834a79b1f276d740d3768F` |
 
-> **Robinhood Chain note**: USDG support is mainnet-only because no canonical testnet USDG address is published. The integration is independent and is not affiliated with or endorsed by Robinhood. Contract and network details come from [Robinhood Chain's official documentation](https://docs.robinhood.com/chain/contracts/).
+> **Robinhood Chain note**: mainnet uses canonical USDG. Robinhood Testnet uses
+> the faucet-distributed `Global Dollar` test token at
+> `0x7E955252E15c84f5768B83c41a71F9eba181802F`; testnet tokens have no monetary
+> value. The integration is independent and is not affiliated with
+> or endorsed by Robinhood. Mainnet contract and network details come from
+> [Robinhood Chain's official documentation](https://docs.robinhood.com/chain/contracts/).
 
 ## Quick Start
 

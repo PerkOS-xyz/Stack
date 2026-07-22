@@ -55,6 +55,8 @@ export type { Chain } from "viem";
 
 export const ROBINHOOD_USDG_ADDRESS =
   "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as const;
+export const ROBINHOOD_TESTNET_USDG_ADDRESS =
+  "0x7E955252E15c84f5768B83c41a71F9eba181802F" as const;
 
 export const MONAD_USDC_ADDRESS =
   "0x754704Bc059F8C67012fEd69BC8A327a5aafb603" as const;
@@ -106,6 +108,23 @@ export const robinhood = defineChain({
     },
   },
 });
+export const robinhoodTestnet = defineChain({
+  id: 46630,
+  name: "Robinhood Chain Testnet",
+  network: "robinhood-testnet",
+  nativeCurrency: { decimals: 18, name: "Ether", symbol: "ETH" },
+  rpcUrls: {
+    default: { http: ["https://rpc.testnet.chain.robinhood.com"] },
+    public: { http: ["https://rpc.testnet.chain.robinhood.com"] },
+  },
+  blockExplorers: {
+    default: {
+      name: "Robinhood Chain Testnet Explorer",
+      url: "https://explorer.testnet.chain.robinhood.com",
+    },
+  },
+  testnet: true,
+});
 
 export const chains: Record<string, Chain> = {
   ...shared.chains,
@@ -128,6 +147,7 @@ export const chains: Record<string, Chain> = {
   "abstract-testnet": abstractTestnet,
   goat,
   robinhood,
+  "robinhood-testnet": robinhoodTestnet,
 };
 
 export const networkToChain: Record<string, Chain> = {
@@ -151,6 +171,7 @@ export const networkToChain: Record<string, Chain> = {
   "abstract-testnet": abstractTestnet,
   goat,
   robinhood,
+  "robinhood-testnet": robinhoodTestnet,
 };
 
 // The legacy name is retained for compatibility. Robinhood uses USDG rather
@@ -160,6 +181,7 @@ export const USDC_ADDRESSES: Record<number, `0x${string}`> = {
   [monad.id]: MONAD_USDC_ADDRESS,
   [monadTestnet.id]: MONAD_TESTNET_USDC_ADDRESS,
   [robinhood.id]: ROBINHOOD_USDG_ADDRESS,
+  [robinhoodTestnet.id]: ROBINHOOD_TESTNET_USDG_ADDRESS,
 };
 
 export const CHAIN_IDS = {
@@ -167,6 +189,7 @@ export const CHAIN_IDS = {
   MONAD: monad.id,
   MONAD_TESTNET: monadTestnet.id,
   ROBINHOOD: robinhood.id,
+  ROBINHOOD_TESTNET: robinhoodTestnet.id,
 } as const;
 
 export type ChainId = (typeof CHAIN_IDS)[keyof typeof CHAIN_IDS];

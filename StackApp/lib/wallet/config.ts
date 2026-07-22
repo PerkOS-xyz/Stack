@@ -77,6 +77,7 @@ export const SUPPORTED_CHAIN_IDS = {
   celo: 42220,
   unichain: 130,
   robinhood: 4663,
+  robinhoodTestnet: 46630,
   // Testnets
   sepolia: 11155111,
   baseSepolia: 84532,
@@ -100,6 +101,7 @@ export function getWalletConfig(): WalletProviderConfig {
     SUPPORTED_CHAIN_IDS.celo,
     SUPPORTED_CHAIN_IDS.unichain,
     SUPPORTED_CHAIN_IDS.robinhood,
+    SUPPORTED_CHAIN_IDS.robinhoodTestnet,
   ];
 
   switch (provider) {

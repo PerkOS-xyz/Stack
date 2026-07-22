@@ -92,6 +92,7 @@ export class DeferredSchemeService {
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
       robinhood: CHAIN_IDS.ROBINHOOD,
+      "robinhood-testnet": CHAIN_IDS.ROBINHOOD_TESTNET,
       bsc: 56,
       "bsc-testnet": 97,
       linea: 59144,

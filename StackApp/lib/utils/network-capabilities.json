@@ -16,5 +16,6 @@
   { "network": "optimism-sepolia", "label": "OP Sepolia", "chainId": 11155420, "testnet": true, "asset": "0x5fd84259d66Cd46123540766Be93DFE6D43130D7", "symbol": "USDC", "tokenName": "USD Coin", "tokenVersion": "2", "erc8004Identity": true },
   { "network": "unichain", "label": "Unichain", "chainId": 130, "testnet": false, "asset": "0x078D782b760474a361dDA0AF3839290b0EF57AD6", "symbol": "USDC", "tokenName": "USDC", "tokenVersion": "2", "erc8004Identity": false },
   { "network": "unichain-sepolia", "label": "Unichain Sepolia", "chainId": 1301, "testnet": true, "asset": "0x31d0220469e10c4E71834a79b1f276d740d3768F", "symbol": "USDC", "tokenName": "USDC", "tokenVersion": "2", "erc8004Identity": false },
-  { "network": "robinhood", "label": "Robinhood Chain", "chainId": 4663, "testnet": false, "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "symbol": "USDG", "tokenName": "Global Dollar", "tokenVersion": "1", "erc8004Identity": false }
+  { "network": "robinhood", "label": "Robinhood Chain", "chainId": 4663, "testnet": false, "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "symbol": "USDG", "tokenName": "Global Dollar", "tokenVersion": "1", "erc8004Identity": false },
+  { "network": "robinhood-testnet", "label": "Robinhood Chain Testnet", "chainId": 46630, "testnet": true, "asset": "0x7E955252E15c84f5768B83c41a71F9eba181802F", "symbol": "USDG", "tokenName": "Global Dollar", "tokenVersion": "1", "erc8004Identity": false }
 ]

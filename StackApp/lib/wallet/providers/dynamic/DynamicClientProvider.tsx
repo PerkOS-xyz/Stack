@@ -354,6 +354,19 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               blockExplorerUrls: ["https://robinhoodchain.blockscout.com"],
               iconUrls: ["https://robinhoodchain.blockscout.com/favicon.ico"],
             },
+            {
+              chainId: 46630,
+              networkId: 46630,
+              name: "Robinhood Chain Testnet",
+              vanityName: "Robinhood Testnet",
+              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_ROBINHOOD_TESTNET_RPC_URL ||
+                  "https://rpc.testnet.chain.robinhood.com",
+              ],
+              blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
+              iconUrls: ["https://explorer.testnet.chain.robinhood.com/favicon.ico"],
+            },
             // Polygon
             {
               chainId: 137,

@@ -20,7 +20,7 @@ const SUPPORTED_NETWORKS = [
   "arbitrum", "arbitrum-sepolia",
   "optimism", "optimism-sepolia",
   "unichain", "unichain-sepolia",
-  "robinhood",
+  "robinhood", "robinhood-testnet",
   "bsc", "bsc-testnet",
   "linea", "linea-sepolia",
   "gnosis", "gnosis-chiado",

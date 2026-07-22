@@ -10,7 +10,7 @@ export type X402PaymentNetwork =
   | "arbitrum" | "arbitrum-sepolia"
   | "optimism" | "optimism-sepolia"
   | "unichain" | "unichain-sepolia"
-  | "robinhood";
+  | "robinhood" | "robinhood-testnet";
 
 export interface NetworkCapability {
   network: X402PaymentNetwork;

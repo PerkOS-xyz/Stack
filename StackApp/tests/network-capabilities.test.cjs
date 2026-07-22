@@ -29,7 +29,7 @@ function domainSeparator({ tokenName, tokenVersion, chainId, asset }) {
 }
 
 test("x402 catalog has unique, non-zero payment rails", () => {
-  assert.equal(capabilities.length, 18);
+  assert.equal(capabilities.length, 19);
   assert.equal(new Set(capabilities.map((entry) => entry.network)).size, capabilities.length);
   assert.equal(new Set(capabilities.map((entry) => entry.chainId)).size, capabilities.length);
   assert.equal(capabilities.filter((entry) => entry.erc8004Identity).length, 15);
@@ -60,4 +60,16 @@ test("Robinhood retains its USDG signing domain", () => {
   assert.equal(robinhood.tokenName, "Global Dollar");
   assert.equal(robinhood.tokenVersion, "1");
   assert.equal(robinhood.erc8004Identity, false);
+});
+
+test("Robinhood Testnet exposes the faucet USDG EIP-712 domain", () => {
+  const testnet = capabilities.find((entry) => entry.network === "robinhood-testnet");
+  assert.ok(testnet);
+  assert.equal(testnet.chainId, 46630);
+  assert.equal(testnet.asset, "0x7E955252E15c84f5768B83c41a71F9eba181802F");
+  assert.equal(testnet.symbol, "USDG");
+  assert.equal(testnet.tokenName, "Global Dollar");
+  assert.equal(testnet.tokenVersion, "1");
+  assert.equal(testnet.testnet, true);
+  assert.equal(testnet.erc8004Identity, false);
 });
