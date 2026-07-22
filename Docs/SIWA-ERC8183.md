@@ -27,6 +27,12 @@ The implementation uses `@buildersgarden/siwa@0.0.24`. SIWA proves that the
 signer owns an ERC-8004 agent identity. ERC-8128 then signs each HTTP request,
 including its method, URL, content digest, receipt, timestamp, and nonce.
 
+Stack deliberately follows the SDK's owner-only SIWA policy: the signer must be
+the current result of `ownerOf(agentId)`. A distinct ERC-8004 `agentWallet` is
+not accepted by this SIWA v1 flow. Supporting delegated agent wallets requires
+a separately versioned policy and receipt format so ownership revalidation is
+not weakened implicitly.
+
 Endpoints:
 
 | Method | Path | Purpose |
@@ -85,8 +91,12 @@ reads a job. `POST` validates an action and returns `{to, data, value, chainId}`
 The caller signs and broadcasts the transaction; Stack does not custody role
 wallets or submit transactions on their behalf.
 
-Supported POST actions are `createJob`, `setBudget`, `fund`, `submit`,
-`complete`, `reject`, and `claimRefund`. Configure deployments per network:
+Supported POST actions cover every non-administrative role operation:
+`createJob`, `setProvider`, `setPayoutReceiver`, `setBudget`, `fund`, `submit`,
+`complete`, `reject`, `claimRefund`, `submitClaim`, `settleClaim`,
+`approveClaim`, and `rejectClaim`. Pause, allowlist, fee, emergency withdrawal,
+and upgrade operations remain deployment-administration concerns and are not
+exposed through the public job API. Configure deployments per network:
 
 ```dotenv
 NEXT_PUBLIC_ROBINHOOD_ERC8183_ADDRESS=0x...
@@ -96,6 +106,17 @@ NEXT_PUBLIC_ROBINHOOD_TESTNET_ERC8183_ADDRESS=0x...
 Only tokens explicitly allowlisted by the ERC-8183 administrator can fund jobs.
 For Robinhood Chain Testnet, the intended test token is USDG at
 `0x7E955252E15c84f5768B83c41a71F9eba181802F`.
+
+## Sponsor rule migration
+
+Historical sponsor rules can be normalized safely with a dry run followed by
+an explicit apply. The lookup keeps a case-insensitive compatibility fallback
+while environments are migrated.
+
+```bash
+npm run migrate:sponsor-addresses
+npm run migrate:sponsor-addresses -- --apply
+```
 
 ## Source map
 

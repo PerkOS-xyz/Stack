@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
       standard: "ERC-8128",
       receiptHeader: "X-SIWA-Receipt",
     },
+    controllerPolicy: {
+      type: "erc8004-owner",
+      delegatedAgentWallets: false,
+    },
     identityNetworks: AGENT_READY_NETWORK_OPTIONS.map((entry) => ({
       network: entry.value,
       chainId: entry.chainId,

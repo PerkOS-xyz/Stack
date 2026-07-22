@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, encodeFunctionData, http, isAddress, type Address, type Hex } from "viem";
+import { createPublicClient, encodeFunctionData, http, type Address, type Hex } from "viem";
 import { z } from "zod";
 import { ERC8183_ABI } from "@/lib/contracts/erc8183/abi";
 import { resolveErc8183Network } from "@/lib/erc8183/config";
@@ -7,23 +7,26 @@ import { getChainByNetwork } from "@/lib/utils/chains";
 import { getRpcUrl } from "@/lib/utils/config";
 import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { getClientIp, rateLimit } from "@/lib/middleware/rateLimit";
+import { boundedBytes, bytes32, evmAddress, uint256 } from "@/lib/erc8183/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const uint = z.union([z.string().regex(/^(0|[1-9]\d*)$/), z.number().int().nonnegative().safe()]);
-const address = z.string().refine(isAddress, "Invalid address");
-const bytes = z.string().regex(/^0x(?:[a-fA-F0-9]{2})*$/);
-const bytes32 = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 const base = { network: z.string().min(1) };
 const actionSchema = z.discriminatedUnion("action", [
-  z.object({ ...base, action: z.literal("createJob"), provider: address, evaluator: address, expiredAt: uint, description: z.string().min(1).max(4_096), hook: address, providerAgentId: uint }).strict(),
-  z.object({ ...base, action: z.literal("setBudget"), jobId: uint, token: address, amount: uint, optParams: bytes.default("0x") }).strict(),
-  z.object({ ...base, action: z.literal("fund"), jobId: uint, expectedToken: address, expectedBudget: uint, optParams: bytes.default("0x") }).strict(),
-  z.object({ ...base, action: z.literal("submit"), jobId: uint, deliverable: bytes32, optParams: bytes.default("0x") }).strict(),
-  z.object({ ...base, action: z.literal("complete"), jobId: uint, reason: bytes32, optParams: bytes.default("0x") }).strict(),
-  z.object({ ...base, action: z.literal("reject"), jobId: uint, reason: bytes32, optParams: bytes.default("0x") }).strict(),
-  z.object({ ...base, action: z.literal("claimRefund"), jobId: uint }).strict(),
+  z.object({ ...base, action: z.literal("createJob"), provider: evmAddress, evaluator: evmAddress, expiredAt: uint256, description: z.string().min(1).max(4_096), hook: evmAddress, providerAgentId: uint256 }).strict(),
+  z.object({ ...base, action: z.literal("setProvider"), jobId: uint256, provider: evmAddress, providerAgentId: uint256 }).strict(),
+  z.object({ ...base, action: z.literal("setPayoutReceiver"), jobId: uint256, payoutReceiver: evmAddress }).strict(),
+  z.object({ ...base, action: z.literal("setBudget"), jobId: uint256, token: evmAddress, amount: uint256, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("fund"), jobId: uint256, expectedToken: evmAddress, expectedBudget: uint256, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("submit"), jobId: uint256, deliverable: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("complete"), jobId: uint256, reason: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("reject"), jobId: uint256, reason: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("claimRefund"), jobId: uint256 }).strict(),
+  z.object({ ...base, action: z.literal("submitClaim"), jobId: uint256, cumulativeAmount: uint256, deliverable: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("settleClaim"), jobId: uint256, cumulativeAmount: uint256, deliverable: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("approveClaim"), jobId: uint256, cumulativeAmount: uint256, deliverable: bytes32, optParams: boundedBytes.default("0x") }).strict(),
+  z.object({ ...base, action: z.literal("rejectClaim"), jobId: uint256, cumulativeAmount: uint256, deliverable: bytes32, reason: bytes32, optParams: boundedBytes.default("0x") }).strict(),
 ]);
 
 function jsonSafe(value: unknown): unknown {
@@ -48,6 +51,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         standard: "ERC-8183",
         status: "draft",
+        apiSurface: "all non-administrative ERC-8183 role actions",
+        actions: actionSchema.options.map((schema) => schema.shape.action.value),
         network,
         chainId: resolved.capability.chainId,
         address: resolved.address,
@@ -90,12 +95,18 @@ export async function POST(request: NextRequest) {
         data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "createJob", args: [input.provider as Address, input.evaluator as Address, Number(expiredAt), input.description, input.hook as Address, BigInt(input.providerAgentId)] });
         break;
       }
+      case "setProvider": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "setProvider", args: [BigInt(input.jobId), input.provider as Address, BigInt(input.providerAgentId)] }); break;
+      case "setPayoutReceiver": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "setPayoutReceiver", args: [BigInt(input.jobId), input.payoutReceiver as Address] }); break;
       case "setBudget": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "setBudget", args: [BigInt(input.jobId), input.token as Address, BigInt(input.amount), input.optParams as Hex] }); break;
       case "fund": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "fund", args: [BigInt(input.jobId), input.expectedToken as Address, BigInt(input.expectedBudget), input.optParams as Hex] }); break;
       case "submit": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "submit", args: [BigInt(input.jobId), input.deliverable as Hex, input.optParams as Hex] }); break;
       case "complete": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "complete", args: [BigInt(input.jobId), input.reason as Hex, input.optParams as Hex] }); break;
       case "reject": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "reject", args: [BigInt(input.jobId), input.reason as Hex, input.optParams as Hex] }); break;
       case "claimRefund": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "claimRefund", args: [BigInt(input.jobId)] }); break;
+      case "submitClaim": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "submitClaim", args: [BigInt(input.jobId), BigInt(input.cumulativeAmount), input.deliverable as Hex, input.optParams as Hex] }); break;
+      case "settleClaim": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "settleClaim", args: [BigInt(input.jobId), BigInt(input.cumulativeAmount), input.deliverable as Hex, input.optParams as Hex] }); break;
+      case "approveClaim": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "approveClaim", args: [BigInt(input.jobId), BigInt(input.cumulativeAmount), input.deliverable as Hex, input.optParams as Hex] }); break;
+      case "rejectClaim": data = encodeFunctionData({ abi: ERC8183_ABI, functionName: "rejectClaim", args: [BigInt(input.jobId), BigInt(input.cumulativeAmount), input.deliverable as Hex, input.reason as Hex, input.optParams as Hex] }); break;
     }
     return NextResponse.json({
       success: true,
