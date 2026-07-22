@@ -35,6 +35,18 @@ const nextConfig = {
         destination: '/api/.well-known/siwa.json',
       },
       {
+        source: '/.well-known/x401.json',
+        destination: '/api/.well-known/x401.json',
+      },
+      {
+        source: '/.well-known/jwks.json',
+        destination: '/api/.well-known/jwks.json',
+      },
+      {
+        source: '/.well-known/did.json',
+        destination: '/api/.well-known/did.json',
+      },
+      {
         source: '/.well-known/x402-discovery.json',
         destination: '/api/.well-known/x402-discovery.json',
       },

@@ -43,6 +43,7 @@ Multi-chain x402 facilitator for AI agents. Stack implements the canonical x402 
 - **EIP-712** - Deferred scheme with typed structured data
 - **ERC-8004** - Trustless agent discovery standard
 - **SIWA + ERC-8128** - Agent identity login and signed HTTP requests
+- **x401 Draft 0.2.0** - Route-scoped credential proof gates and reusable verification tokens
 - **ERC-8183** - Draft agentic-commerce job lifecycle and escrow
 
 ### Discovery & Metadata (V2)
@@ -189,10 +190,16 @@ This opens an interactive visualization showing what's in each bundle.
 | POST | `/api/v2/agents/siwa/nonce` | Issue a one-time SIWA nonce |
 | POST | `/api/v2/agents/siwa/verify` | Verify ownership and issue a short-lived receipt |
 | GET/POST | `/api/v2/agents/siwa/session` | Verify receipt plus an ERC-8128 signed request |
+| GET/POST | `/api/v2/x401/requirements` | Issue a signed OpenID4VP x401 proof requirement |
+| GET/POST | `/api/v2/x401/protected` | Reference route accepting Result Artifacts or verification tokens |
+| POST | `/api/v2/x401/token` | OAuth Token Exchange for a route-scoped verification token |
 | GET/POST | `/api/v2/erc8183/jobs` | Read jobs or prepare unsigned ERC-8183 actions |
 
 See [SIWA, ERC-8128, and ERC-8183 integration](../Docs/SIWA-ERC8183.md) for the
 complete flow, configuration, source map, and security model.
+
+See [x401 current status and Stack profile](../Docs/X401-STATUS-2026-07-22.md)
+for the exact Draft 0.2.0 support boundary and operational configuration.
 
 ## x402 V2 Protocol Details
 

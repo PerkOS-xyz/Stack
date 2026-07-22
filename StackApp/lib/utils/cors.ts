@@ -1,11 +1,11 @@
 import { generateRequestId } from "@/lib/utils/x402-headers";
 
-// Wildcard CORS for public protocol endpoints (x402, erc8004)
+// Wildcard CORS for public protocol endpoints (x401, x402, erc8004)
 export const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Content-Digest, Signature, Signature-Input, X-Agent-Id, X-API-Key, X-SIWA-Receipt, X-PAYMENT, PAYMENT-SIGNATURE, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
-  'Access-Control-Expose-Headers': 'X-SIWA-Receipt, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Content-Digest, Signature, Signature-Input, X-Agent-Id, X-API-Key, X-SIWA-Receipt, PROOF-RESPONSE, X-PAYMENT, PAYMENT-SIGNATURE, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
+  'Access-Control-Expose-Headers': 'X-SIWA-Receipt, PROOF-REQUEST, PROOF-RESULT, PAYMENT-REQUIRED, PAYMENT-RESPONSE',
 };
 
 // Restricted CORS for admin and sponsor routes
