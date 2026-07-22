@@ -8,6 +8,14 @@ export const ERC8183_ABI = [
     ], outputs: [{ name: "jobId", type: "uint256" }],
   },
   {
+    type: "function", name: "setProvider", stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }, { name: "provider", type: "address" }, { name: "agentId", type: "uint256" }], outputs: [],
+  },
+  {
+    type: "function", name: "setPayoutReceiver", stateMutability: "nonpayable",
+    inputs: [{ name: "jobId", type: "uint256" }, { name: "payoutReceiver", type: "address" }], outputs: [],
+  },
+  {
     type: "function", name: "setBudget", stateMutability: "nonpayable",
     inputs: [
       { name: "jobId", type: "uint256" }, { name: "token", type: "address" },
@@ -45,6 +53,21 @@ export const ERC8183_ABI = [
   {
     type: "function", name: "claimRefund", stateMutability: "nonpayable",
     inputs: [{ name: "jobId", type: "uint256" }], outputs: [],
+  },
+  ...(["submitClaim", "settleClaim", "approveClaim"] as const).map((name) => ({
+    type: "function" as const, name, stateMutability: "nonpayable" as const,
+    inputs: [
+      { name: "jobId", type: "uint256" }, { name: "cumulativeAmount", type: "uint256" },
+      { name: "deliverable", type: "bytes32" }, { name: "optParams", type: "bytes" },
+    ], outputs: [],
+  })),
+  {
+    type: "function", name: "rejectClaim", stateMutability: "nonpayable",
+    inputs: [
+      { name: "jobId", type: "uint256" }, { name: "cumulativeAmount", type: "uint256" },
+      { name: "deliverable", type: "bytes32" }, { name: "reason", type: "bytes32" },
+      { name: "optParams", type: "bytes" },
+    ], outputs: [],
   },
   {
     type: "function", name: "getJob", stateMutability: "view",

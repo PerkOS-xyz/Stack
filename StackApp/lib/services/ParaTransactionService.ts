@@ -2,6 +2,7 @@ import { firebaseAdmin } from "../db/firebase";
 import { logger } from "../utils/logger";
 import { CHAIN_IDS, getChainById, chains } from "../utils/chains";
 import { getParaService } from "./ParaService";
+import { selectSponsorRule, type SponsorRuleCandidate } from "./sponsorRuleSelection";
 import { ethers, Contract } from "ethers";
 import { createPublicClient, http, encodeFunctionData } from "viem";
 import { getRpcUrl, type SupportedNetwork } from "../utils/config";
@@ -117,7 +118,7 @@ export class ParaTransactionService {
 
       const { data: agentRules, error: agentRuleError } = await firebaseAdmin
         .from("perkos_sponsor_rules")
-        .select("sponsor_wallet_id, priority")
+        .select("id, sponsor_wallet_id, agent_address, priority, created_at")
         .eq("rule_type", "agent_whitelist")
         .eq("agent_address", normalizedAddress)
         .eq("enabled", true);
@@ -129,13 +130,28 @@ export class ParaTransactionService {
         });
       }
 
-      // Sort in memory so the critical settlement path does not depend on a
-      // Firestore composite index for priority ordering.
-      const agentRule = !agentRuleError
-        ? [...(agentRules || [])].sort(
-            (left, right) => (right.priority || 0) - (left.priority || 0),
-          )[0]
+      let agentRule = !agentRuleError
+        ? selectSponsorRule((agentRules || []) as SponsorRuleCandidate[], normalizedAddress)
         : undefined;
+
+      // Historical records may contain checksummed addresses. Firestore string
+      // equality is case-sensitive, so retain this compatibility lookup until
+      // the idempotent lowercase migration has been applied in every environment.
+      if (!agentRule && !agentRuleError) {
+        const { data: legacyRules, error: legacyRuleError } = await firebaseAdmin
+          .from("perkos_sponsor_rules")
+          .select("id, sponsor_wallet_id, agent_address, priority, created_at")
+          .eq("rule_type", "agent_whitelist")
+          .eq("enabled", true);
+        if (legacyRuleError) {
+          logger.warn("Legacy agent whitelist fallback failed", { error: legacyRuleError.message });
+        } else {
+          agentRule = selectSponsorRule(
+            (legacyRules || []) as SponsorRuleCandidate[],
+            normalizedAddress,
+          );
+        }
+      }
 
       if (agentRule && !agentRuleError) {
         // Found an agent whitelist rule - get the sponsor wallet

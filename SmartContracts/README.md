@@ -14,10 +14,14 @@ git submodule update --init --recursive
 
 ## ERC-8183
 
-`src/erc8183/PerkOSAgenticCommerce.sol` wraps the official
-`ERC8183WithAuthorization` reference implementation pinned at commit
+`src/erc8183/PerkOSAgenticCommerce.sol` wraps the official base `ERC8183`
+reference implementation pinned at commit
 `142e669c1fd318486a4628395b629f033654dd06`. ERC-8183 is still a draft; review
 and repin the dependency deliberately when the specification changes.
+
+The optional upstream authorization extension is intentionally excluded because
+its runtime bytecode exceeds the EIP-170 contract-size limit. Stack prepares
+unsigned role transactions and each role wallet signs its action directly.
 
 Run the integration tests:
 

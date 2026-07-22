@@ -58,9 +58,9 @@ Multi-chain x402 facilitator for AI agents. Stack implements the canonical x402 
 - **Supabase** - PostgreSQL database
 - **Dynamic / Para** - Server-wallet transaction sponsorship
 
-### Supported x402 Networks (18)
+### Supported x402 Networks (19)
 
-PerkOS Stack supports 18 EVM networks with configured USDC or USDG payment tokens. Fifteen also have an official ERC-8004 deployment; Robinhood and both Unichain networks use a signed cross-chain payment binding to an identity on one of those fifteen networks.
+PerkOS Stack supports 19 EVM networks with configured USDC or USDG payment tokens. Fifteen also have an official ERC-8004 deployment; Robinhood, Robinhood Testnet, and both Unichain networks use a signed cross-chain payment binding to an identity on one of those fifteen networks.
 
 #### Mainnet Networks
 
@@ -89,6 +89,7 @@ PerkOS Stack supports 18 EVM networks with configured USDC or USDG payment token
 | OP Sepolia | 11155420 | ETH | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
 | Monad Testnet | 10143 | MON | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
 | Unichain Sepolia | 1301 | ETH | `0x31d0220469e10c4E71834a79b1f276d740d3768F` |
+| Robinhood Testnet | 46630 | ETH | faucet USDG `0x7E955252E15c84f5768B83c41a71F9eba181802F` (no monetary value) |
 
 > **Robinhood Chain note**: mainnet uses canonical USDG. Robinhood Testnet uses
 > the faucet-distributed `Global Dollar` test token at

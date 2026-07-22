@@ -36,13 +36,10 @@ import {
   getChainByNetwork,
 } from "../../../utils/chains";
 import { X402_PAYMENT_NETWORK_OPTIONS } from "../../../utils/network-capabilities";
-
-const EXISTING_DYNAMIC_ERC8004_NETWORKS = new Set([
-  "base", "base-sepolia", "ethereum", "sepolia", "monad", "monad-testnet",
-  "polygon", "polygon-amoy", "arbitrum", "arbitrum-sepolia", "optimism",
-  "optimism-sepolia", "avalanche", "avalanche-fuji", "celo", "celo-sepolia",
-  "robinhood",
-]);
+import {
+  MANUALLY_CONFIGURED_DYNAMIC_CHAIN_IDS,
+  selectAdditionalDynamicNetworkOptions,
+} from "./networkSelection";
 
 const dynamicExtensionOptions = [
   ...ERC8004_REGISTRATION_NETWORKS,
@@ -51,8 +48,10 @@ const dynamicExtensionOptions = [
   options.findIndex((candidate) => candidate.value === option.value) === index
 );
 
-const additionalPaymentAndIdentityWalletNetworks = dynamicExtensionOptions
-  .filter((option) => !EXISTING_DYNAMIC_ERC8004_NETWORKS.has(option.value))
+const additionalPaymentAndIdentityWalletNetworks = selectAdditionalDynamicNetworkOptions(
+  dynamicExtensionOptions,
+  MANUALLY_CONFIGURED_DYNAMIC_CHAIN_IDS,
+)
   .map((option) => {
     const chain = getChainByNetwork(option.value);
     if (!chain) throw new Error(`Missing chain configuration for ${option.value}`);
