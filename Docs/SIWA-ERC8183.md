@@ -65,7 +65,9 @@ ERC-8183 is currently a draft agentic-commerce protocol. Stack pins the official
 reference contracts at commit
 `142e669c1fd318486a4628395b629f033654dd06` instead of following a moving branch.
 The deployed artifact is `PerkOSAgenticCommerce`, which inherits the upstream
-`ERC8183WithAuthorization` implementation and supports EIP-712 relayed actions.
+base `ERC8183` implementation. The optional `ERC8183WithAuthorization` extension
+is not used because its runtime bytecode exceeds the EIP-170 limit. Stack instead
+prepares role transactions that the client, provider, or evaluator signs directly.
 
 The lifecycle is:
 
