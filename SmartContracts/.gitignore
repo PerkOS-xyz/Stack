@@ -8,8 +8,7 @@ broadcast/
 .env.local
 .env*.local
 
-# Dependencies (managed by foundry)
-lib/
+# Dependencies are pinned as git submodules in the repository root.
 
 # Build artifacts
 *.abi

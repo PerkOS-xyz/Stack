@@ -1,66 +1,54 @@
-## Foundry
+# PerkOS Stack smart contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Foundry contracts for x402 deferred settlement, ERC-8004 registries, and
+ERC-8183 agentic commerce.
 
-Foundry consists of:
+## Install
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Dependencies are pinned git submodules. Clone with `--recursive`, or initialize
+an existing checkout:
 
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+git submodule update --init --recursive
 ```
 
-### Test
+## ERC-8183
 
-```shell
-$ forge test
+`src/erc8183/PerkOSAgenticCommerce.sol` wraps the official
+`ERC8183WithAuthorization` reference implementation pinned at commit
+`142e669c1fd318486a4628395b629f033654dd06`. ERC-8183 is still a draft; review
+and repin the dependency deliberately when the specification changes.
+
+Run the integration tests:
+
+```bash
+forge test --match-contract PerkOSAgenticCommerceTest \
+  --skip IdentityRegistry.sol \
+  --skip ReputationRegistry.sol \
+  --skip ValidationRegistry.sol \
+  --skip DeferredPaymentEscrowUpgradeable.sol \
+  --skip DeployUpgradeable.s.sol -vv
 ```
 
-### Format
+Deploy the upgradeable implementation and proxy:
 
-```shell
-$ forge fmt
+```bash
+cp .env.example .env
+source .env
+
+forge script script/DeployERC8183.s.sol:DeployERC8183 \
+  --rpc-url robinhood_testnet \
+  --broadcast
 ```
 
-### Gas Snapshots
+Required variables are `PRIVATE_KEY` and `ERC8183_PAYMENT_TOKEN`. The deployer
+is the default admin and treasury; override them with `ERC8183_ADMIN` and
+`ERC8183_TREASURY`. If a different admin must perform the initial token
+allowlisting, also set `ERC8183_ADMIN_PRIVATE_KEY`.
 
-```shell
-$ forge snapshot
-```
+After deployment, put the printed proxy address—not the implementation
+address—in the corresponding StackApp `NEXT_PUBLIC_<NETWORK>_ERC8183_ADDRESS`
+variable.
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+See [the integration guide](../Docs/SIWA-ERC8183.md) for architecture, API, and
+security details.

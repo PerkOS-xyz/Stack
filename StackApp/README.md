@@ -42,6 +42,8 @@ Multi-chain x402 facilitator for AI agents. Stack implements the canonical x402 
 - **EIP-3009** - Exact scheme with transferWithAuthorization
 - **EIP-712** - Deferred scheme with typed structured data
 - **ERC-8004** - Trustless agent discovery standard
+- **SIWA + ERC-8128** - Agent identity login and signed HTTP requests
+- **ERC-8183** - Draft agentic-commerce job lifecycle and escrow
 
 ### Discovery & Metadata (V2)
 - **Discovery metadata** - PerkOS well-known metadata plus facilitator capability discovery
@@ -177,6 +179,19 @@ This opens an interactive visualization showing what's in each bundle.
 | POST | `/api/deferred/vouchers/:id/:nonce/settle` | Settle specific voucher |
 | POST | `/api/deferred/settle-batch` | Batch settle vouchers |
 | GET | `/api/deferred/escrow/balance` | Query escrow balance |
+
+### Agent Authentication and Commerce
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/.well-known/siwa.json` | SIWA configuration and ERC-8004 identity networks |
+| POST | `/api/v2/agents/siwa/nonce` | Issue a one-time SIWA nonce |
+| POST | `/api/v2/agents/siwa/verify` | Verify ownership and issue a short-lived receipt |
+| GET/POST | `/api/v2/agents/siwa/session` | Verify receipt plus an ERC-8128 signed request |
+| GET/POST | `/api/v2/erc8183/jobs` | Read jobs or prepare unsigned ERC-8183 actions |
+
+See [SIWA, ERC-8128, and ERC-8183 integration](../Docs/SIWA-ERC8183.md) for the
+complete flow, configuration, source map, and security model.
 
 ## x402 V2 Protocol Details
 

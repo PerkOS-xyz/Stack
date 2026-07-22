@@ -31,6 +31,10 @@ const nextConfig = {
         destination: '/api/.well-known/erc-8004.json',
       },
       {
+        source: '/.well-known/siwa.json',
+        destination: '/api/.well-known/siwa.json',
+      },
+      {
         source: '/.well-known/x402-discovery.json',
         destination: '/api/.well-known/x402-discovery.json',
       },
