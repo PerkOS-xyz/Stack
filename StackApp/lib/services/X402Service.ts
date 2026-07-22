@@ -13,6 +13,11 @@ import { config, type SupportedNetwork } from "../utils/config";
 import { SUPPORTED_NETWORKS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { normalizeX402Request } from "../utils/x402-normalization";
+import {
+  ZERO_ADDRESS,
+  getNetworkCapabilityByChainId,
+  isX402PaymentNetwork,
+} from "../utils/network-capabilities";
 
 export class X402Service {
   private exactSchemes: Map<SupportedNetwork, ExactSchemeService> = new Map();
@@ -22,7 +27,9 @@ export class X402Service {
   constructor() {
     // Initialize exact scheme for all EVM networks
     for (const network of SUPPORTED_NETWORKS) {
-      this.exactSchemes.set(network, new ExactSchemeService(network));
+      if (this.hasPaymentAsset(network)) {
+        this.exactSchemes.set(network, new ExactSchemeService(network));
+      }
     }
 
     // Initialize Stellar exact scheme
@@ -61,40 +68,10 @@ export class X402Service {
    * e.g., "eip155:43114" -> "avalanche"
    */
   private caip2ToLegacyNetwork(caip2: string): SupportedNetwork | null {
-    const caip2Map: Record<string, SupportedNetwork> = {
-      // Avalanche
-      "eip155:43114": "avalanche",
-      "eip155:43113": "avalanche-fuji",
-      // Celo
-      "eip155:42220": "celo",
-      "eip155:11142220": "celo-sepolia",
-      // Base
-      "eip155:8453": "base",
-      "eip155:84532": "base-sepolia",
-      // Ethereum
-      "eip155:1": "ethereum",
-      "eip155:11155111": "sepolia",
-      // Polygon
-      "eip155:137": "polygon",
-      "eip155:80002": "polygon-amoy",
-      // Monad
-      "eip155:143": "monad",
-      "eip155:10143": "monad-testnet",
-      // Arbitrum
-      "eip155:42161": "arbitrum",
-      "eip155:421614": "arbitrum-sepolia",
-      // Optimism
-      "eip155:10": "optimism",
-      "eip155:11155420": "optimism-sepolia",
-      // Unichain
-      "eip155:130": "unichain",
-      "eip155:1301": "unichain-sepolia",
-      // Robinhood Chain
-      "eip155:4663": "robinhood",
-      // Stellar (CAIP-2 maps to itself since it's not an EVM legacy network)
-      "stellar:pubnet": "stellar:pubnet" as SupportedNetwork,
-    };
-    return caip2Map[caip2] || null;
+    const match = /^eip155:(\d+)$/.exec(caip2);
+    if (!match) return null;
+    const capability = getNetworkCapabilityByChainId(Number(match[1]));
+    return capability?.network as SupportedNetwork | undefined || null;
   }
 
   /**
@@ -102,7 +79,7 @@ export class X402Service {
    */
   private normalizeNetwork(network: string): SupportedNetwork | null {
     // If already in legacy format, return as-is
-    if ((SUPPORTED_NETWORKS as readonly string[]).includes(network)) {
+    if (isX402PaymentNetwork(network)) {
       return network as SupportedNetwork;
     }
     // Check for stellar:pubnet
@@ -118,6 +95,11 @@ export class X402Service {
 
   private isStellarNetwork(network: string): boolean {
     return network.startsWith("stellar:");
+  }
+
+  private hasPaymentAsset(network: SupportedNetwork): boolean {
+    const asset = config.paymentTokens[network];
+    return typeof asset === "string" && asset.toLowerCase() !== ZERO_ADDRESS;
   }
 
   private isValidNetwork(network: string): network is SupportedNetwork {
@@ -372,7 +354,9 @@ export class X402Service {
 
     // Add exact scheme for all EVM networks
     for (const network of SUPPORTED_NETWORKS) {
-      kinds.push({ scheme: "exact", network });
+      if (this.exactSchemes.has(network)) {
+        kinds.push({ scheme: "exact", network });
+      }
     }
 
     // Add Stellar exact scheme

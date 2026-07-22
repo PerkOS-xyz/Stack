@@ -56,9 +56,9 @@ Multi-chain x402 facilitator for AI agents. Stack implements the canonical x402 
 - **Supabase** - PostgreSQL database
 - **Dynamic / Para** - Server-wallet transaction sponsorship
 
-### Supported Networks (19)
+### Supported x402 Networks (18)
 
-PerkOS Stack supports 19 EVM networks with configured USDC or USDG payment tokens:
+PerkOS Stack supports 18 EVM networks with configured USDC or USDG payment tokens. Fifteen also have an official ERC-8004 deployment; Robinhood and both Unichain networks use a signed cross-chain payment binding to an identity on one of those fifteen networks.
 
 #### Mainnet Networks
 
@@ -85,11 +85,15 @@ PerkOS Stack supports 19 EVM networks with configured USDC or USDG payment token
 | Polygon Amoy | 80002 | POL | `0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582` |
 | Arbitrum Sepolia | 421614 | ETH | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` |
 | OP Sepolia | 11155420 | ETH | `0x5fd84259d66Cd46123540766Be93DFE6D43130D7` |
-| Celo Sepolia | 11142220 | CELO | *TBD* |
 | Monad Testnet | 10143 | MON | `0x534b2f3A21130d7a60830c2Df862319e593943A3` |
-| Unichain Sepolia | 1301 | ETH | *TBD* |
+| Unichain Sepolia | 1301 | ETH | `0x31d0220469e10c4E71834a79b1f276d740d3768F` |
 
-> **Robinhood Chain note**: USDG support is mainnet-only because no canonical testnet USDG address is published. The integration is independent and is not affiliated with or endorsed by Robinhood. Contract and network details come from [Robinhood Chain's official documentation](https://docs.robinhood.com/chain/contracts/).
+> **Robinhood Chain note**: mainnet uses canonical USDG. Robinhood Testnet uses
+> the faucet-distributed `Global Dollar` test token at
+> `0x7E955252E15c84f5768B83c41a71F9eba181802F`; testnet tokens have no monetary
+> value. The integration is independent and is not affiliated with
+> or endorsed by Robinhood. Mainnet contract and network details come from
+> [Robinhood Chain's official documentation](https://docs.robinhood.com/chain/contracts/).
 
 ## Quick Start
 

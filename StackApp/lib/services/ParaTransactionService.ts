@@ -91,6 +91,7 @@ export class ParaTransactionService {
       unichain: CHAIN_IDS.UNICHAIN,
       "unichain-sepolia": CHAIN_IDS.UNICHAIN_SEPOLIA,
       robinhood: CHAIN_IDS.ROBINHOOD,
+      "robinhood-testnet": CHAIN_IDS.ROBINHOOD_TESTNET,
     };
     return chainIdMap[network]!;
   }

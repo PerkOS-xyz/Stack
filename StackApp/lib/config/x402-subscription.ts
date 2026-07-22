@@ -99,4 +99,5 @@ export const SUBSCRIPTION_SUPPORTED_NETWORKS: SupportedNetwork[] = [
   "avalanche",
   "avalanche-fuji",
   "robinhood",
+  "robinhood-testnet",
 ];

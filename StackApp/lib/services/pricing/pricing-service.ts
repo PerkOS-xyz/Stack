@@ -44,6 +44,7 @@ const USDC_ADDRESSES: Record<string, Address> = {
   "monad": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
   "monad-testnet": "0x534b2f3A21130d7a60830c2Df862319e593943A3",
   "robinhood": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+  "robinhood-testnet": "0x7E955252E15c84f5768B83c41a71F9eba181802F",
 };
 
 export class PricingService {

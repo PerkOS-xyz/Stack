@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  bytesToHex,
   createPublicClient,
   http,
   parseEventLogs,
@@ -16,7 +17,16 @@ import {
   ERC8004_REGISTRATION_NETWORKS,
   getChainByNetwork,
 } from "@/lib/utils/chains";
+import {
+  X402_PAYMENT_NETWORK_OPTIONS,
+  getNetworkCapability,
+} from "@/lib/utils/network-capabilities";
 import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
+import {
+  AGENT_PAYMENT_BINDING_SCHEMA,
+  buildAgentPaymentBindingTypedData,
+  type AgentPaymentBindingProof,
+} from "@/lib/erc8004/paymentBinding";
 
 const REGISTRATION_TYPE = "https://eips.ethereum.org/EIPS/eip-8004#registration-v1";
 
@@ -33,12 +43,12 @@ interface RegistrationEntry {
 
 export default function RegisterAgentPage() {
   const [network, setNetwork] = useState("monad-testnet");
+  const [paymentNetwork, setPaymentNetwork] = useState("monad-testnet");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [website, setWebsite] = useState("");
   const [agentCard, setAgentCard] = useState("");
   const [image, setImage] = useState("");
-  const [x402Support, setX402Support] = useState(true);
   const [status, setStatus] = useState("Ready to prepare registration.");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{
@@ -50,23 +60,33 @@ export default function RegisterAgentPage() {
   } | null>(null);
 
   const chain = useMemo(() => getChainByNetwork(network), [network]);
-  const selectedNetwork = useMemo(
-    () => ERC8004_REGISTRATION_NETWORKS.find((option) => option.value === network),
-    [network]
+  const selectedPaymentNetwork = useMemo(
+    () => getNetworkCapability(paymentNetwork),
+    [paymentNetwork]
   );
   const wallet = useWalletContext();
   const { walletClient, canSign } = useWalletClient({ chain: chain! });
 
-  async function createMetadataUri(registrations: RegistrationEntry[]) {
-    if (!chain || !wallet.address?.startsWith("0x")) throw new Error("Connect an EVM wallet first.");
-    const services: Array<Record<string, string>> = [{ name: "web", endpoint: website }];
+  async function createMetadataUri(
+    registrations: RegistrationEntry[],
+    paymentBinding?: AgentPaymentBindingProof
+  ) {
+    if (!chain || !selectedPaymentNetwork || !wallet.address?.startsWith("0x")) {
+      throw new Error("Connect an EVM wallet and select a payment network first.");
+    }
+    const services: Array<Record<string, unknown>> = [{ name: "web", endpoint: website }];
     if (agentCard) services.push({ name: "A2A", endpoint: agentCard, version: "0.3.0" });
     services.push({ name: "agentWallet", endpoint: `eip155:${chain.id}:${wallet.address}` });
-    if (x402Support) {
+    if (paymentBinding) {
       services.push({
-        name: "x402-supported",
+        name: "x402",
         endpoint: `${window.location.origin}/api/v2/x402/supported`,
         version: "2",
+        network: `eip155:${selectedPaymentNetwork.chainId}`,
+        asset: selectedPaymentNetwork.asset,
+        symbol: selectedPaymentNetwork.symbol,
+        payTo: wallet.address,
+        paymentBinding,
       });
     }
 
@@ -78,7 +98,7 @@ export default function RegisterAgentPage() {
       services,
       registrations,
       supportedTrust: ["reputation"],
-      x402Support,
+      x402Support: Boolean(paymentBinding),
       active: true,
     };
     const response = await fetch("/api/erc8004/metadata", {
@@ -158,8 +178,49 @@ export default function RegisterAgentPage() {
       const agentId = Number(registeredEvent.args.agentId);
       const registry = `eip155:${chain.id}:${prepared.registration.to}`;
 
+      if (!selectedPaymentNetwork) throw new Error("Payment network configuration is missing.");
+      const issuedAt = Math.floor(Date.now() / 1000);
+      const validUntil = issuedAt + 365 * 24 * 60 * 60;
+      const nonce = bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
+      const bindingFields = {
+        identityChainId: chain.id,
+        identityRegistry: prepared.registration.to as Address,
+        agentId,
+        paymentChainId: selectedPaymentNetwork.chainId,
+        payTo: wallet.address as Address,
+        asset: selectedPaymentNetwork.asset as Address,
+        issuedAt,
+        validUntil,
+        nonce,
+      };
+      setStatus(`Sign the ${selectedPaymentNetwork.label} x402 receiver binding…`);
+      const signature = await walletClient.signTypedData({
+        account: wallet.address as Address,
+        ...buildAgentPaymentBindingTypedData(bindingFields),
+      });
+      const paymentBinding: AgentPaymentBindingProof = {
+        schema: AGENT_PAYMENT_BINDING_SCHEMA,
+        identityNetwork: network,
+        paymentNetwork,
+        signer: wallet.address as Address,
+        signature,
+        ...bindingFields,
+      };
+      const bindingResponse = await fetch("/api/v2/agents/payment-bindings/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentBinding),
+      });
+      const bindingResult = await bindingResponse.json();
+      if (!bindingResponse.ok || bindingResult.verified !== true) {
+        throw new Error(bindingResult.error || "Could not verify the x402 receiver binding.");
+      }
+
       setStatus("Confirm one metadata update so 8004scan can verify the registration backlink…");
-      const finalUri = await createMetadataUri([{ agentId, agentRegistry: registry }]);
+      const finalUri = await createMetadataUri(
+        [{ agentId, agentRegistry: registry }],
+        paymentBinding
+      );
       const updateResponse = await fetch("/api/erc8004/identity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -212,11 +273,8 @@ export default function RegisterAgentPage() {
                   value={network}
                   onChange={(event) => {
                     const nextNetwork = event.target.value;
-                    const nextOption = ERC8004_REGISTRATION_NETWORKS.find(
-                      (option) => option.value === nextNetwork
-                    );
                     setNetwork(nextNetwork);
-                    setX402Support(nextOption?.x402Configured === true);
+                    setPaymentNetwork(nextNetwork);
                   }}
                   className={inputClass}
                   disabled={busy}
@@ -233,7 +291,31 @@ export default function RegisterAgentPage() {
                   </optgroup>
                 </select>
                 <span className="mt-2 block text-xs text-slate-500">
-                  30 official EVM deployments currently supported; all are indexed by 8004scan.
+                  15 payment-ready networks with an official ERC-8004 Identity Registry.
+                </span>
+              </label>
+              <label className="block text-sm text-slate-300">x402 payment network
+                <select
+                  value={paymentNetwork}
+                  onChange={(event) => setPaymentNetwork(event.target.value)}
+                  className={inputClass}
+                  disabled={busy}
+                >
+                  <optgroup label="Testnets">
+                    {X402_PAYMENT_NETWORK_OPTIONS.filter((option) => option.testnet).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label} · {option.symbol}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Mainnets">
+                    {X402_PAYMENT_NETWORK_OPTIONS.filter((option) => !option.testnet).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label} · {option.symbol}</option>
+                    ))}
+                  </optgroup>
+                </select>
+                <span className="mt-2 block text-xs text-slate-500">
+                  {selectedPaymentNetwork?.erc8004Identity
+                    ? "Identity and payments can use the same network."
+                    : "Robinhood and Unichain payments are linked to this identity with a signed cross-chain binding."}
                 </span>
               </label>
               <label className="block text-sm text-slate-300">Agent name
@@ -251,20 +333,9 @@ export default function RegisterAgentPage() {
               <label className="block text-sm text-slate-300">Image URL <span className="text-slate-500">(optional)</span>
                 <input type="url" value={image} onChange={(event) => setImage(event.target.value)} className={inputClass} placeholder="https://agent.example/icon.png" disabled={busy} />
               </label>
-              <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={x402Support}
-                  onChange={(event) => setX402Support(event.target.checked)}
-                  className="mt-1"
-                  disabled={busy || !selectedNetwork?.x402Configured}
-                />
-                <span>
-                  {selectedNetwork?.x402Configured
-                    ? "Publish x402 payment support and use the connected wallet as the verified agent wallet."
-                    : "ERC-8004 registration is available on this network, but Stack does not yet have an x402 payment asset configured there."}
-                </span>
-              </label>
+              <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4 text-sm text-slate-300">
+                x402 payment support is required. The connected wallet is published as `payTo`, and its binding to the ERC-8004 identity is signed and verified before the final metadata update.
+              </div>
               <button type="submit" disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 px-5 py-3 font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
                 {!wallet.isConnected ? "Connect wallet to continue" : busy ? "Registration in progress…" : "Register agent"}
               </button>
@@ -287,7 +358,8 @@ export default function RegisterAgentPage() {
               <h2 className="text-lg font-semibold text-white">What you will sign</h2>
               <ol className="mt-3 list-decimal space-y-2 pl-5">
                 <li>Mint the ERC-8004 identity NFT in the official registry.</li>
-                <li>Update its URI with the final registry and agent-ID backlink required for reliable indexing.</li>
+                <li>Sign an EIP-712 binding for the selected x402 payment receiver.</li>
+                <li>Update its URI with the final registry, agent-ID backlink, and verified payment binding.</li>
               </ol>
               <p className="mt-3 text-slate-400">Stack never receives a private key and does not submit either transaction for you.</p>
             </div>

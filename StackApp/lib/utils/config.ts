@@ -68,7 +68,7 @@ export type SupportedNetwork =
   | "arbitrum" | "arbitrum-sepolia"
   | "optimism" | "optimism-sepolia"
   | "unichain" | "unichain-sepolia"
-  | "robinhood"
+  | "robinhood" | "robinhood-testnet"
   | "bsc" | "bsc-testnet"
   | "linea" | "linea-sepolia"
   | "gnosis" | "gnosis-chiado"
@@ -140,6 +140,7 @@ export const config = {
     unichain: process.env.NEXT_PUBLIC_UNICHAIN_RPC_URL || "https://mainnet.unichain.org",
     "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_RPC_URL || "https://sepolia.unichain.org",
     robinhood: process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL || "https://rpc.mainnet.chain.robinhood.com",
+    "robinhood-testnet": process.env.NEXT_PUBLIC_ROBINHOOD_TESTNET_RPC_URL || "https://rpc.testnet.chain.robinhood.com",
     bsc: process.env.NEXT_PUBLIC_BSC_RPC_URL || "https://bsc-dataseed.binance.org",
     "bsc-testnet": process.env.NEXT_PUBLIC_BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545",
     linea: process.env.NEXT_PUBLIC_LINEA_RPC_URL || "https://rpc.linea.build",
@@ -179,8 +180,9 @@ export const config = {
     optimism: (process.env.NEXT_PUBLIC_OPTIMISM_PAYMENT_TOKEN || "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85") as Address,
     "optimism-sepolia": (process.env.NEXT_PUBLIC_OPTIMISM_SEPOLIA_PAYMENT_TOKEN || "0x5fd84259d66Cd46123540766Be93DFE6D43130D7") as Address,
     unichain: (process.env.NEXT_PUBLIC_UNICHAIN_PAYMENT_TOKEN || "0x078D782b760474a361dDA0AF3839290b0EF57AD6") as Address,
-    "unichain-sepolia": (process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
+    "unichain-sepolia": (process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_PAYMENT_TOKEN || "0x31d0220469e10c4E71834a79b1f276d740d3768F") as Address,
     robinhood: (process.env.NEXT_PUBLIC_ROBINHOOD_PAYMENT_TOKEN || "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168") as Address,
+    "robinhood-testnet": (process.env.NEXT_PUBLIC_ROBINHOOD_TESTNET_PAYMENT_TOKEN || "0x7E955252E15c84f5768B83c41a71F9eba181802F") as Address,
     bsc: (process.env.NEXT_PUBLIC_BSC_PAYMENT_TOKEN || "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d") as Address,
     "bsc-testnet": (process.env.NEXT_PUBLIC_BSC_TESTNET_PAYMENT_TOKEN || "0x0000000000000000000000000000000000000000") as Address,
     linea: (process.env.NEXT_PUBLIC_LINEA_PAYMENT_TOKEN || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff") as Address,
@@ -224,6 +226,7 @@ export const config = {
     unichain: process.env.NEXT_PUBLIC_UNICHAIN_ESCROW_ADDRESS as Address | undefined,
     "unichain-sepolia": process.env.NEXT_PUBLIC_UNICHAIN_SEPOLIA_ESCROW_ADDRESS as Address | undefined,
     robinhood: process.env.NEXT_PUBLIC_ROBINHOOD_ESCROW_ADDRESS as Address | undefined,
+    "robinhood-testnet": process.env.NEXT_PUBLIC_ROBINHOOD_TESTNET_ESCROW_ADDRESS as Address | undefined,
     bsc: process.env.NEXT_PUBLIC_BSC_ESCROW_ADDRESS as Address | undefined,
     "bsc-testnet": process.env.NEXT_PUBLIC_BSC_TESTNET_ESCROW_ADDRESS as Address | undefined,
     linea: process.env.NEXT_PUBLIC_LINEA_ESCROW_ADDRESS as Address | undefined,

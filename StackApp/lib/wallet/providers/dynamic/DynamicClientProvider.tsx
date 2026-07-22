@@ -35,14 +35,23 @@ import {
   ERC8004_REGISTRATION_NETWORKS,
   getChainByNetwork,
 } from "../../../utils/chains";
+import { X402_PAYMENT_NETWORK_OPTIONS } from "../../../utils/network-capabilities";
 
 const EXISTING_DYNAMIC_ERC8004_NETWORKS = new Set([
   "base", "base-sepolia", "ethereum", "sepolia", "monad", "monad-testnet",
   "polygon", "polygon-amoy", "arbitrum", "arbitrum-sepolia", "optimism",
   "optimism-sepolia", "avalanche", "avalanche-fuji", "celo", "celo-sepolia",
+  "robinhood",
 ]);
 
-const additionalErc8004WalletNetworks = ERC8004_REGISTRATION_NETWORKS
+const dynamicExtensionOptions = [
+  ...ERC8004_REGISTRATION_NETWORKS,
+  ...X402_PAYMENT_NETWORK_OPTIONS,
+].filter((option, index, options) =>
+  options.findIndex((candidate) => candidate.value === option.value) === index
+);
+
+const additionalPaymentAndIdentityWalletNetworks = dynamicExtensionOptions
   .filter((option) => !EXISTING_DYNAMIC_ERC8004_NETWORKS.has(option.value))
   .map((option) => {
     const chain = getChainByNetwork(option.value);
@@ -345,6 +354,19 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               blockExplorerUrls: ["https://robinhoodchain.blockscout.com"],
               iconUrls: ["https://robinhoodchain.blockscout.com/favicon.ico"],
             },
+            {
+              chainId: 46630,
+              networkId: 46630,
+              name: "Robinhood Chain Testnet",
+              vanityName: "Robinhood Testnet",
+              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+              rpcUrls: [
+                process.env.NEXT_PUBLIC_ROBINHOOD_TESTNET_RPC_URL ||
+                  "https://rpc.testnet.chain.robinhood.com",
+              ],
+              blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"],
+              iconUrls: ["https://explorer.testnet.chain.robinhood.com/favicon.ico"],
+            },
             // Polygon
             {
               chainId: 137,
@@ -450,7 +472,7 @@ export function DynamicClientProvider({ children }: DynamicClientProviderProps) 
               blockExplorerUrls: ["https://celo-sepolia.blockscout.com"],
               iconUrls: ["https://icons.llamao.fi/icons/chains/rsz_celo.jpg"],
             },
-            ...additionalErc8004WalletNetworks,
+            ...additionalPaymentAndIdentityWalletNetworks,
           ],
         },
       }}

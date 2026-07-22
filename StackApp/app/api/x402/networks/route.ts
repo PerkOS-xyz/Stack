@@ -85,6 +85,13 @@ const NETWORK_METADATA: Record<
     color: "#00C805",
     icon: "R",
   },
+  "robinhood-testnet": {
+    name: "Robinhood Chain Testnet",
+    chainId: CHAIN_IDS.ROBINHOOD_TESTNET,
+    symbol: "ETH",
+    color: "#00C805",
+    icon: "R",
+  },
   // Testnet networks
   "avalanche-fuji": {
     name: "Avalanche Fuji",
@@ -128,13 +135,6 @@ const NETWORK_METADATA: Record<
     color: "#FF0420",
     icon: "🔴",
   },
-  "celo-sepolia": {
-    name: "Celo Sepolia",
-    chainId: CHAIN_IDS.CELO_SEPOLIA,
-    symbol: "CELO",
-    color: "#35D07F",
-    icon: "🟡",
-  },
   "monad-testnet": {
     name: "Monad Testnet",
     chainId: CHAIN_IDS.MONAD_TESTNET,
@@ -153,7 +153,7 @@ const NETWORK_METADATA: Record<
 
 // Lists of network keys for filtering
 const MAINNET_NETWORKS = ["avalanche", "base", "ethereum", "polygon", "arbitrum", "optimism", "celo", "monad", "unichain", "robinhood"];
-const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "celo-sepolia", "monad-testnet", "unichain-sepolia"];
+const TESTNET_NETWORKS = ["avalanche-fuji", "base-sepolia", "sepolia", "polygon-amoy", "arbitrum-sepolia", "optimism-sepolia", "monad-testnet", "unichain-sepolia", "robinhood-testnet"];
 
 interface NetworkAggregation {
   network: string;
