@@ -8,8 +8,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/interfaces/IERC1271.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./IIdentityRegistry.sol";
 
 /**
@@ -32,7 +33,7 @@ contract IdentityRegistry is
     EIP712Upgradeable,
     IIdentityRegistry
 {
-    using ECDSAUpgradeable for bytes32;
+    using ECDSA for bytes32;
 
     /// @notice Counter for generating unique agent IDs
     uint256 private _nextAgentId;
@@ -71,7 +72,6 @@ contract IdentityRegistry is
         __ERC721URIStorage_init();
         __ERC721Enumerable_init();
         __Ownable_init(msg.sender);
-        __UUPSUpgradeable_init();
         __EIP712_init("ERC8004IdentityRegistry", "1");
         _nextAgentId = 1; // Start from 1, 0 is reserved
     }
@@ -94,8 +94,8 @@ contract IdentityRegistry is
 
         // Set all metadata entries
         for (uint256 i = 0; i < metadata.length; i++) {
-            _metadata[agentId][metadata[i].key] = metadata[i].value;
-            emit MetadataSet(agentId, metadata[i].key, metadata[i].key, metadata[i].value);
+            _metadata[agentId][metadata[i].metadataKey] = metadata[i].metadataValue;
+            emit MetadataSet(agentId, metadata[i].metadataKey, metadata[i].metadataKey, metadata[i].metadataValue);
         }
 
         _ownerAgents[msg.sender].push(agentId);
@@ -210,8 +210,8 @@ contract IdentityRegistry is
         bytes calldata signature
     ) internal view returns (bool) {
         // Try ECDSA recovery first (for EOAs)
-        (address recovered, ECDSAUpgradeable.RecoverError error, ) = ECDSAUpgradeable.tryRecover(digest, signature);
-        if (error == ECDSAUpgradeable.RecoverError.NoError && recovered == signer) {
+        (address recovered, ECDSA.RecoverError error, ) = ECDSA.tryRecover(digest, signature);
+        if (error == ECDSA.RecoverError.NoError && recovered == signer) {
             return true;
         }
 
@@ -329,7 +329,7 @@ contract IdentityRegistry is
 
     function ownerOf(
         uint256 tokenId
-    ) public view override(ERC721Upgradeable, IIdentityRegistry) returns (address) {
+    ) public view override(ERC721Upgradeable, IERC721, IIdentityRegistry) returns (address) {
         return super.ownerOf(tokenId);
     }
 

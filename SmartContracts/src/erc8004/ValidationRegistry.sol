@@ -49,7 +49,6 @@ contract ValidationRegistry is
     function initialize(address identityRegistry_) public initializer {
         require(identityRegistry_ != address(0), "Invalid identity registry");
         __Ownable_init(msg.sender);
-        __UUPSUpgradeable_init();
         _identityRegistry = identityRegistry_;
         _requestCounter = 0;
     }
