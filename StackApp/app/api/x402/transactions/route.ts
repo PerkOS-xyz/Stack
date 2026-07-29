@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { getNativeTokenSymbol, weiToNativeToken } from "@/lib/utils/chains";
+import { schemeFilterValues } from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (scheme && scheme !== "all") {
-      query = query.eq("scheme", scheme);
+      // Match the whole scheme family so the rename does not hide history.
+      query = query.in("scheme", schemeFilterValues(scheme));
     }
 
     // Apply search filter (searches transaction_hash, payer_address, recipient_address)
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (scheme && scheme !== "all") {
-      statsQuery = statsQuery.eq("scheme", scheme);
+      statsQuery = statsQuery.in("scheme", schemeFilterValues(scheme));
     }
 
     // Apply search filter to stats query as well

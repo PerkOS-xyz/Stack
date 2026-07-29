@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { X402Service } from "@/lib/services/X402Service";
 import { config } from "@/lib/utils/config";
 import { NETWORK_CAPABILITIES } from "@/lib/utils/network-capabilities";
+import { SCHEME_DEFERRED } from "@/lib/utils/x402-schemes";
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
   );
   const deferredNetworks = new Set(
     supported.kinds
-      .filter(({ scheme }) => scheme === "deferred")
+      .filter(({ scheme }) => scheme === SCHEME_DEFERRED)
       .map(({ network }) => network)
   );
   return NextResponse.json({

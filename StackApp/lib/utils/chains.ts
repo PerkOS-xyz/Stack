@@ -18,7 +18,6 @@ import {
   lineaSepolia,
   mantle,
   mantleSepoliaTestnet,
-  megaeth,
   megaethTestnet,
   metis,
   metisSepolia,
@@ -141,7 +140,7 @@ export const chains: Record<string, Chain> = {
   "mantle-sepolia": mantleSepoliaTestnet,
   metis,
   "metis-sepolia": metisSepolia,
-  megaeth,
+  // MegaETH mainnet is not shipped by viem/chains; only the testnet exists.
   "megaeth-testnet": megaethTestnet,
   abstract,
   "abstract-testnet": abstractTestnet,
@@ -165,7 +164,7 @@ export const networkToChain: Record<string, Chain> = {
   "mantle-sepolia": mantleSepoliaTestnet,
   metis,
   "metis-sepolia": metisSepolia,
-  megaeth,
+  // MegaETH mainnet is not shipped by viem/chains; only the testnet exists.
   "megaeth-testnet": megaethTestnet,
   abstract,
   "abstract-testnet": abstractTestnet,

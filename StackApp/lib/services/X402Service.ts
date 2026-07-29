@@ -14,6 +14,12 @@ import { SUPPORTED_NETWORKS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { normalizeX402Request } from "../utils/x402-normalization";
 import {
+  canonicalizeScheme,
+  SCHEME_EXACT,
+  SCHEME_DEFERRED,
+  type StackSupportedResponse,
+} from "../utils/x402-schemes";
+import {
   ZERO_ADDRESS,
   getNetworkCapabilityByChainId,
   isX402PaymentNetwork,
@@ -181,8 +187,11 @@ export class X402Service {
     // Use normalized network for scheme routing
     const network = normalizedPayloadNetwork;
 
-    // Route to appropriate scheme
-    if (paymentPayload.scheme === "exact") {
+    // Route to appropriate scheme. `deferred` is accepted as a deprecated
+    // alias of `perkos-deferred`; unknown schemes fail closed below.
+    const canonicalScheme = canonicalizeScheme(paymentPayload.scheme);
+
+    if (canonicalScheme === SCHEME_EXACT) {
       // Route Stellar networks to StellarExactSchemeService
       if (this.isStellarNetwork(network)) {
         if (!this.stellarExactScheme) {
@@ -200,7 +209,7 @@ export class X402Service {
         paymentPayload.payload as any,
         paymentRequirements
       );
-    } else if (paymentPayload.scheme === "deferred") {
+    } else if (canonicalScheme === SCHEME_DEFERRED) {
       const deferredScheme = this.getDeferredSchemeForNetwork(network);
       if (!deferredScheme) {
         return {
@@ -297,8 +306,11 @@ export class X402Service {
     // Use normalized network for scheme routing
     const network = normalizedPayloadNetwork;
 
-    // Route to appropriate scheme
-    if (paymentPayload.scheme === "exact") {
+    // Route to appropriate scheme. `deferred` is accepted as a deprecated
+    // alias of `perkos-deferred`; unknown schemes fail closed below.
+    const canonicalScheme = canonicalizeScheme(paymentPayload.scheme);
+
+    if (canonicalScheme === SCHEME_EXACT) {
       // Route Stellar networks to StellarExactSchemeService
       if (this.isStellarNetwork(network)) {
         if (!this.stellarExactScheme) {
@@ -319,7 +331,7 @@ export class X402Service {
         paymentRequirements,
         vendorDomain
       );
-    } else if (paymentPayload.scheme === "deferred") {
+    } else if (canonicalScheme === SCHEME_DEFERRED) {
       const deferredScheme = this.getDeferredSchemeForNetwork(network);
       if (!deferredScheme) {
         return {
@@ -349,26 +361,28 @@ export class X402Service {
   /**
    * Get supported schemes/networks
    */
-  getSupported(): SupportedResponse {
-    const kinds: SupportedResponse["kinds"] = [];
+  getSupported(): StackSupportedResponse {
+    const kinds: StackSupportedResponse["kinds"] = [];
 
     // Add exact scheme for all EVM networks
     for (const network of SUPPORTED_NETWORKS) {
       if (this.exactSchemes.has(network)) {
-        kinds.push({ scheme: "exact", network });
+        kinds.push({ scheme: SCHEME_EXACT, network });
       }
     }
 
     // Add Stellar exact scheme
     if (this.stellarExactScheme) {
-      kinds.push({ scheme: "exact", network: "stellar:pubnet" as SupportedNetwork });
+      kinds.push({ scheme: SCHEME_EXACT, network: "stellar:pubnet" });
     }
 
-    // Add deferred scheme for networks with escrow configured
+    // Add deferred scheme for networks with escrow configured. Advertised
+    // under the vendor-prefixed name only; the bare `deferred` alias is still
+    // accepted on input but deliberately not advertised.
     if (config.deferredEnabled) {
       for (const [network, deferredScheme] of this.deferredSchemes.entries()) {
         if (deferredScheme) {
-          kinds.push({ scheme: "deferred", network });
+          kinds.push({ scheme: SCHEME_DEFERRED, network });
         }
       }
     }

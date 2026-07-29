@@ -4,7 +4,28 @@
 
 **PerkOS Stack** is enterprise-grade agent infrastructure that provides the complete backbone for building agent-powered applications. Built on the x402 protocol, PerkOS Stack delivers production-ready REST APIs, micropayment infrastructure, agent discovery, and ERC-8004 identity management in one unified platform.
 
-Supports both exact (EIP-3009) and deferred (EIP-712) payment schemes across multiple blockchain networks with native multi-chain support.
+Supports both exact (EIP-3009) and PerkOS deferred (EIP-712) payment schemes across multiple blockchain networks with native multi-chain support.
+
+## Protocol status — read before writing copy
+
+**None of the four protocols Stack builds on is a finalized standard.** Claiming
+otherwise in docs, marketing or a pitch is a factual error. Verified 2026-07-29
+against primary sources; full analysis in `STACK-PROTOCOL-RESEARCH-2026-07-29.md`
+(workspace root).
+
+| Protocol | Accurate description | Do **not** say |
+|---|---|---|
+| **x402** | v2 live, governed by the x402 Foundation under the Linux Foundation since 2026-07-14. Only `exact` is standardized. | "final", "v1.0", "`deferred` is standard" |
+| **ERC-8004** | **Draft** EIP (created 2025-08-13). Canonical registries are deployed on 30+ chains; Validation Registry still experimental. | "Final", "ratified" — deployment is not ratification |
+| **x401** | **Draft 0.2.0**. No standards body has adopted it; a FIDO Alliance submission is announced, not completed. | "finalized", "FIDO standard", "every credential ecosystem supported" |
+| **ERC-8183** | **Draft** EIP (created 2026-02-25). | "Final" |
+
+The honest framing to reuse, modeled on `Docs/X401-STATUS-2026-07-22.md`:
+
+> Stack implements a security-hardened verifier profile for x401 Draft 0.2.0,
+> using Proof's official Node SDK and OpenID4VP credential verification.
+
+Re-pin review process: `Docs/PROTOCOL-PIN-REVIEW.md`.
 
 ### Key Features
 
@@ -249,20 +270,52 @@ See [DATABASE_TABLES.md](MiddlewareApp/DATABASE_TABLES.md) for complete schema r
 
 ## x402 Protocol Implementation
 
+Stack speaks the **x402 v2** envelope. The protocol is governed by the
+[x402 Foundation](https://x402.org) under the Linux Foundation since 2026-07-14;
+its Technical Steering Committee owns the specification and the scheme
+namespace. v2 is live, but it is not a frozen v1.0 — treat it as a moving target.
+
+**v2 differences that matter when writing a client:**
+
+- `x402Version` is `2`
+- `network` is **CAIP-2** (`eip155:43114`), not a bare name (`avalanche`)
+- `paymentPayload.accepted` echoes the requirements and **must match them
+  field by field** — Stack rejects a mismatch rather than trusting the payload
+- `extensions` and `signers` are part of the response surface
+
+v1 and a pre-standard flat v2 shape are still accepted as a migration bridge
+(`lib/utils/x402-normalization.ts`), but new integrations should emit v2.
+
 ### Payment Schemes
+
+**Only `exact` is standardized by x402 v2.** `upto`, `deferred` and
+batch-settlement are proposed but not ratified. Stack's aggregated-voucher
+settlement therefore advertises the vendor-prefixed name **`perkos-deferred`**
+so it does not squat an identifier the TSC may define differently. The bare
+`deferred` string is still accepted on input and answers with an
+`X-x402-Deprecation` header; it is never advertised. See
+`lib/utils/x402-schemes.ts`.
 
 #### 1. Exact Scheme (EIP-3009)
 
 Immediate payment execution using EIP-3009 `transferWithAuthorization`.
 
-```typescript
-// Example: Exact payment verification
-POST /api/v2/x402/verify
+```jsonc
+// POST /api/v2/x402/verify
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "paymentPayload": {
+    "x402Version": 2,
     "scheme": "exact",
-    "network": "avalanche",
+    "network": "eip155:43114",       // CAIP-2
+    "accepted": {                     // must equal paymentRequirements
+      "scheme": "exact",
+      "network": "eip155:43114",
+      "amount": "1000000",
+      "asset": "0x...",
+      "payTo": "0x...",
+      "maxTimeoutSeconds": 3600
+    },
     "payload": {
       "signature": "0x...",
       "authorization": {
@@ -277,28 +330,43 @@ POST /api/v2/x402/verify
   },
   "paymentRequirements": {
     "scheme": "exact",
-    "network": "avalanche",
-    "maxAmountRequired": "1000000",
-    "resource": "/api/service",
+    "network": "eip155:43114",
+    "amount": "1000000",
+    "asset": "0x...",
     "payTo": "0x...",
     "maxTimeoutSeconds": 3600,
-    "asset": "0x..."
+    "resource": "/api/service"
   }
 }
 ```
 
-#### 2. Deferred Scheme (EIP-712)
+#### 2. PerkOS Deferred Scheme (EIP-712) — `perkos-deferred`
 
-Off-chain voucher aggregation with batch settlement.
+Off-chain voucher aggregation settled against an escrow contract. **This is a
+PerkOS scheme, not an x402 standard one.** Clients still sending `deferred` keep
+working and receive `X-x402-Deprecation` on the response.
 
-```typescript
-// Example: Deferred payment verification
-POST /api/v2/x402/verify
+```jsonc
+// POST /api/v2/x402/verify
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "paymentPayload": {
-    "scheme": "deferred",
-    "network": "avalanche",
+    "x402Version": 2,
+    "scheme": "perkos-deferred",
+    "network": "eip155:43114",
+    "accepted": {
+      "scheme": "perkos-deferred",
+      "network": "eip155:43114",
+      "amount": "1000000",
+      "asset": "0x...",
+      "payTo": "0x...",
+      "maxTimeoutSeconds": 3600,
+      "extra": {
+        "type": "aggregation",
+        "escrow": "0x...",
+        "facilitator": "https://stack.perkos.xyz"
+      }
+    },
     "payload": {
       "voucher": {
         "id": "0x...",
@@ -315,13 +383,13 @@ POST /api/v2/x402/verify
     }
   },
   "paymentRequirements": {
-    "scheme": "deferred",
-    "network": "avalanche",
-    "maxAmountRequired": "1000000",
-    "resource": "/api/service",
+    "scheme": "perkos-deferred",
+    "network": "eip155:43114",
+    "amount": "1000000",
+    "asset": "0x...",
     "payTo": "0x...",
     "maxTimeoutSeconds": 3600,
-    "asset": "0x...",
+    "resource": "/api/service",
     "extra": {
       "type": "aggregation",
       "escrow": "0x...",
@@ -330,6 +398,13 @@ POST /api/v2/x402/verify
   }
 }
 ```
+
+### Discovery
+
+| Endpoint | What it is |
+|---|---|
+| `GET /api/discovery/resources` | **x402 v2 spec** resource listing (`limit`, `offset`, `type`). How other facilitators index Stack's resources. |
+| `GET /.well-known/x402-discovery.json` | PerkOS metadata about the facilitator itself. Not a spec endpoint. |
 
 ### Supported Networks
 

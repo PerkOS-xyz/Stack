@@ -11,6 +11,11 @@ import { corsHeaders, corsOptions } from "@/lib/utils/cors";
 import { x402RequestSchema, validateBody } from "@/lib/validation/schemas";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 import { normalizeX402Request } from "@/lib/utils/x402-normalization";
+import {
+  isLegacyDeferred,
+  LEGACY_DEFERRED_DEPRECATION,
+  DEPRECATION_HEADER,
+} from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +105,13 @@ export async function POST(request: NextRequest) {
       payer: result.payer,
     });
 
-    return NextResponse.json(result, { headers: { ...corsHeaders, ...headers } });
+    const deprecation: Record<string, string> = isLegacyDeferred(scheme)
+      ? { [DEPRECATION_HEADER]: LEGACY_DEFERRED_DEPRECATION }
+      : ({} as Record<string, string>);
+
+    return NextResponse.json(result, {
+      headers: { ...corsHeaders, ...headers, ...deprecation },
+    });
   } catch (error) {
     console.log(
       "\n Verify Error:",

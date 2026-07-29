@@ -14,6 +14,11 @@ import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
 import { normalizeX402Request } from "@/lib/utils/x402-normalization";
 import { authenticateApiKey } from "@/lib/middleware/apiKeyAuth";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import {
+  isLegacyDeferred,
+  LEGACY_DEFERRED_DEPRECATION,
+  DEPRECATION_HEADER,
+} from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -203,7 +208,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(v2Response, { status: 402, headers: { ...corsHeaders, ...headers } });
     }
 
-    return NextResponse.json(v2Response, { headers: { ...corsHeaders, ...headers } });
+    const deprecation: Record<string, string> = isLegacyDeferred(scheme)
+      ? { [DEPRECATION_HEADER]: LEGACY_DEFERRED_DEPRECATION }
+      : ({} as Record<string, string>);
+
+    return NextResponse.json(v2Response, {
+      headers: { ...corsHeaders, ...headers, ...deprecation },
+    });
   } catch (error) {
     console.log(
       "\n Settle Error:",
