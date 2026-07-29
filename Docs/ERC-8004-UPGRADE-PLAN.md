@@ -2,7 +2,21 @@
 
 **Date:** 2025-03-08
 **Branch:** `upgrade-erc8004-v2`
-**Status:** In Progress
+**Status:** Closed 2026-07-29 — TypeScript and API work landed; the Solidity work was dropped, not done.
+
+> **Resolution.** The TypeScript types, ABIs, API routes and config items in this plan
+> were completed. The Solidity checkboxes never were: the three interfaces were rewritten
+> to v2 while the implementations stayed on the January shape, so `IdentityRegistry.sol`,
+> `ReputationRegistry.sol` and `ValidationRegistry.sol` stopped compiling and remained
+> broken from March to July 2026.
+>
+> Rather than finish the migration, the local Solidity registries were **deleted** on
+> 2026-07-29. Stack does not deploy its own registries — it consumes the canonical
+> ERC-8004 v2 deployments at their CREATE2 addresses (item 4 of this plan, which shipped).
+> Keeping private reimplementations of a standard that publishes canonical deployments
+> was maintenance with no consumer.
+>
+> The remaining Solidity sections below are kept for historical context only.
 
 ---
 

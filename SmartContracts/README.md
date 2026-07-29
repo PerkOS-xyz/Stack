@@ -26,13 +26,10 @@ unsigned role transactions and each role wallet signs its action directly.
 Run the integration tests:
 
 ```bash
-forge test --match-contract PerkOSAgenticCommerceTest \
-  --skip IdentityRegistry.sol \
-  --skip ReputationRegistry.sol \
-  --skip ValidationRegistry.sol \
-  --skip DeferredPaymentEscrowUpgradeable.sol \
-  --skip DeployUpgradeable.s.sol -vv
+forge test --match-contract PerkOSAgenticCommerceTest -vv
 ```
+
+Or just `forge build` / `forge test` for the whole repo.
 
 Deploy the upgradeable implementation and proxy:
 
