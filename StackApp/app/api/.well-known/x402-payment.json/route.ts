@@ -4,6 +4,7 @@ import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS } from "@/lib/utils/chains";
 import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
+import { SCHEME_DEFERRED } from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
         caip19: chainId ? `eip155:${chainId}/erc20:${tokenAddress}` : null,
       },
       escrow:
-        kind.scheme === "deferred"
+        kind.scheme === SCHEME_DEFERRED
           ? config.deferredEscrowAddresses[kind.network as SupportedNetwork]
           : null,
       isTestnet: isTestnet(kind.network),

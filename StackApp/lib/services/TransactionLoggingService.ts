@@ -16,7 +16,7 @@ export interface TransactionLogData {
   assetAddress: string;
   assetSymbol?: string;
   network: SupportedNetwork;
-  scheme: "exact" | "deferred";
+  scheme: "exact" | "perkos-deferred" | "deferred";
   vendorDomain?: string;
   vendorEndpoint?: string;
   status: "success" | "failed" | "pending";

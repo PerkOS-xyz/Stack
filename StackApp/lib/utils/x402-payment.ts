@@ -46,7 +46,7 @@ export function getPaymentTokenSymbol(chainId: number): string {
  * Payment requirements from x402 protocol
  */
 export interface PaymentRequirements {
-  scheme: "exact" | "deferred";
+  scheme: "exact" | "perkos-deferred" | "deferred";
   network: string;
   amount: string;
   maxAmountRequired?: string;

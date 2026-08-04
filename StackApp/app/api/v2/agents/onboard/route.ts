@@ -13,6 +13,7 @@ import { agentOnboardSchema, validateBody } from "@/lib/validation/schemas";
 import { IDENTITY_REGISTRY_ABI } from "@/lib/contracts/erc8004";
 import { encodeFunctionData, type Address, type Hex } from "viem";
 import { isAgentReadyNetwork } from "@/lib/utils/network-capabilities";
+import { SCHEME_EXACT, SCHEME_DEFERRED } from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         config: `${baseUrl}/api/v2/x402/config`,
         supported: `${baseUrl}/api/v2/x402/supported`,
       },
-      schemes: ["exact", ...(config.deferredEnabled ? ["deferred"] : [])],
+      schemes: [SCHEME_EXACT, ...(config.deferredEnabled ? [SCHEME_DEFERRED] : [])],
     };
 
     return NextResponse.json({

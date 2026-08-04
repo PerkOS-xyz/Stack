@@ -4,6 +4,7 @@ import { X402Service } from "@/lib/services/X402Service";
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { CHAIN_IDS, chains, getChainByNetwork } from "@/lib/utils/chains";
 import { createPublicClient, http } from "viem";
+import { SCHEME_DEFERRED } from "@/lib/utils/x402-schemes";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
   };
 
   if (config.deferredEnabled) {
-    health.capabilities.schemes.push("deferred");
+    health.capabilities.schemes.push(SCHEME_DEFERRED);
   }
 
   // Check database connectivity

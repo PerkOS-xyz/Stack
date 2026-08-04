@@ -51,7 +51,7 @@ interface ApiResponse {
 
 export default function TransactionsPage() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
-  const [schemeFilter, setSchemeFilter] = useState<"all" | "exact" | "deferred">("all");
+  const [schemeFilter, setSchemeFilter] = useState<"all" | "exact" | "perkos-deferred">("all");
   const [chartData, setChartData] = useState<Array<{ height: number }>>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -298,7 +298,7 @@ export default function TransactionsPage() {
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               {/* Scheme Filter */}
               <div className="inline-flex bg-slate-800/50 border border-pink-500/30 rounded-lg p-1 backdrop-blur-sm">
-                {(["all", "exact", "deferred"] as const).map((scheme) => (
+                {(["all", "exact", "perkos-deferred"] as const).map((scheme) => (
                   <button
                     key={scheme}
                     onClick={() => setSchemeFilter(scheme)}

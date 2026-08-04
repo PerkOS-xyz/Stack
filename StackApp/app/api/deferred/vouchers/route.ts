@@ -3,6 +3,7 @@ import type { DeferredPayload, Address } from "@/lib/types/x402";
 import { X402Service } from "@/lib/services/X402Service";
 import { config, type SupportedNetwork } from "@/lib/utils/config";
 import { deferredVoucherSchema, validateBody } from "@/lib/validation/schemas";
+import { SCHEME_DEFERRED_LEGACY } from "@/lib/utils/x402-schemes";
 
 export const dynamic = 'force-dynamic';
 
@@ -73,7 +74,9 @@ export async function POST(request: NextRequest) {
 
     // Verify and store
     const result = await deferredScheme.verify(body, {
-      scheme: "deferred",
+      // @perkos/types-x402@1.1.1 still types this "exact" | "deferred";
+      // pass the legacy identifier at the SDK boundary only.
+      scheme: SCHEME_DEFERRED_LEGACY,
       network,
       maxAmountRequired: body.voucher.valueAggregate.toString(),
       resource: "",
