@@ -32,15 +32,8 @@ PerkOS-Stack/
 │   ├── src/                      # Solidity smart contracts
 │   │   ├── DeferredPaymentEscrow.sol            # Legacy non-upgradeable
 │   │   ├── DeferredPaymentEscrowUpgradeable.sol # UUPS upgradeable (recommended)
-│   │   └── erc8004/              # ERC-8004 Registry Contracts
-│   │       ├── IIdentityRegistry.sol            # Identity interface
-│   │       ├── IdentityRegistry.sol             # ERC-721 agent identity NFT
-│   │       ├── IReputationRegistry.sol          # Reputation interface
-│   │       ├── ReputationRegistry.sol           # On-chain feedback system
-│   │       ├── IValidationRegistry.sol          # Validation interface
-│   │       └── ValidationRegistry.sol           # Third-party attestations
-│   ├── scripts/                  # Deployment scripts
-│   │   └── deploy-erc8004.ts     # ERC-8004 registry deployment
+│   │   └── erc8183/              # Agentic Commerce (ERC-8183)
+│   │       └── PerkOSAgenticCommerce.sol
 │   ├── script/                   # Foundry scripts
 │   │   └── DeployUpgradeable.s.sol
 │   ├── lib/                      # Dependencies (forge-std, openzeppelin)
@@ -355,6 +348,16 @@ POST /api/v2/x402/verify
 
 PerkOS Stack implements **ERC-8004** for standardized agent discovery and trust mechanisms with three on-chain registries.
 
+> **Stack does not deploy its own registries.** It reads and writes the canonical ERC-8004 v2 registries at their CREATE2-deterministic addresses. The addresses live in `StackApp/lib/utils/config.ts` and the ABIs in `StackApp/lib/contracts/erc8004/abis.ts` (hand-maintained, because `@perkos/contracts-erc8004@1.0.1` still describes the pre-v2 contracts).
+>
+> | Registry | Mainnet | Testnet |
+> |---|---|---|
+> | Identity | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
+> | Reputation | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
+> | Validation | not officially deployed yet | not officially deployed yet |
+>
+> Per-network overrides are available via `NEXT_PUBLIC_<NETWORK>_{IDENTITY,REPUTATION,VALIDATION}_REGISTRY`. The local Solidity copies of these registries were removed on 2026-07-29 — they had drifted from the v2 interfaces and were never deployed.
+
 ### On-Chain Registry Architecture
 
 ERC-8004 defines three interconnected registries for complete agent lifecycle management:
@@ -382,7 +385,7 @@ ERC-8004 defines three interconnected registries for complete agent lifecycle ma
 
 The Identity Registry mints unique NFTs representing agent identities on-chain.
 
-**Smart Contract**: `SmartContracts/src/erc8004/IdentityRegistry.sol`
+**Contract**: canonical ERC-8004 v2 `IdentityRegistry` (addresses above); ABI in `StackApp/lib/contracts/erc8004/abis.ts`
 
 ```solidity
 // Core functions
@@ -405,7 +408,7 @@ function totalAgents() external view returns (uint256);
 
 The Reputation Registry enables cryptographically-signed feedback from clients.
 
-**Smart Contract**: `SmartContracts/src/erc8004/ReputationRegistry.sol`
+**Contract**: canonical ERC-8004 v2 `ReputationRegistry` (addresses above); ABI in `StackApp/lib/contracts/erc8004/abis.ts`
 
 ```solidity
 // Feedback with EIP-712 authorization
@@ -444,7 +447,7 @@ function getSummary(uint256 agentId) external view returns (ReputationSummary me
 
 The Validation Registry allows trusted validators to provide attestations about agents.
 
-**Smart Contract**: `SmartContracts/src/erc8004/ValidationRegistry.sol`
+**Contract**: canonical ERC-8004 v2 `ValidationRegistry` (addresses above); ABI in `StackApp/lib/contracts/erc8004/abis.ts`
 
 ```solidity
 struct Validator {
@@ -649,25 +652,15 @@ NEXT_PUBLIC_BASE_VALIDATION_REGISTRY=0x...
 
 ### Deployment
 
-Deploy all three registries using the Foundry deployment script:
+**There is nothing to deploy.** The registries are the canonical ERC-8004 v2 deployments, live at the same CREATE2 addresses on every supported network (see the table at the top of this section). Stack only needs the addresses, which are already baked into `StackApp/lib/utils/config.ts`.
+
+To point a network at a different registry (for example a self-hosted Validation Registry while the official one does not exist yet), set the override env var instead of deploying from this repo:
 
 ```bash
-cd SmartContracts
-
-# Deploy to testnet
-forge script scripts/deploy-erc8004.ts --rpc-url avalanche-fuji --broadcast
-
-# Deploy to mainnet
-forge script scripts/deploy-erc8004.ts --rpc-url avalanche --broadcast
+NEXT_PUBLIC_<NETWORK>_IDENTITY_REGISTRY=0x...
+NEXT_PUBLIC_<NETWORK>_REPUTATION_REGISTRY=0x...
+NEXT_PUBLIC_<NETWORK>_VALIDATION_REGISTRY=0x...
 ```
-
-The deployment script automatically:
-
-1. Deploys IdentityRegistry first
-2. Deploys ReputationRegistry linked to IdentityRegistry
-3. Deploys ValidationRegistry linked to IdentityRegistry
-4. Sets minimum stake for validators
-5. Outputs all contract addresses for `.env` configuration
 
 ## API Reference
 

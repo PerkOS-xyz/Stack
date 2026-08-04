@@ -148,14 +148,10 @@ npm run typecheck
 npm test
 
 cd ../SmartContracts
-forge test --match-contract PerkOSAgenticCommerceTest \
-  --skip IdentityRegistry.sol \
-  --skip ReputationRegistry.sol \
-  --skip ValidationRegistry.sol \
-  --skip DeferredPaymentEscrowUpgradeable.sol \
-  --skip DeployUpgradeable.s.sol
+forge test
 ```
 
-The skips isolate the ERC-8183 module from legacy contracts that predate the
-pinned OpenZeppelin dependency. The upstream reference suite can be run from
+The `--skip` flags this section used to require are no longer needed: the
+legacy contracts that predated the pinned OpenZeppelin dependency were either
+migrated to the v5 API or removed. The upstream reference suite can be run from
 `SmartContracts/lib/erc-8183-base-contracts` with `forge test`.
