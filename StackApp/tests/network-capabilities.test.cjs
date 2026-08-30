@@ -53,6 +53,17 @@ test("Unichain domains match the contracts verified on-chain", () => {
   }
 });
 
+test("Base Sepolia domain matches FiatTokenV2 on-chain", () => {
+  const entry = capabilities.find((candidate) => candidate.chainId === 84532);
+  assert.ok(entry);
+  assert.equal(entry.tokenName, "USDC");
+  assert.equal(entry.tokenVersion, "2");
+  assert.equal(
+    domainSeparator(entry),
+    "0x71f17a3b2ff373b803d70a5a07c046c1a2bc8e89c09ef722fcb047abe94c9818"
+  );
+});
+
 test("Robinhood retains its USDG signing domain", () => {
   const robinhood = capabilities.find((entry) => entry.network === "robinhood");
   assert.ok(robinhood);
