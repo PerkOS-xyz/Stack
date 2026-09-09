@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 test("a rule without caps never refuses, and null/garbage limits mean no cap", async () => {
-  const { evaluateSpendCaps, toWei } = await import("../lib/services/sponsorSpend.ts");
+  const { evaluateSpendCaps, toWei } = await import("../lib/services/sponsorSpendCaps.ts");
   assert.deepEqual(evaluateSpendCaps(null, { estimatedCostWei: 10n ** 18n, spentDayWei: 10n ** 20n, spentMonthWei: 10n ** 21n }), { ok: true });
   assert.deepEqual(evaluateSpendCaps({ id: "r" }, { estimatedCostWei: 10n ** 18n, spentDayWei: 10n ** 20n, spentMonthWei: 0n }), { ok: true });
   assert.equal(toWei(null), null);
@@ -14,7 +14,7 @@ test("a rule without caps never refuses, and null/garbage limits mean no cap", a
 });
 
 test("per-transaction cap compares the estimate; unknown estimate skips only that cap", async () => {
-  const { evaluateSpendCaps } = await import("../lib/services/sponsorSpend.ts");
+  const { evaluateSpendCaps } = await import("../lib/services/sponsorSpendCaps.ts");
   const rule = { id: "r", per_transaction_limit_wei: "1000" };
   assert.equal(evaluateSpendCaps(rule, { estimatedCostWei: 999n, spentDayWei: 0n, spentMonthWei: 0n }).ok, true);
   assert.equal(evaluateSpendCaps(rule, { estimatedCostWei: 1000n, spentDayWei: 0n, spentMonthWei: 0n }).ok, true);
@@ -25,7 +25,7 @@ test("per-transaction cap compares the estimate; unknown estimate skips only tha
 });
 
 test("daily and monthly caps count what was spent plus this settlement", async () => {
-  const { evaluateSpendCaps } = await import("../lib/services/sponsorSpend.ts");
+  const { evaluateSpendCaps } = await import("../lib/services/sponsorSpendCaps.ts");
   const rule = { id: "r", daily_limit_wei: "1000", monthly_limit_wei: "5000" };
   assert.equal(evaluateSpendCaps(rule, { estimatedCostWei: 100n, spentDayWei: 900n, spentMonthWei: 900n }).ok, true);
   const day = evaluateSpendCaps(rule, { estimatedCostWei: 101n, spentDayWei: 900n, spentMonthWei: 900n });
@@ -39,7 +39,7 @@ test("daily and monthly caps count what was spent plus this settlement", async (
 });
 
 test("ledger windows sum only rows inside the window, across ISO and Timestamp shapes", async () => {
-  const { sumSpend, DAY_MS } = await import("../lib/services/sponsorSpend.ts");
+  const { sumSpend, DAY_MS } = await import("../lib/services/sponsorSpendCaps.ts");
   const now = Date.parse("2026-09-09T20:00:00Z");
   const rows = [
     { gas_cost_wei: "100", created_at: "2026-09-09T19:00:00Z" },          // inside
