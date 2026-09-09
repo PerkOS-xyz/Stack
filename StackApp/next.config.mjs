@@ -63,6 +63,9 @@ const nextConfig = {
       { source: '/.well-known/oauth-protected-resource', destination: '/api/.well-known/oauth-protected-resource' },
       { source: '/.well-known/oauth-authorization-server', destination: '/api/.well-known/oauth-authorization-server' },
       { source: '/.well-known/openid-configuration', destination: '/api/.well-known/oauth-authorization-server' },
+      // UCP business profile (payment handler only; no shopping service).
+      { source: '/.well-known/ucp', destination: '/api/.well-known/ucp' },
+      { source: '/.well-known/ucp/x402-handler.schema.json', destination: '/api/.well-known/ucp/x402-handler.schema.json' },
     ];
   },
   // Baseline security headers on every response (L1). CSP is intentionally
