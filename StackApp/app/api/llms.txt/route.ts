@@ -51,6 +51,31 @@ Response (201):
 
 Signature message: "Register as PerkOS Stack Agent"
 
+### POST /api/v2/agents/keys/rotate
+Replace a lost or compromised API key. Keys are stored hashed and cannot be shown again,
+so this issues a new one and revokes every previous key for the wallet. No X-API-Key needed:
+the wallet signature is the proof.
+
+Request:
+  {
+    "walletAddress": "0x...",
+    "timestamp": 1788960000000,
+    "signature": "0x..."
+  }
+
+Signature message (EIP-191, three lines, timestamp = Date.now(), valid for 5 minutes):
+  Rotate PerkOS Stack Agent API key
+  Wallet: 0x... (lowercase)
+  Timestamp: 1788960000000
+
+Response (200):
+  {
+    "agent": { ... },
+    "apiKey": "sk_perkos_...",
+    "revokedKeys": 1,
+    "message": "..."
+  }
+
 ### GET /api/v2/agents/me
 Get your agent profile, wallets, and services.
 Auth: X-API-Key (read scope)

@@ -97,6 +97,63 @@ export async function registerAgent(
 }
 
 /**
+ * Rotate an agent's API key: a fresh key is issued and every previous key
+ * for the wallet is deactivated. Keys are stored hashed, so this is the only
+ * way to recover access when a key is lost. The raw key is returned once.
+ */
+export async function rotateAgentApiKey(
+  walletAddressInput: string
+): Promise<
+  | { agent: AgentProfile; apiKey: string; revoked: number }
+  | { error: string; status: number }
+> {
+  const walletAddress = walletAddressInput.toLowerCase();
+
+  const agent = await getAgentByWallet(walletAddress);
+  if (!agent) {
+    return { error: "No agent registered for this wallet address", status: 404 };
+  }
+
+  const { data: existingKeys } = await firebaseAdmin
+    .from<{ id: string; is_active: boolean }>("perkos_api_keys")
+    .select("*")
+    .eq("wallet_address", walletAddress);
+
+  const rawKey = generateApiKey();
+  const keyHash = await hashApiKey(rawKey);
+  const now = new Date().toISOString();
+
+  const { error: keyError } = await firebaseAdmin
+    .from("perkos_api_keys")
+    .insert({
+      key_hash: keyHash,
+      wallet_address: walletAddress,
+      agent_id: agent.id,
+      scopes: ["read", "write"] as ApiKeyScope[],
+      is_active: true,
+      last_used_at: null,
+      requests_count: 0,
+      rate_limit_per_minute: 60,
+      created_at: now,
+    });
+
+  if (keyError) {
+    return { error: "Failed to create API key", status: 500 };
+  }
+
+  // Revoke the previous keys only after the new one exists, so a failure never locks the agent out.
+  const active = (existingKeys || []).filter((k) => k.is_active);
+  for (const key of active) {
+    await firebaseAdmin
+      .from("perkos_api_keys")
+      .update({ is_active: false, updated_at: now, revoked_reason: "rotated" })
+      .eq("id", key.id);
+  }
+
+  return { agent, apiKey: rawKey, revoked: active.length };
+}
+
+/**
  * Get agent profile by wallet address
  */
 export async function getAgentByWallet(
