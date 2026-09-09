@@ -40,6 +40,11 @@
         "in": "header",
         "name": "PAYMENT-SIGNATURE",
         "description": "x402 payment (v2: PAYMENT-SIGNATURE, v1: X-PAYMENT). Unpaid requests get 402 with a PAYMENT-REQUIRED header listing the offers (exact scheme, USDC on Base and Base Sepolia). Stack is its own facilitator."
+      },
+      "mpp": {
+        "type": "http",
+        "scheme": "Payment",
+        "description": "MPP (Machine Payments Protocol) card payment via Stripe: the 402 carries WWW-Authenticate: Payment \u2026; resend with Authorization: Payment <credential>. Advertised only when card charging is configured."
       }
     },
     "schemas": {
@@ -789,11 +794,14 @@
     "/api/v1": {
       "get": {
         "operationId": "agentReport",
-        "summary": "ERC-8004 agent report ($0.01 over x402)",
+        "summary": "ERC-8004 agent report ($0.01 over x402 or by card over MPP)",
         "description": "Identity, reputation summary, validation summary and 8004scan indexing status for one agent, in one call. Paid per call with x402; verify, build, settle, deliver. Nothing is charged if the report cannot be built.",
         "security": [
           {
             "x402": []
+          },
+          {
+            "mpp": []
           }
         ],
         "parameters": [
@@ -828,6 +836,12 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "Payment-Receipt": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "MPP receipt (card rail)"
               }
             }
           },
@@ -842,20 +856,59 @@
                   "type": "string"
                 },
                 "description": "base64 x402 PaymentRequired"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "MPP Payment challenge (when card payments are configured)"
               }
             }
           }
+        },
+        "x-payment-info": {
+          "intent": "charge",
+          "method": "stripe",
+          "amount": "1",
+          "currency": "usd",
+          "description": "ERC-8004 agent report, paid by card over MPP.",
+          "offers": [
+            {
+              "intent": "charge",
+              "method": "stripe",
+              "amount": "1",
+              "currency": "usd",
+              "description": "ERC-8004 agent report, paid by card over MPP."
+            },
+            {
+              "intent": "charge",
+              "method": "x402",
+              "amount": "10000",
+              "currency": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+              "description": "ERC-8004 agent report, paid in USDC on Base over x402."
+            },
+            {
+              "intent": "charge",
+              "method": "x402",
+              "amount": "10000",
+              "currency": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "description": "ERC-8004 agent report, paid in USDC on Base Sepolia over x402 (integration tests)."
+            }
+          ]
         }
       }
     },
     "/api/v1/wallets/{address}/trust": {
       "get": {
         "operationId": "payerTrust",
-        "summary": "x402 payer trust profile ($0.01 over x402)",
+        "summary": "x402 payer trust profile ($0.01 over x402 or by card over MPP)",
         "description": "What this facilitator has seen from a paying wallet: settlements, success rate, volume, networks, first/last seen, distinct recipients, plus ERC-8004 identities it owns on Base.",
         "security": [
           {
             "x402": []
+          },
+          {
+            "mpp": []
           }
         ],
         "parameters": [
@@ -882,6 +935,12 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "Payment-Receipt": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "MPP receipt (card rail)"
               }
             }
           },
@@ -896,11 +955,58 @@
                   "type": "string"
                 },
                 "description": "base64 x402 PaymentRequired"
+              },
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "MPP Payment challenge (when card payments are configured)"
               }
             }
           }
+        },
+        "x-payment-info": {
+          "intent": "charge",
+          "method": "stripe",
+          "amount": "1",
+          "currency": "usd",
+          "description": "x402 payer trust profile, paid by card over MPP.",
+          "offers": [
+            {
+              "intent": "charge",
+              "method": "stripe",
+              "amount": "1",
+              "currency": "usd",
+              "description": "x402 payer trust profile, paid by card over MPP."
+            },
+            {
+              "intent": "charge",
+              "method": "x402",
+              "amount": "10000",
+              "currency": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+              "description": "x402 payer trust profile, paid in USDC on Base over x402."
+            },
+            {
+              "intent": "charge",
+              "method": "x402",
+              "amount": "10000",
+              "currency": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "description": "x402 payer trust profile, paid in USDC on Base Sepolia over x402 (integration tests)."
+            }
+          ]
         }
       }
+    }
+  },
+  "x-service-info": {
+    "categories": [
+      "payments",
+      "identity",
+      "data"
+    ],
+    "docs": {
+      "documentation": "https://stack.perkos.xyz/llms.txt",
+      "authentication": "https://stack.perkos.xyz/auth.md"
     }
   }
 }
