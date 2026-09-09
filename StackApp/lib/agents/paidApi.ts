@@ -219,3 +219,22 @@ export function encodePaymentResponse(result: { success: boolean; transaction?: 
     network: result.network,
   })).toString("base64");
 }
+
+/**
+ * Firestore rows carry created_at either as an ISO string or as a Timestamp
+ * ({ _seconds, _nanoseconds }). Products publish ISO only.
+ */
+export function toIso(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  if (typeof value === "object") {
+    const v = value as { _seconds?: number; seconds?: number; toDate?: () => Date };
+    if (typeof v.toDate === "function") return v.toDate().toISOString();
+    const secs = v._seconds ?? v.seconds;
+    if (typeof secs === "number") return new Date(secs * 1000).toISOString();
+  }
+  return null;
+}

@@ -89,3 +89,14 @@ test("PAYMENT-RESPONSE encodes the settlement outcome", async () => {
   assert.equal(bad.success, false);
   assert.equal(bad.errorReason, "nope");
 });
+
+test("toIso normalizes ISO strings and Firestore Timestamps, and drops garbage", async () => {
+  const { toIso } = await import("../lib/agents/paidApi.ts");
+  assert.equal(toIso("2026-01-17T01:50:23.672Z"), "2026-01-17T01:50:23.672Z");
+  assert.equal(toIso({ _seconds: 1768589232, _nanoseconds: 705000000 }), "2026-01-16T18:47:12.000Z");
+  assert.equal(toIso({ toDate: () => new Date(0) }), "1970-01-01T00:00:00.000Z");
+  assert.equal(toIso("not a date"), null);
+  assert.equal(toIso(null), null);
+  const mixed = ["2026-01-17T01:50:23.672Z", { _seconds: 1768589232 }, undefined].map(toIso).filter(Boolean).sort();
+  assert.deepEqual(mixed, ["2026-01-16T18:47:12.000Z", "2026-01-17T01:50:23.672Z"]);
+});
