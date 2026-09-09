@@ -133,6 +133,11 @@ the offer's amount and resend with PAYMENT-SIGNATURE (v2) or X-PAYMENT (v1). Sta
 settles the payment itself and answers with PAYMENT-RESPONSE. Nothing is charged when inputs are
 missing or the product cannot be built.
 
+The same endpoints also take cards over MPP (Machine Payments Protocol): when card payments are
+configured the 402 carries WWW-Authenticate: Payment … and the operation is annotated with
+x-payment-info in /openapi.json; resend with Authorization: Payment <credential> and the answer
+carries Payment-Receipt.
+
 ### GET /api/v1?chainId=&agentId=            $0.01  ERC-8004 agent report
 Identity (owner, agentURI, metadata), reputation summary, validation summary, 8004scan indexing.
 

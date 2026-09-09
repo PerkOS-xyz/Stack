@@ -28,6 +28,10 @@ Flow:
 
 The wallet must already be a registered Stack agent (see below); otherwise the token endpoint answers `403 access_denied` with a `register` URL. A 401 from Stack carries `WWW-Authenticate: Bearer resource_metadata="…"` pointing back at the metadata above.
 
+## Paying for data (x402 or MPP)
+
+`GET /api/v1` and `GET /api/v1/wallets/{address}/trust` are paid, one cent each. Pay in USDC over x402 (PAYMENT-SIGNATURE / X-PAYMENT) or by card over MPP (`Authorization: Payment …` after the `WWW-Authenticate: Payment` challenge). No account and no API key are needed to buy. Offers are listed in `/openapi.json` (`x-payment-info`) and in the 402 itself.
+
 ## Registration and credentials
 
 1. Sign the exact message `Register as PerkOS Stack Agent` with your wallet (EIP-191 personal_sign).
