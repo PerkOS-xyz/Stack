@@ -568,6 +568,105 @@ export class ParaTransactionService {
   }
 
   /**
+   * Execute an arbitrary contract call from a sponsor wallet (Dynamic or Para).
+   *
+   * Used by the exact scheme's split path to call `CoffeeSplit.settle(...)`.
+   * The caller is responsible for `to` being an allowlisted contract; this
+   * method never derives the target from request data.
+   */
+  async executeContractCall(params: {
+    network: SupportedNetwork;
+    to: Address;
+    data: Hex;
+    sponsorWalletId: string;
+    sponsorUserShare?: string;
+  }): Promise<{
+    success: boolean;
+    transactionHash?: Hex;
+    error?: string;
+    gasUsed?: string;
+    effectiveGasPrice?: string;
+    gasCostWei?: string;
+  }> {
+    if (!params.sponsorUserShare) {
+      return { success: false, error: "Sponsor wallet missing key material - please recreate the wallet" };
+    }
+    const chain = chains[params.network];
+    if (!chain) {
+      return { success: false, error: `Unsupported network: ${params.network}` };
+    }
+    const rpcUrl = getRpcUrl(params.network);
+    const isDynamic = this.isDynamicKeyMaterial(params.sponsorUserShare);
+
+    logger.info("Executing sponsored contract call", {
+      provider: isDynamic ? "dynamic" : "para",
+      network: params.network,
+      to: params.to,
+      walletId: params.sponsorWalletId,
+    });
+
+    try {
+      let hash: Hex;
+      if (isDynamic) {
+        const { getServerWalletService } = await import("@/lib/wallet/server");
+        const walletService = await getServerWalletService();
+        if (!walletService.isInitialized()) {
+          return { success: false, error: "Wallet service not initialized" };
+        }
+        const walletClient = await walletService.getViemClient(params.sponsorWalletId, chain, params.sponsorUserShare);
+        if (!walletClient.account) {
+          return { success: false, error: "Wallet client account not found" };
+        }
+        hash = (await walletClient.sendTransaction({
+          account: walletClient.account,
+          to: params.to,
+          data: params.data,
+          chain,
+        })) as Hex;
+      } else {
+        const paraService = getParaService();
+        const signer = await paraService.getSigner(params.sponsorWalletId, rpcUrl, params.sponsorUserShare);
+        const tx = await signer.sendTransaction({ to: params.to, data: params.data });
+        hash = tx.hash as Hex;
+      }
+
+      const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+      let receipt;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({
+          hash,
+          confirmations: 1,
+          timeout: 60_000,
+          pollingInterval: 2_000,
+        });
+      } catch (receiptError) {
+        const msg = receiptError instanceof Error ? receiptError.message : String(receiptError);
+        if (msg.includes("could not be found") || msg.includes("timeout")) {
+          logger.warn("Sponsored contract call sent but receipt not yet available", { hash, error: msg });
+          return { success: true, transactionHash: hash };
+        }
+        throw receiptError;
+      }
+      if (receipt.status === "reverted") {
+        return { success: false, error: "Transaction reverted on-chain" };
+      }
+      const gasUsed = receipt.gasUsed.toString();
+      const effectiveGasPrice = receipt.effectiveGasPrice?.toString() || "0";
+      const gasCostWei = (receipt.gasUsed * (receipt.effectiveGasPrice || BigInt(0))).toString();
+      return { success: true, transactionHash: receipt.transactionHash as Hex, gasUsed, effectiveGasPrice, gasCostWei };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      let revertReason = errorMessage;
+      if (errorMessage.includes("execution reverted")) {
+        const match = errorMessage.match(/reason="([^"]+)"/);
+        if (match) revertReason = match[1];
+      }
+      logger.error("Sponsored contract call failed", { to: params.to, error: revertReason });
+      return { success: false, error: revertReason };
+    }
+  }
+
+  /**
    * Execute transferWithAuthorization via the appropriate wallet provider
    *
    * Automatically detects provider (Dynamic vs Para) based on keyMaterial format:
