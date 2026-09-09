@@ -1,5 +1,6 @@
 import { firebaseAdmin } from "../db/firebase";
 import type { SponsorSpendRule } from "./sponsorSpend";
+import { mostRestrictiveCaps } from "./sponsorSpendCaps";
 import { logger } from "../utils/logger";
 import { CHAIN_IDS, getChainById, chains } from "../utils/chains";
 import { getParaService } from "./ParaService";
@@ -266,11 +267,22 @@ export class ParaTransactionService {
       }
 
       if (directWallet && !directError) {
+        // No rule matched, but the owner's caps still apply: take the most
+        // restrictive of every enabled rule on this wallet, so a payer that
+        // arrives without a domain cannot spend more than one that does.
+        const { data: walletRules } = await firebaseAdmin
+          .from("perkos_sponsor_rules")
+          .select("id, per_transaction_limit_wei, daily_limit_wei, monthly_limit_wei")
+          .eq("sponsor_wallet_id", directWallet.id)
+          .eq("enabled", true);
+        const fallbackRule = mostRestrictiveCaps(((walletRules || []) as unknown as SponsorSpendRule[]));
         logger.info("Found sponsor wallet via direct lookup", {
           userWalletAddress: normalizedAddress,
           sponsorAddress: directWallet.sponsor_address,
+          capsFromRules: (walletRules || []).length,
+          capped: !!fallbackRule,
         });
-        return directWallet as SponsorWallet;
+        return { ...(directWallet as SponsorWallet), rule: fallbackRule };
       }
 
       logger.warn("No sponsor wallet found", {

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (userWalletAddress) {
       const domains = await vendorOwnershipService.getUserDomains(userWalletAddress);
       const verifiedDomains = domains.filter(
-        (d) => d.verification_status === "verified" && d.is_active
+        (d) => d.verification_status === "verified" && d.is_active !== false
       );
 
       const statuses: Array<{ domain: string; status: RateLimitStatus }> = [];
