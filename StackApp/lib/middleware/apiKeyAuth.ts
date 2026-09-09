@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { firebaseAdmin } from "@/lib/db/firebase";
+import { bearerChallenge, looksLikeJwt, verifyAccessToken } from "@/lib/agents/oauth";
 
 export type ApiKeyScope = "read" | "write" | "admin";
 
@@ -71,9 +72,32 @@ export function generateApiKey(): string {
 export async function authenticateApiKey(
   req: NextRequest
 ): Promise<{ agent: AuthenticatedAgent | null; error?: string }> {
-  // X-API-Key is canonical; `Authorization: Bearer sk_perkos_…` is accepted so
-  // generic HTTP clients and agent frameworks can use their default bearer slot.
-  const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(sk_perkos_\S+)$/i)?.[1];
+  // X-API-Key is canonical; `Authorization: Bearer …` carries either an API
+  // key (sk_perkos_…) or an OAuth access token minted by PerkOS OAuth for this
+  // resource. The token path needs no database read: the issuer's JWKS,
+  // `iss` and `aud` are the proof, and the scopes travel in the token.
+  const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (bearer && !bearer.startsWith("sk_perkos_") && looksLikeJwt(bearer)) {
+    const verified = await verifyAccessToken(bearer);
+    if (!verified) return { agent: null, error: "Invalid or expired access token" };
+    const rateKey = `oauth:${verified.walletAddress}`;
+    const now = Date.now();
+    let record = apiKeyRateLimit.get(rateKey);
+    if (!record || record.resetAt <= now) {
+      record = { count: 0, resetAt: now + 60_000 };
+      apiKeyRateLimit.set(rateKey, record);
+    }
+    if (record.count >= 60) return { agent: null, error: "Rate limit exceeded" };
+    record.count++;
+    return {
+      agent: {
+        walletAddress: verified.walletAddress,
+        agentId: verified.agentId ?? "",
+        scopes: verified.scopes,
+        apiKeyId: `oauth:${verified.tokenId}`,
+      },
+    };
+  }
   const apiKey = req.headers.get("X-API-Key") || req.headers.get("x-api-key") || bearer;
 
   if (!apiKey) {
@@ -153,7 +177,9 @@ export async function requireApiKey(
     return {
       response: NextResponse.json(
         { error: error || "Unauthorized" },
-        { status: 401 }
+        // RFC 9728: the challenge names the resource metadata, so an OAuth
+        // client that hit this without a token learns where to get one.
+        { status: 401, headers: { "WWW-Authenticate": bearerChallenge() } }
       ),
     };
   }

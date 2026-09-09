@@ -1,6 +1,6 @@
 # auth.md
 
-How agents authenticate to https://stack.perkos.xyz. Self-contained: there is no OAuth server. Credentials are proven with wallet signatures and used as API keys.
+How agents authenticate to https://stack.perkos.xyz. Identity is a wallet signature. It can be used two ways: as a long-lived API key issued by Stack, or as a short-lived OAuth 2.0 access token issued by PerkOS OAuth for this resource.
 
 ## Audience
 
@@ -9,8 +9,24 @@ Autonomous agents and services that want to use Stack as an x402 facilitator (ve
 ## Identity types supported
 
 - `anonymous` for read-only and verification endpoints
-- `wallet` (EIP-191 signature from an EVM wallet) to register and obtain an API key
+- `wallet` (EIP-191 signature from an EVM wallet) to register, to obtain an API key, and to obtain an OAuth token
 - `api_key` (`sk_perkos_…`) for authenticated agent endpoints
+- `oauth` (Bearer access token from https://oauth.perkos.xyz, audience `https://stack.perkos.xyz`)
+
+## OAuth 2.0 (for MCP clients and anything that speaks OAuth)
+
+- Protected resource metadata (RFC 9728): `https://stack.perkos.xyz/.well-known/oauth-protected-resource`
+- Authorization server: `https://oauth.perkos.xyz` (metadata at `/.well-known/oauth-authorization-server`, tokens at `/oauth2/token`, keys at `/jwks.json`)
+- Grant: `urn:perkos:oauth:grant-type:wallet-signature`. No client registration, no browser redirect: the wallet signature is the credential.
+- Scopes: `stack:read` (profile, wallets, services) and `stack:write` (create wallets and services). Registration and key rotation stay on their own signed endpoints.
+
+Flow:
+
+1. `GET https://stack.perkos.xyz/api/v2/agents/oauth/nonce?address=0xYOUR_ADDRESS` returns `{ nonce, message, expiresAt }`. Sign `message` verbatim (EIP-191 personal_sign). The nonce is single-use and expires in five minutes.
+2. `POST https://oauth.perkos.xyz/oauth2/token` with JSON `{ "grant_type": "urn:perkos:oauth:grant-type:wallet-signature", "resource": "https://stack.perkos.xyz", "address": "0x…", "nonce": "…", "signature": "0x…", "scope": "stack:read stack:write" }`.
+3. The response is `{ access_token, token_type: "Bearer", expires_in, scope }`. Send it as `Authorization: Bearer <access_token>` to any endpoint that accepts an API key.
+
+The wallet must already be a registered Stack agent (see below); otherwise the token endpoint answers `403 access_denied` with a `register` URL. A 401 from Stack carries `WWW-Authenticate: Bearer resource_metadata="…"` pointing back at the metadata above.
 
 ## Registration and credentials
 

@@ -22,9 +22,15 @@ const LLMS_TXT = `# PerkOS Stack — Agent API
 
 ## Authentication
 
-All endpoints except /register require an \`X-API-Key\` header.
+All endpoints except /register require an \`X-API-Key\` header (or \`Authorization: Bearer sk_perkos_…\`).
 Keys have scopes: read, write, admin.
 Rate limit: 60 requests/minute per key.
+
+OAuth 2.0 is also accepted: a Bearer access token from https://oauth.perkos.xyz minted for
+resource https://stack.perkos.xyz (scopes stack:read, stack:write). Get a nonce from
+GET /api/v2/agents/oauth/nonce?address=0x…, sign it, then POST it to the issuer's token endpoint
+with grant_type urn:perkos:oauth:grant-type:wallet-signature and resource https://stack.perkos.xyz.
+Metadata: /.well-known/oauth-protected-resource. Full flow: /auth.md.
 
 ## Endpoints
 

@@ -4,74 +4,781 @@
     "title": "PerkOS Stack API",
     "version": "2.0.0",
     "description": "x402 facilitator (verify and settle stablecoin payments on 16 EVM networks), ERC-8004 agent identity registration, and agent accounts. Full narrative reference at /llms.txt, authentication at /auth.md.",
-    "contact": { "name": "PerkOS", "url": "https://perkos.xyz", "email": "contact@perkos.xyz" }
+    "contact": {
+      "name": "PerkOS",
+      "url": "https://perkos.xyz",
+      "email": "contact@perkos.xyz"
+    }
   },
-  "servers": [{ "url": "https://stack.perkos.xyz" }],
+  "servers": [
+    {
+      "url": "https://stack.perkos.xyz"
+    }
+  ],
   "components": {
     "securitySchemes": {
-      "apiKey": { "type": "apiKey", "in": "header", "name": "X-API-Key", "description": "sk_perkos_… from POST /api/v2/agents/register. Also accepted as Authorization: Bearer." },
-      "walletSignature": { "type": "apiKey", "in": "header", "name": "X-Wallet-Signature", "description": "EIP-191 signature over 'PerkOS Sponsor Wallet Access {timestamp}', with X-Wallet-Timestamp and X-Wallet-Address." }
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "sk_perkos_\u2026 from POST /api/v2/agents/register. Also accepted as Authorization: Bearer."
+      },
+      "walletSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Wallet-Signature",
+        "description": "EIP-191 signature over 'PerkOS Sponsor Wallet Access {timestamp}', with X-Wallet-Timestamp and X-Wallet-Address."
+      },
+      "oauth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token from https://oauth.perkos.xyz minted for resource https://stack.perkos.xyz (grant urn:perkos:oauth:grant-type:wallet-signature; scopes stack:read, stack:write). See /.well-known/oauth-protected-resource and /auth.md."
+      }
     },
     "schemas": {
-      "PaymentKind": { "type": "object", "properties": { "x402Version": { "type": "integer" }, "scheme": { "type": "string" }, "network": { "type": "string", "description": "CAIP-2, e.g. eip155:8453" } } },
-      "X402Request": {
+      "PaymentKind": {
         "type": "object",
-        "required": ["x402Version", "paymentPayload", "paymentRequirements"],
         "properties": {
-          "x402Version": { "type": "integer", "enum": [1, 2] },
-          "paymentPayload": { "type": "object", "properties": { "scheme": { "type": "string" }, "network": { "type": "string" }, "payload": { "type": "object", "properties": { "signature": { "type": "string" }, "authorization": { "type": "object", "properties": { "from": { "type": "string" }, "to": { "type": "string" }, "value": { "type": "string" }, "validAfter": { "type": "string" }, "validBefore": { "type": "string" }, "nonce": { "type": "string" } } } } } } },
-          "paymentRequirements": { "type": "object", "properties": { "scheme": { "type": "string" }, "network": { "type": "string" }, "amount": { "type": "string" }, "asset": { "type": "string" }, "payTo": { "type": "string" }, "resource": {}, "maxTimeoutSeconds": { "type": "integer" }, "extra": { "type": "object" } } }
+          "x402Version": {
+            "type": "integer"
+          },
+          "scheme": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string",
+            "description": "CAIP-2, e.g. eip155:8453"
+          }
         }
       },
-      "VerifyResponse": { "type": "object", "properties": { "isValid": { "type": "boolean" }, "invalidReason": { "type": ["string", "null"] }, "payer": { "type": ["string", "null"] } } },
-      "SettleResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": ["string", "null"] }, "payer": { "type": ["string", "null"] }, "transaction": { "type": ["string", "null"] }, "network": { "type": "string" } } },
-      "Error": { "type": "object", "properties": { "error": { "type": "string" } } }
+      "X402Request": {
+        "type": "object",
+        "required": [
+          "x402Version",
+          "paymentPayload",
+          "paymentRequirements"
+        ],
+        "properties": {
+          "x402Version": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "paymentPayload": {
+            "type": "object",
+            "properties": {
+              "scheme": {
+                "type": "string"
+              },
+              "network": {
+                "type": "string"
+              },
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "signature": {
+                    "type": "string"
+                  },
+                  "authorization": {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string"
+                      },
+                      "to": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      },
+                      "validAfter": {
+                        "type": "string"
+                      },
+                      "validBefore": {
+                        "type": "string"
+                      },
+                      "nonce": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "paymentRequirements": {
+            "type": "object",
+            "properties": {
+              "scheme": {
+                "type": "string"
+              },
+              "network": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "string"
+              },
+              "asset": {
+                "type": "string"
+              },
+              "payTo": {
+                "type": "string"
+              },
+              "resource": {},
+              "maxTimeoutSeconds": {
+                "type": "integer"
+              },
+              "extra": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "VerifyResponse": {
+        "type": "object",
+        "properties": {
+          "isValid": {
+            "type": "boolean"
+          },
+          "invalidReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SettleResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transaction": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "network": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "paths": {
     "/api/v2/x402/supported": {
-      "get": { "operationId": "x402Supported", "summary": "Payment schemes and networks this facilitator settles", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "kinds": { "type": "array", "items": { "$ref": "#/components/schemas/PaymentKind" } } } } } } } } }
+      "get": {
+        "operationId": "x402Supported",
+        "summary": "Payment schemes and networks this facilitator settles",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kinds": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PaymentKind"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "/api/v2/x402/verify": {
-      "post": { "operationId": "x402Verify", "summary": "Verify an x402 payment payload against requirements", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/X402Request" } } } }, "responses": { "200": { "description": "Verification result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyResponse" } } } }, "400": { "description": "Invalid request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } }
+      "post": {
+        "operationId": "x402Verify",
+        "summary": "Verify an x402 payment payload against requirements",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/X402Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "/api/v2/x402/settle": {
-      "post": { "operationId": "x402Settle", "summary": "Settle a verified x402 payment on-chain", "description": "Gas is sponsored when the caller's API key belongs to a verified vendor domain with a sponsor rule.", "security": [{}, { "apiKey": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/X402Request" } } } }, "responses": { "200": { "description": "Settlement result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SettleResponse" } } } } } }
+      "post": {
+        "operationId": "x402Settle",
+        "summary": "Settle a verified x402 payment on-chain",
+        "description": "Gas is sponsored when the caller's API key belongs to a verified vendor domain with a sponsor rule.",
+        "security": [
+          {},
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/X402Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settlement result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "/api/v2/x402/health": {
-      "get": { "operationId": "x402Health", "summary": "Facilitator health", "responses": { "200": { "description": "OK" } } }
+      "get": {
+        "operationId": "x402Health",
+        "summary": "Facilitator health",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     },
     "/api/v2/agents/register": {
-      "post": { "operationId": "registerAgent", "summary": "Register an agent wallet and receive an API key", "description": "Sign the exact message 'Register as PerkOS Stack Agent' with the wallet (EIP-191). One agent per wallet.", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["walletAddress", "name", "signature"], "properties": { "walletAddress": { "type": "string" }, "name": { "type": "string" }, "description": { "type": "string" }, "signature": { "type": "string" }, "agentCardUrl": { "type": "string" }, "erc8004AgentId": { "type": "string" }, "network": { "type": "string" } } } } } }, "responses": { "201": { "description": "Registered; apiKey is shown once", "content": { "application/json": { "schema": { "type": "object", "properties": { "agent": { "type": "object" }, "apiKey": { "type": "string" }, "message": { "type": "string" } } } } } }, "401": { "description": "Invalid signature" }, "409": { "description": "Wallet already registered" } } }
+      "post": {
+        "operationId": "registerAgent",
+        "summary": "Register an agent wallet and receive an API key",
+        "description": "Sign the exact message 'Register as PerkOS Stack Agent' with the wallet (EIP-191). One agent per wallet.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "walletAddress",
+                  "name",
+                  "signature"
+                ],
+                "properties": {
+                  "walletAddress": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  },
+                  "agentCardUrl": {
+                    "type": "string"
+                  },
+                  "erc8004AgentId": {
+                    "type": "string"
+                  },
+                  "network": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered; apiKey is shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent": {
+                      "type": "object"
+                    },
+                    "apiKey": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature"
+          },
+          "409": {
+            "description": "Wallet already registered"
+          }
+        }
+      }
     },
     "/api/v2/agents/keys/rotate": {
-      "post": { "operationId": "rotateAgentKey", "summary": "Replace a lost API key", "description": "Sign 'Rotate PerkOS Stack Agent API key\\nWallet: <lowercase>\\nTimestamp: <ms>' within five minutes. Previous keys are revoked.", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["walletAddress", "timestamp", "signature"], "properties": { "walletAddress": { "type": "string" }, "timestamp": { "type": "integer" }, "signature": { "type": "string" } } } } } }, "responses": { "200": { "description": "New key", "content": { "application/json": { "schema": { "type": "object", "properties": { "agent": { "type": "object" }, "apiKey": { "type": "string" }, "revokedKeys": { "type": "integer" } } } } } }, "401": { "description": "Invalid or stale signature" }, "404": { "description": "No agent for this wallet" } } }
+      "post": {
+        "operationId": "rotateAgentKey",
+        "summary": "Replace a lost API key",
+        "description": "Sign 'Rotate PerkOS Stack Agent API key\\nWallet: <lowercase>\\nTimestamp: <ms>' within five minutes. Previous keys are revoked.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "walletAddress",
+                  "timestamp",
+                  "signature"
+                ],
+                "properties": {
+                  "walletAddress": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "integer"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent": {
+                      "type": "object"
+                    },
+                    "apiKey": {
+                      "type": "string"
+                    },
+                    "revokedKeys": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or stale signature"
+          },
+          "404": {
+            "description": "No agent for this wallet"
+          }
+        }
+      }
     },
     "/api/v2/agents/me": {
-      "get": { "operationId": "getMe", "summary": "Your agent profile, wallets and services", "security": [{ "apiKey": [] }], "responses": { "200": { "description": "OK" }, "401": { "description": "Missing or invalid API key" } } }
+      "get": {
+        "operationId": "getMe",
+        "summary": "Your agent profile, wallets and services",
+        "security": [
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        }
+      }
     },
     "/api/v2/agents/wallets": {
-      "get": { "operationId": "listWallets", "summary": "List your server-managed wallets", "security": [{ "apiKey": [] }], "responses": { "200": { "description": "OK" } } },
-      "post": { "operationId": "createWallet", "summary": "Create a server-managed wallet", "security": [{ "apiKey": [] }], "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "network": { "type": "string", "example": "evm" }, "name": { "type": "string" } } } } } }, "responses": { "201": { "description": "Created" } } }
+      "get": {
+        "operationId": "listWallets",
+        "summary": "List your server-managed wallets",
+        "security": [
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWallet",
+        "summary": "Create a server-managed wallet",
+        "security": [
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "example": "evm"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
     },
     "/api/v2/agents/services": {
-      "get": { "operationId": "listServices", "summary": "List your marketplace services", "security": [{ "apiKey": [] }], "responses": { "200": { "description": "OK" } } },
-      "post": { "operationId": "createService", "summary": "Register a paid service in the marketplace", "security": [{ "apiKey": [] }], "responses": { "201": { "description": "Created" } } }
+      "get": {
+        "operationId": "listServices",
+        "summary": "List your marketplace services",
+        "security": [
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createService",
+        "summary": "Register a paid service in the marketplace",
+        "security": [
+          {
+            "apiKey": []
+          },
+          {
+            "oauth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
     },
     "/api/v2/agents/onboard": {
-      "post": { "operationId": "prepareErc8004Registration", "summary": "Unsigned ERC-8004 registration calldata for a network", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["network"], "properties": { "network": { "type": "string", "example": "base" }, "tokenURI": { "type": "string" }, "metadata": { "type": "array", "items": { "type": "object" } }, "paymentReceiver": { "type": "string" }, "agentId": { "type": "string" } } } } } }, "responses": { "200": { "description": "Registration plan with calldata" }, "400": { "description": "Network not agent-ready" } } }
+      "post": {
+        "operationId": "prepareErc8004Registration",
+        "summary": "Unsigned ERC-8004 registration calldata for a network",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "network"
+                ],
+                "properties": {
+                  "network": {
+                    "type": "string",
+                    "example": "base"
+                  },
+                  "tokenURI": {
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "paymentReceiver": {
+                    "type": "string"
+                  },
+                  "agentId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registration plan with calldata"
+          },
+          "400": {
+            "description": "Network not agent-ready"
+          }
+        }
+      }
     },
     "/api/v2/agents/discovery": {
-      "get": { "operationId": "checkAgentDiscovery", "summary": "Whether an ERC-8004 agent is indexed by 8004scan", "parameters": [{ "name": "chainId", "in": "query", "required": true, "schema": { "type": "integer" } }, { "name": "agentId", "in": "query", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "Discovery status" }, "400": { "description": "Missing parameters" } } }
+      "get": {
+        "operationId": "checkAgentDiscovery",
+        "summary": "Whether an ERC-8004 agent is indexed by 8004scan",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discovery status"
+          },
+          "400": {
+            "description": "Missing parameters"
+          }
+        }
+      }
     },
     "/api/a2a": {
-      "post": { "operationId": "a2aMessageSend", "summary": "A2A JSON-RPC endpoint (message/send)", "description": "Agent card at /.well-known/agent-card.json.", "responses": { "200": { "description": "JSON-RPC response" } } }
+      "post": {
+        "operationId": "a2aMessageSend",
+        "summary": "A2A JSON-RPC endpoint (message/send)",
+        "description": "Agent card at /.well-known/agent-card.json.",
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response"
+          }
+        }
+      }
     },
     "/mcp": {
-      "post": { "operationId": "mcp", "summary": "MCP server, Streamable HTTP (JSON-RPC 2.0)", "description": "Server card at /.well-known/mcp/server-card.json.", "responses": { "200": { "description": "JSON-RPC response" } } }
+      "post": {
+        "operationId": "mcp",
+        "summary": "MCP server, Streamable HTTP (JSON-RPC 2.0)",
+        "description": "Server card at /.well-known/mcp/server-card.json.",
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response"
+          }
+        }
+      }
     },
     "/llms.txt": {
-      "get": { "operationId": "llmsTxt", "summary": "API reference for LLMs", "responses": { "200": { "description": "text/plain" } } }
+      "get": {
+        "operationId": "llmsTxt",
+        "summary": "API reference for LLMs",
+        "responses": {
+          "200": {
+            "description": "text/plain"
+          }
+        }
+      }
+    },
+    "/api/v2/agents/oauth/nonce": {
+      "get": {
+        "operationId": "oauthNonce",
+        "summary": "Single-use sign-in challenge for the OAuth wallet-signature grant",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "nonce": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid address"
+          }
+        }
+      }
+    },
+    "/api/v2/agents/oauth/exchange": {
+      "post": {
+        "operationId": "oauthExchange",
+        "summary": "Verify a signed challenge and report whether the wallet is a registered agent (called by the issuer)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "address",
+                  "nonce",
+                  "signature"
+                ],
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "nonce": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subject": {
+                      "type": "string"
+                    },
+                    "agent_id": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_grant"
+          },
+          "403": {
+            "description": "access_denied (not registered)"
+          }
+        }
+      }
     }
   }
 }
