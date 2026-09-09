@@ -19,7 +19,7 @@ import { verifyMessage } from "viem";
  * (donation wallets), so it stays in-route.
  */
 export const config = {
-  matcher: ["/api/admin/:path*"],
+  matcher: ["/api/admin/:path*", "/"],
 };
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -29,6 +29,16 @@ function unauthorized(error: string): NextResponse {
 }
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
+  // Markdown for Agents: `GET /` with `Accept: text/markdown` gets the site as
+  // Markdown (see app/api/markdown). HTML stays the default.
+  if (req.nextUrl.pathname === "/") {
+    const accept = req.headers.get("accept") || "";
+    if (req.method === "GET" && /text\/markdown/i.test(accept)) {
+      return NextResponse.rewrite(new URL("/api/markdown", req.url));
+    }
+    return NextResponse.next();
+  }
+
   // Let CORS preflight through — it carries no auth headers by design.
   if (req.method === "OPTIONS") {
     return NextResponse.next();

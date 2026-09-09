@@ -1,0 +1,75 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "PerkOS Stack",
+    "identifier": "did:web:stack.perkos.xyz"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:stack.perkos.xyz:server:stack",
+      "displayName": "PerkOS Stack MCP server",
+      "type": "application/mcp-server-card+json",
+      "url": "https://stack.perkos.xyz/.well-known/mcp/server-card.json",
+      "representativeQueries": [
+        "which networks can this x402 facilitator settle on",
+        "verify an x402 payment from an MCP client",
+        "prepare an ERC-8004 registration for my agent"
+      ]
+    },
+    {
+      "identifier": "urn:air:stack.perkos.xyz:agent:registration",
+      "displayName": "Stack Registration Agent (A2A)",
+      "type": "application/a2a-agent-card+json",
+      "url": "https://stack.perkos.xyz/.well-known/agent-card.json",
+      "representativeQueries": [
+        "register my agent on-chain with ERC-8004",
+        "is my agent indexed on 8004scan",
+        "configure x402 payments for my service"
+      ]
+    },
+    {
+      "identifier": "urn:air:stack.perkos.xyz:skill:x402-facilitator",
+      "displayName": "Use Stack as an x402 facilitator",
+      "type": "text/markdown",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/x402-facilitator/SKILL.md",
+      "representativeQueries": [
+        "accept USDC payments over x402 on Base",
+        "how do I verify and settle an x402 payment",
+        "x402 facilitator with gas sponsorship"
+      ]
+    },
+    {
+      "identifier": "urn:air:stack.perkos.xyz:skill:register-stack-agent",
+      "displayName": "Register an agent on Stack",
+      "type": "text/markdown",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/register-stack-agent/SKILL.md",
+      "representativeQueries": [
+        "get an API key for PerkOS Stack",
+        "rotate my Stack API key",
+        "register a wallet as a Stack agent"
+      ]
+    },
+    {
+      "identifier": "urn:air:stack.perkos.xyz:skill:erc8004-registration",
+      "displayName": "Register an ERC-8004 identity",
+      "type": "text/markdown",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/erc8004-registration/SKILL.md",
+      "representativeQueries": [
+        "mint an ERC-8004 identity for my agent",
+        "check if agent 42 on Base is discoverable",
+        "ERC-8004 registration calldata"
+      ]
+    },
+    {
+      "identifier": "urn:air:stack.perkos.xyz:api:stack",
+      "displayName": "PerkOS Stack API (x402, agents, ERC-8004)",
+      "type": "application/vnd.oai.openapi+json",
+      "url": "https://stack.perkos.xyz/openapi.json",
+      "representativeQueries": [
+        "PerkOS Stack API reference",
+        "x402 verify and settle endpoints",
+        "Stack agent registration API"
+      ]
+    }
+  ]
+}

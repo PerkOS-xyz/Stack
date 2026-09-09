@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
       version: "1.0.0",
       url: a2aUrl,
       preferredTransport: "JSONRPC",
+      // A2A v0.3 name and the v1 name for the same interface list.
       additionalInterfaces: [{ url: a2aUrl, transport: "JSONRPC" }],
+      supportedInterfaces: [{ url: a2aUrl, transport: "JSONRPC", protocolBinding: "JSONRPC", protocolVersion: "0.3.0" }],
       provider: {
         organization: "PerkOS",
         url: "https://perkos.xyz",

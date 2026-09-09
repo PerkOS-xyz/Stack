@@ -1,0 +1,18 @@
+{
+  "serverInfo": { "name": "stack.perkos.xyz", "version": "1.0.0", "title": "PerkOS Stack" },
+  "description": "x402 facilitator and ERC-8004 registration tools: list supported payment kinds, verify a payment, prepare an on-chain agent registration, check whether an agent is indexed. No authentication.",
+  "protocolVersion": "2025-06-18",
+  "transport": { "type": "streamable-http", "endpoint": "https://stack.perkos.xyz/mcp" },
+  "endpoint": "https://stack.perkos.xyz/mcp",
+  "capabilities": { "tools": { "listChanged": false } },
+  "tools": [
+    { "name": "x402_supported_kinds", "description": "Payment schemes and CAIP-2 networks this facilitator verifies and settles." },
+    { "name": "x402_verify_payment", "description": "Verify an x402 payment payload against payment requirements without settling it." },
+    { "name": "prepare_erc8004_registration", "description": "Unsigned calldata to register an ERC-8004 identity on a supported network." },
+    { "name": "check_agent_discovery", "description": "Whether an ERC-8004 agent (chainId, agentId) is indexed by 8004scan." },
+    { "name": "facilitator_info", "description": "Facilitator name, endpoints, and links to the API reference and auth.md." }
+  ],
+  "authentication": { "type": "none" },
+  "documentationUrl": "https://stack.perkos.xyz/llms.txt",
+  "provider": { "name": "PerkOS", "url": "https://perkos.xyz" }
+}
