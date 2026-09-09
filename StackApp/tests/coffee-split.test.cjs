@@ -86,3 +86,12 @@ test("encodeCoffeeSettle targets settle(address,bytes32,bytes32,(address,uint256
   assert.equal(decoded.args[0].toLowerCase(), CREATOR.toLowerCase());
   assert.equal(decoded.args[3].value, 5000000n);
 });
+
+test("CoffeeSplit addresses are allowlisted per network, including Celo and Robinhood", async () => {
+  const { getCoffeeSplitAddress } = await import("../lib/services/coffeeSplit.ts");
+  const env = { COFFEE_SPLIT_ADDRESS_BASE: "0x" + "aa".repeat(20), COFFEE_SPLIT_ADDRESS_CELO: "0x" + "bb".repeat(20), COFFEE_SPLIT_ADDRESS_ROBINHOOD: "0x" + "cc".repeat(20) };
+  assert.equal(getCoffeeSplitAddress("celo", env), "0x" + "bb".repeat(20));
+  assert.equal(getCoffeeSplitAddress("robinhood", env), "0x" + "cc".repeat(20));
+  assert.equal(getCoffeeSplitAddress("base-sepolia", env), null, "unset network stays unavailable");
+  assert.equal(getCoffeeSplitAddress("avalanche", env), null, "unknown network has no key");
+});

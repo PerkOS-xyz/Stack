@@ -57,6 +57,8 @@ export const RECEIVE_WITH_AUTHORIZATION_TYPES = {
 const ENV_KEYS: Record<string, string> = {
   "base-sepolia": "COFFEE_SPLIT_ADDRESS_BASE_SEPOLIA",
   base: "COFFEE_SPLIT_ADDRESS_BASE",
+  celo: "COFFEE_SPLIT_ADDRESS_CELO",
+  robinhood: "COFFEE_SPLIT_ADDRESS_ROBINHOOD",
 };
 
 export function getCoffeeSplitAddress(network: string, env: NodeJS.ProcessEnv = process.env): Address | null {
