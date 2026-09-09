@@ -24,7 +24,7 @@ const text = (value: unknown, isError = false) => ({
   isError,
 });
 
-async function call(origin: string, name: McpToolName, args: Record<string, unknown>) {
+async function call(origin: string, name: McpToolName, args: Record<string, unknown>, passthrough: Record<string, string>) {
   const json = async (r: Response) => {
     const t = await r.text();
     try {
@@ -33,26 +33,29 @@ async function call(origin: string, name: McpToolName, args: Record<string, unkn
       return { status: r.status, body: t };
     }
   };
+  const get = (path: string) => fetch(`${origin}${path}`, { headers: passthrough });
+  const post = (path: string, body: unknown) =>
+    fetch(`${origin}${path}`, { method: "POST", headers: { ...passthrough, "Content-Type": "application/json" }, body: JSON.stringify(body) });
   switch (name) {
     case "x402_supported_kinds": {
-      const r = await json(await fetch(`${origin}/api/v2/x402/supported`));
+      const r = await json(await get("/api/v2/x402/supported"));
       return text(r.body, r.status >= 400);
     }
     case "x402_verify_payment": {
       const body = { x402Version: args.x402Version ?? 2, paymentPayload: args.paymentPayload, paymentRequirements: args.paymentRequirements };
-      const r = await json(await fetch(`${origin}/api/v2/x402/verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+      const r = await json(await post("/api/v2/x402/verify", body));
       return text(r.body, r.status >= 400);
     }
     case "prepare_erc8004_registration": {
       const body: Record<string, unknown> = { network: args.network };
       if (args.tokenURI) body.tokenURI = args.tokenURI;
       if (args.paymentReceiver) body.paymentReceiver = args.paymentReceiver;
-      const r = await json(await fetch(`${origin}/api/v2/agents/onboard`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+      const r = await json(await post("/api/v2/agents/onboard", body));
       return text(r.body, r.status >= 400);
     }
     case "check_agent_discovery": {
       const q = new URLSearchParams({ chainId: String(args.chainId ?? ""), agentId: String(args.agentId ?? "") });
-      const r = await json(await fetch(`${origin}/api/v2/agents/discovery?${q}`));
+      const r = await json(await get(`/api/v2/agents/discovery?${q}`));
       return text(r.body, r.status >= 400);
     }
     case "facilitator_info":
@@ -60,7 +63,15 @@ async function call(origin: string, name: McpToolName, args: Record<string, unkn
   }
 }
 
-async function handle(origin: string, m: Rpc) {
+/** Headers to carry into same-origin calls: Vercel's deployment-protection bypass on previews. */
+function passthroughHeaders(req: NextRequest): Record<string, string> {
+  const out: Record<string, string> = {};
+  const bypass = req.headers.get("x-vercel-protection-bypass");
+  if (bypass) out["x-vercel-protection-bypass"] = bypass;
+  return out;
+}
+
+async function handle(origin: string, m: Rpc, passthrough: Record<string, string>) {
   switch (m.method) {
     case "initialize":
       return ok(m.id, {
@@ -80,7 +91,7 @@ async function handle(origin: string, m: Rpc) {
       const tool = MCP_TOOLS.find((t) => t.name === name);
       if (!tool) return err(m.id, -32602, `unknown tool: ${name}`);
       try {
-        return ok(m.id, await call(origin, tool.name, args));
+        return ok(m.id, await call(origin, tool.name, args, passthrough));
       } catch (e) {
         return ok(m.id, text(`tool failed: ${(e as Error).message}`, true));
       }
@@ -119,7 +130,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(err(null, -32600, "invalid request"), { status: 400, headers: HEADERS });
   }
   const origin = new URL(req.url).origin;
-  const out = (await Promise.all(msgs.map((m) => handle(origin, m)))).filter(Boolean);
+  const passthrough = passthroughHeaders(req);
+  const out = (await Promise.all(msgs.map((m) => handle(origin, m, passthrough)))).filter(Boolean);
   if (out.length === 0) return new Response(null, { status: 202, headers: HEADERS });
   return NextResponse.json(batch ? out : out[0], { status: 200, headers: HEADERS });
 }

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import { config } from "@/lib/utils/config";
-import WebMcpTools from "./components/WebMcpTools";
+import { WEBMCP_SCRIPT } from "@/lib/agents/webmcp";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -54,7 +55,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className} suppressHydrationWarning>
         {children}
-        <WebMcpTools />
+        {/* WebMCP tools for browser agents, registered at page load (lib/agents/webmcp.ts). */}
+        <Script id="webmcp-tools" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: WEBMCP_SCRIPT }} />
       </body>
     </html>
   );

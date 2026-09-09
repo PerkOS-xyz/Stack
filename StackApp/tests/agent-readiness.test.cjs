@@ -96,6 +96,22 @@ test("robots.txt carries Content-Signal, an Agentmap and the sitemap", () => {
   assert.match(robots, /^User-agent: GPTBot\nAllow: \/$/m);
 });
 
+test("WebMCP inline script parses and registers every advertised tool", async () => {
+  const { WEBMCP_SCRIPT, WEBMCP_TOOL_NAMES } = await import("../lib/agents/webmcp.ts");
+  new Function(WEBMCP_SCRIPT); // syntax check only
+  const registered = [];
+  const nav = { modelContext: { registerTool: (t, o) => { registered.push(t); assert.ok(o.signal); } } };
+  new Function("navigator", "window", "fetch", WEBMCP_SCRIPT)(nav, { addEventListener() {}, location: { assign() {} } }, async () => new Response("ok"));
+  assert.deepEqual(registered.map((t) => t.name), [...WEBMCP_TOOL_NAMES]);
+  for (const t of registered) {
+    assert.ok(t.description.length > 20);
+    assert.equal(t.inputSchema.type, "object");
+    assert.equal(typeof t.execute, "function");
+  }
+  const r = await registered[1].execute({});
+  assert.equal(r.content[0].text, "ok");
+});
+
 test("auth.md is self-contained per the Auth.md guidance", () => {
   const md = fs.readFileSync(path.join(PUBLIC, "auth.md"), "utf8");
   assert.match(md, /^# auth\.md/);
