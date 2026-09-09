@@ -104,11 +104,11 @@ export async function POST(request: NextRequest) {
           const resourceHost = new URL(resourceUrlStr).hostname.toLowerCase();
           const { data: claims } = await firebaseAdmin
             .from("perkos_user_vendor_domains")
-            .select("domain_url")
+            .select("domain_url, is_active")
             .eq("user_wallet_address", auth.agent.walletAddress.toLowerCase())
-            .eq("verification_status", "verified")
-            .eq("is_active", true);
-          const verified = claims?.some((claim) => {
+            .eq("verification_status", "verified");
+          // Claims created before is_active existed carry no such field; absent means active.
+          const verified = claims?.filter((claim) => (claim as { is_active?: boolean }).is_active !== false).some((claim) => {
             try {
               const value = String(claim.domain_url);
               const host = new URL(value.includes("://") ? value : `https://${value}`).hostname.toLowerCase();

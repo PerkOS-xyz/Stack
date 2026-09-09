@@ -76,3 +76,27 @@ function createdAtMs(value: unknown): number | null {
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const MONTH_MS = 30 * DAY_MS;
+
+/**
+ * The tightest cap per field across a wallet's enabled rules. Used when a
+ * settlement is sponsored through the direct-owner fallback (no rule matched):
+ * the owner's explicit caps still apply, taking the most restrictive of each.
+ * Returns null when no rule carries any cap.
+ */
+export function mostRestrictiveCaps(rules: SponsorSpendRule[]): SponsorSpendRule | null {
+  const fields = ["per_transaction_limit_wei", "daily_limit_wei", "monthly_limit_wei"] as const;
+  const out: SponsorSpendRule = { id: "fallback:most-restrictive" };
+  let any = false;
+  for (const f of fields) {
+    let min: bigint | null = null;
+    for (const r of rules) {
+      const v = toWei(r[f]);
+      if (v !== null && (min === null || v < min)) min = v;
+    }
+    if (min !== null) {
+      out[f] = min.toString();
+      any = true;
+    }
+  }
+  return any ? out : null;
+}

@@ -51,3 +51,15 @@ test("ledger windows sum only rows inside the window, across ISO and Timestamp s
   assert.equal(sumSpend(rows, now - DAY_MS), 300n);
   assert.equal(sumSpend(rows, now - 30 * DAY_MS), 700n);
 });
+
+test("fallback caps: the tightest of each field across the wallet's rules, or null when none has caps", async () => {
+  const { mostRestrictiveCaps } = await import("../lib/services/sponsorSpendCaps.ts");
+  assert.equal(mostRestrictiveCaps([]), null);
+  assert.equal(mostRestrictiveCaps([{ id: "a" }, { id: "b", daily_limit_wei: null }]), null);
+  const r = mostRestrictiveCaps([
+    { id: "a", per_transaction_limit_wei: "500", daily_limit_wei: "9000" },
+    { id: "b", per_transaction_limit_wei: "300", monthly_limit_wei: "70000" },
+    { id: "c", daily_limit_wei: "8000", monthly_limit_wei: "garbage" },
+  ]);
+  assert.deepEqual(r, { id: "fallback:most-restrictive", per_transaction_limit_wei: "300", daily_limit_wei: "8000", monthly_limit_wei: "70000" });
+});

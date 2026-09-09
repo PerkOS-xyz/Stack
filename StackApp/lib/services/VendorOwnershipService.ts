@@ -92,6 +92,7 @@ export class VendorOwnershipService {
         verification_method: request.verification_method,
         verification_token: verificationToken,
         verification_expires_at: expiresAt.toISOString(),
+        is_active: true,
       })
       .select()
       .single();
@@ -320,12 +321,13 @@ export class VendorOwnershipService {
       .select("*")
       .eq("domain_url", normalizedDomain)
       .eq("verification_status", "verified")
-      .eq("is_active", true)
       .single();
 
     if (error || !data) {
       return null;
     }
+    // Claims created before is_active existed carry no such field; absent means active.
+    if ((data as { is_active?: boolean }).is_active === false) return null;
 
     return data as UserVendorDomain;
   }
