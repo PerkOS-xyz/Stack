@@ -71,7 +71,10 @@ export function generateApiKey(): string {
 export async function authenticateApiKey(
   req: NextRequest
 ): Promise<{ agent: AuthenticatedAgent | null; error?: string }> {
-  const apiKey = req.headers.get("X-API-Key") || req.headers.get("x-api-key");
+  // X-API-Key is canonical; `Authorization: Bearer sk_perkos_…` is accepted so
+  // generic HTTP clients and agent frameworks can use their default bearer slot.
+  const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(sk_perkos_\S+)$/i)?.[1];
+  const apiKey = req.headers.get("X-API-Key") || req.headers.get("x-api-key") || bearer;
 
   if (!apiKey) {
     return { agent: null, error: "Missing X-API-Key header" };

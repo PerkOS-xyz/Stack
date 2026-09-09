@@ -54,6 +54,11 @@ const nextConfig = {
         source: '/.well-known/x402-payment.json',
         destination: '/api/.well-known/x402-payment.json',
       },
+      // Agent-readiness entry points (see lib/agents/readiness.ts).
+      { source: '/llms.txt', destination: '/api/llms.txt' },
+      { source: '/index.md', destination: '/api/markdown' },
+      { source: '/mcp', destination: '/api/mcp' },
+      { source: '/.well-known/api-catalog', destination: '/api/.well-known/api-catalog' },
     ];
   },
   // Baseline security headers on every response (L1). CSP is intentionally
@@ -61,6 +66,53 @@ const nextConfig = {
   // RPC calls, and needs careful per-origin allowlisting + runtime testing.
   async headers() {
     return [
+      // Homepage: RFC 8288 Link relations to every machine-readable entry point,
+      // and Vary: Accept because `/` negotiates text/markdown (middleware).
+      {
+        source: '/',
+        headers: [
+          { key: 'Vary', value: 'Accept' },
+          {
+            key: 'Link',
+            value: [
+              '<https://stack.perkos.xyz/llms.txt>; rel="llms-txt"; type="text/plain"',
+              '<https://stack.perkos.xyz/index.md>; rel="alternate"; type="text/markdown"',
+              '<https://stack.perkos.xyz/openapi.json>; rel="service-desc"; type="application/json"',
+              '<https://stack.perkos.xyz/auth.md>; rel="service-doc"; type="text/markdown"',
+              '<https://stack.perkos.xyz/.well-known/api-catalog>; rel="api-catalog"',
+              '<https://stack.perkos.xyz/.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json"',
+              '<https://stack.perkos.xyz/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"',
+              '<https://stack.perkos.xyz/.well-known/agent-card.json>; rel="agent-card"; type="application/json"',
+              '<https://stack.perkos.xyz/.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"',
+              '<https://stack.perkos.xyz/.well-known/x402-payment.json>; rel="describedby"; type="application/json"',
+            ].join(', '),
+          },
+        ],
+      },
+      // Static discovery files: readable cross-origin, correct media types.
+      {
+        source: '/.well-known/:path*',
+        headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+      },
+      {
+        source: '/.well-known/agent-skills/:skill/SKILL.md',
+        headers: [{ key: 'Content-Type', value: 'text/markdown; charset=utf-8' }],
+      },
+      {
+        source: '/auth.md',
+        headers: [
+          { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+      {
+        source: '/openapi.json',
+        headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+      },
+      {
+        source: '/llms.txt',
+        headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }],
+      },
       {
         source: '/:path*',
         headers: [

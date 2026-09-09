@@ -1,0 +1,44 @@
+# stack.perkos.xyz. Multi-chain x402 facilitator and ERC-8004 registration for agents.
+# Everything public is meant to be read by people and agents alike.
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+
+User-agent: *
+Allow: /
+Allow: /.well-known/
+Allow: /api/llms.txt
+Allow: /api/v2/x402/supported
+Allow: /api/.well-known/
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /wallet/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Disallow: /
+
+Agentmap: https://stack.perkos.xyz/.well-known/ai-catalog.json
+Sitemap: https://stack.perkos.xyz/sitemap.xml

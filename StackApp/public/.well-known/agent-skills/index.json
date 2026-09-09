@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "x402-facilitator",
+      "type": "skill-md",
+      "description": "Use PerkOS Stack as an x402 facilitator to verify and settle stablecoin payments on 16 EVM networks.",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/x402-facilitator/SKILL.md",
+      "digest": "sha256:eba75ff8edeef8070efd93364eea89e00078e4f905e8542568e73c2f204f5475"
+    },
+    {
+      "name": "register-stack-agent",
+      "type": "skill-md",
+      "description": "Register an agent on PerkOS Stack with a wallet signature, obtain an API key, and rotate it when lost.",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/register-stack-agent/SKILL.md",
+      "digest": "sha256:4b7493c56226faf87bbfdb4799fd66713f87c4d8b5036df06ad365e109ae6df1"
+    },
+    {
+      "name": "erc8004-registration",
+      "type": "skill-md",
+      "description": "Prepare an ERC-8004 on-chain agent identity with Stack and check whether it is discoverable.",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/erc8004-registration/SKILL.md",
+      "digest": "sha256:52e083aa337555f7927c009ada91bf85c97c2df49afdab142a6a6d8edc9e4168"
+    }
+  ]
+}
