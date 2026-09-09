@@ -19,6 +19,7 @@ import { networkToCAIP2 } from "../utils/x402-headers";
 import { getEIP712Version, getPaymentTokenSymbol, getTokenName } from "../utils/x402-payment";
 import { getParaTransactionService } from "./ParaTransactionService";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
+import { coffeeNonce, encodeCoffeeSettle, parseSplitExtra, RECEIVE_WITH_AUTHORIZATION_TYPES } from "./coffeeSplit";
 
 export class ExactSchemeService {
   private network: SupportedNetwork;
@@ -90,8 +91,30 @@ export class ExactSchemeService {
         };
       }
 
+      // 1b. Split payments (CoffeeSplit): the authorization is a
+      //     ReceiveWithAuthorization to the contract, and the nonce binds the creator.
+      const splitParse = parseSplitExtra(requirements, this.network);
+      if (splitParse.split === null && splitParse.error) {
+        return { isValid: false, invalidReason: splitParse.error, payer: null };
+      }
+      const split = splitParse.split;
+      if (split) {
+        const expectedNonce = coffeeNonce(split.creator, split.coffeeId);
+        if (authorization.nonce.toLowerCase() !== expectedNonce.toLowerCase()) {
+          return { isValid: false, invalidReason: "Split nonce does not bind the creator and coffee id", payer: null };
+        }
+        if (authorization.to.toLowerCase() !== split.contract.toLowerCase()) {
+          return { isValid: false, invalidReason: "Split authorization must be addressed to the CoffeeSplit contract", payer: null };
+        }
+      }
+
       // 2. Verify signature and recover signer
-      const signer = await this.recoverSigner(authorization, signature, requirements.asset);
+      const signer = await this.recoverSigner(
+        authorization,
+        signature,
+        requirements.asset,
+        split ? "ReceiveWithAuthorization" : "TransferWithAuthorization"
+      );
 
       if (!signer) {
         return {
@@ -305,6 +328,15 @@ export class ExactSchemeService {
 
       // Parse signature
       const sig = this.parseSignature(signature);
+
+      // Split payments (CoffeeSplit) take their own path: the sponsor wallet
+      // calls the allowlisted contract, which pulls the USDC and pays
+      // creator + treasury in one transaction. verify() already checked the
+      // ReceiveWithAuthorization signature and the creator-bound nonce.
+      const splitParse = parseSplitExtra(requirements, this.network);
+      if (splitParse.split) {
+        return this.executeSplitSettlement(payload, requirements, splitParse.split, sponsorWallet, sig);
+      }
 
       // Execute transferWithAuthorization via Para server wallet
       // Retry once with a delay if we get "authorization is used or canceled" error
@@ -562,6 +594,119 @@ export class ExactSchemeService {
     }
   }
 
+  /**
+   * Settle a CoffeeSplit payment: sponsor wallet → CoffeeSplit.settle(...).
+   * On failure, re-check the EIP-3009 nonce on-chain (the contract consumes it
+   * through receiveWithAuthorization), so a settled-but-unreported coffee is
+   * still reported as success and never re-charged.
+   */
+  private async executeSplitSettlement(
+    payload: ExactPayload,
+    requirements: PaymentRequirements,
+    split: ReturnType<typeof parseSplitExtra> extends { split: infer S } ? NonNullable<S> : never,
+    sponsorWallet: { id: string; para_wallet_id: string; para_user_share?: string; sponsor_address: string },
+    sig: { v: number; r: Hex; s: Hex }
+  ): Promise<SettleResponse> {
+    const { authorization } = payload;
+    const paraTxService = getParaTransactionService();
+    const data = encodeCoffeeSettle({
+      split,
+      from: authorization.from as Address,
+      value: BigInt(authorization.value),
+      validAfter: BigInt(authorization.validAfter),
+      validBefore: BigInt(authorization.validBefore),
+      v: sig.v,
+      r: sig.r,
+      s: sig.s,
+    });
+
+    logger.info("Executing split settlement via CoffeeSplit", {
+      network: this.network,
+      contract: split.contract,
+      creator: split.creator,
+      coffeeId: split.coffeeId,
+      from: authorization.from,
+      value: authorization.value,
+      sponsorWallet: sponsorWallet.sponsor_address,
+    });
+
+    let result = await paraTxService.executeContractCall({
+      network: this.network,
+      to: split.contract,
+      data,
+      sponsorWalletId: sponsorWallet.para_wallet_id,
+      sponsorUserShare: sponsorWallet.para_user_share,
+    });
+
+    if (!result.success) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const used = await this.checkNonceState(authorization.from, authorization.nonce as Hex, requirements.asset);
+      if (used) {
+        logger.warn("Split settlement reported failure but the nonce is used on-chain; treating as settled", {
+          nonce: authorization.nonce,
+          error: result.error,
+        });
+        result = { success: true, transactionHash: undefined };
+      }
+    }
+
+    if (!result.success) {
+      return {
+        success: false,
+        errorReason: result.error || "Split settlement failed",
+        payer: authorization.from,
+        transaction: null,
+        network: this.getNetworkCAIP2(),
+      };
+    }
+
+    const chainId = this.getChainIdForNetwork(this.network);
+    let vendorDomain: string | undefined;
+    let vendorEndpoint: string | undefined;
+    try {
+      const resourceUrl = new URL(getResourceUrl(requirements));
+      vendorDomain = resourceUrl.hostname;
+      vendorEndpoint = resourceUrl.pathname;
+    } catch {
+      // resource is optional
+    }
+
+    const loggingService = getTransactionLoggingService();
+    await loggingService.logTransaction({
+      transactionHash: result.transactionHash || `recovered-${authorization.nonce}`,
+      payerAddress: authorization.from,
+      recipientAddress: split.creator,
+      sponsorAddress: sponsorWallet.sponsor_address,
+      amountWei: authorization.value,
+      assetAddress: requirements.asset,
+      assetSymbol: getPaymentTokenSymbol(chainId),
+      network: this.network,
+      scheme: "exact",
+      status: "success",
+      vendorDomain,
+      vendorEndpoint,
+    });
+    if (result.transactionHash) {
+      await loggingService.logSponsorSpending({
+        sponsorWalletId: sponsorWallet.id,
+        amountWei: result.gasCostWei || "0",
+        agentAddress: authorization.from,
+        transactionHash: result.transactionHash,
+        chainId,
+        networkName: this.network,
+        serverDomain: vendorDomain,
+        serverEndpoint: vendorEndpoint,
+      });
+    }
+
+    return {
+      success: true,
+      payer: authorization.from,
+      transaction: result.transactionHash ?? null,
+      network: this.getNetworkCAIP2(),
+    };
+  }
+
   private validateAuthorization(
     auth: ExactPayload["authorization"],
     requirements: PaymentRequirements
@@ -584,7 +729,8 @@ export class ExactSchemeService {
   private async recoverSigner(
     authorization: ExactPayload["authorization"],
     signature: Hex,
-    tokenAddress: Address
+    tokenAddress: Address,
+    primaryType: "TransferWithAuthorization" | "ReceiveWithAuthorization" = "TransferWithAuthorization"
   ): Promise<Address | null> {
     try {
       const chainId = this.getChainIdForNetwork(this.network);
@@ -610,7 +756,7 @@ export class ExactSchemeService {
         },
       });
 
-      const types = {
+      const transferTypes = {
         TransferWithAuthorization: [
           { name: "from", type: "address" },
           { name: "to", type: "address" },
@@ -619,7 +765,7 @@ export class ExactSchemeService {
           { name: "validBefore", type: "uint256" },
           { name: "nonce", type: "bytes32" },
         ],
-      };
+      } as const;
 
       const message = {
         from: authorization.from,
@@ -630,13 +776,22 @@ export class ExactSchemeService {
         nonce: authorization.nonce,
       };
 
-      const recoveredAddress = await recoverTypedDataAddress({
-        domain,
-        types,
-        primaryType: "TransferWithAuthorization",
-        message,
-        signature,
-      });
+      const recoveredAddress =
+        primaryType === "ReceiveWithAuthorization"
+          ? await recoverTypedDataAddress({
+              domain,
+              types: RECEIVE_WITH_AUTHORIZATION_TYPES,
+              primaryType: "ReceiveWithAuthorization",
+              message,
+              signature,
+            })
+          : await recoverTypedDataAddress({
+              domain,
+              types: transferTypes,
+              primaryType: "TransferWithAuthorization",
+              message,
+              signature,
+            });
       
       logger.info("Signature recovery result", {
         recoveredAddress,
