@@ -124,6 +124,22 @@ Request:
 List your registered services.
 Auth: X-API-Key (read scope)
 
+## Paid API (x402)
+
+Stack sells data over HTTP with x402. Unpaid requests return 402 with a PAYMENT-REQUIRED header
+(x402 v2 offers: exact scheme, USDC on Base eip155:8453 and Base Sepolia eip155:84532, payTo the
+PerkOS treasury) and the same offers in the body for x402 v1. Sign an EIP-3009 authorization for
+the offer's amount and resend with PAYMENT-SIGNATURE (v2) or X-PAYMENT (v1). Stack verifies and
+settles the payment itself and answers with PAYMENT-RESPONSE. Nothing is charged when inputs are
+missing or the product cannot be built.
+
+### GET /api/v1?chainId=&agentId=            $0.01  ERC-8004 agent report
+Identity (owner, agentURI, metadata), reputation summary, validation summary, 8004scan indexing.
+
+### GET /api/v1/wallets/{address}/trust     $0.01  x402 payer trust profile
+Settlements this facilitator has seen from the wallet: count, success rate, volume, networks,
+first/last seen, distinct recipients, sponsored count, plus ERC-8004 identities owned on Base.
+
 ## Networks
 Supported: base, base-sepolia, avalanche, avalanche-fuji, celo, ethereum, polygon, arbitrum, optimism, and more.
 

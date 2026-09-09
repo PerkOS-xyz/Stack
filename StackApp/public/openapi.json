@@ -34,6 +34,12 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": "Access token from https://oauth.perkos.xyz minted for resource https://stack.perkos.xyz (grant urn:perkos:oauth:grant-type:wallet-signature; scopes stack:read, stack:write). See /.well-known/oauth-protected-resource and /auth.md."
+      },
+      "x402": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "PAYMENT-SIGNATURE",
+        "description": "x402 payment (v2: PAYMENT-SIGNATURE, v1: X-PAYMENT). Unpaid requests get 402 with a PAYMENT-REQUIRED header listing the offers (exact scheme, USDC on Base and Base Sepolia). Stack is its own facilitator."
       }
     },
     "schemas": {
@@ -776,6 +782,122 @@
           },
           "403": {
             "description": "access_denied (not registered)"
+          }
+        }
+      }
+    },
+    "/api/v1": {
+      "get": {
+        "operationId": "agentReport",
+        "summary": "ERC-8004 agent report ($0.01 over x402)",
+        "description": "Identity, reputation summary, validation summary and 8004scan indexing status for one agent, in one call. Paid per call with x402; verify, build, settle, deliver. Nothing is charged if the report cannot be built.",
+        "security": [
+          {
+            "x402": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report",
+            "headers": {
+              "PAYMENT-RESPONSE": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "base64 settlement receipt"
+              },
+              "X-x402-Transaction": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing inputs (not charged)"
+          },
+          "402": {
+            "description": "Payment required. PAYMENT-REQUIRED header carries the x402 v2 offers; the JSON body carries the v1 offers and the catalog.",
+            "headers": {
+              "PAYMENT-REQUIRED": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "base64 x402 PaymentRequired"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallets/{address}/trust": {
+      "get": {
+        "operationId": "payerTrust",
+        "summary": "x402 payer trust profile ($0.01 over x402)",
+        "description": "What this facilitator has seen from a paying wallet: settlements, success rate, volume, networks, first/last seen, distinct recipients, plus ERC-8004 identities it owns on Base.",
+        "security": [
+          {
+            "x402": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile",
+            "headers": {
+              "PAYMENT-RESPONSE": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "base64 settlement receipt"
+              },
+              "X-x402-Transaction": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid address (not charged)"
+          },
+          "402": {
+            "description": "Payment required. PAYMENT-REQUIRED header carries the x402 v2 offers; the JSON body carries the v1 offers and the catalog.",
+            "headers": {
+              "PAYMENT-REQUIRED": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "base64 x402 PaymentRequired"
+              }
+            }
           }
         }
       }
