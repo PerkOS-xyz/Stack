@@ -59,6 +59,10 @@ const nextConfig = {
       { source: '/index.md', destination: '/api/markdown' },
       { source: '/mcp', destination: '/api/mcp' },
       { source: '/.well-known/api-catalog', destination: '/api/.well-known/api-catalog' },
+      // OAuth (PerkOS OAuth is the issuer; Stack is a resource server).
+      { source: '/.well-known/oauth-protected-resource', destination: '/api/.well-known/oauth-protected-resource' },
+      { source: '/.well-known/oauth-authorization-server', destination: '/api/.well-known/oauth-authorization-server' },
+      { source: '/.well-known/openid-configuration', destination: '/api/.well-known/oauth-authorization-server' },
     ];
   },
   // Baseline security headers on every response (L1). CSP is intentionally
