@@ -4,6 +4,7 @@
  */
 import { firebaseAdmin } from "@/lib/db/firebase";
 import { caip2ToNetwork } from "@/lib/utils/x402-headers";
+import { toIso } from "./paidApi";
 
 async function getJson(url: string, headers: Record<string, string>) {
   const r = await fetch(url, { headers });
@@ -51,7 +52,7 @@ interface TxRow {
   network?: string;
   chain_id?: number;
   status?: string;
-  created_at?: string;
+  created_at?: unknown;
   sponsor_address?: string;
   vendor_domain?: string;
 }
@@ -66,7 +67,7 @@ export async function payerTrust(origin: string, address: string, headers: Recor
   if (error) throw new Error(`settlement history unavailable: ${error.message}`);
   const rows = (data || []) as TxRow[];
   const ok = rows.filter((r) => r.status === "success");
-  const dates = rows.map((r) => r.created_at).filter(Boolean).sort() as string[];
+  const dates = rows.map((r) => toIso(r.created_at)).filter((d): d is string => Boolean(d)).sort();
   const networks = [...new Set(rows.map((r) => r.network).filter(Boolean))] as string[];
   const recipients = new Set(ok.map((r) => r.recipient_address).filter(Boolean));
   const domains = [...new Set(ok.map((r) => r.vendor_domain).filter(Boolean))] as string[];
