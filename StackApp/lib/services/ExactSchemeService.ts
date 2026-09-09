@@ -17,7 +17,9 @@ import { getChainById, CHAIN_IDS } from "../utils/chains";
 import { logger } from "../utils/logger";
 import { networkToCAIP2 } from "../utils/x402-headers";
 import { getEIP712Version, getPaymentTokenSymbol, getTokenName } from "../utils/x402-payment";
-import { getParaTransactionService } from "./ParaTransactionService";
+import { getParaTransactionService, TRANSFER_WITH_AUTHORIZATION_ABI } from "./ParaTransactionService";
+import { guardSponsorSpend, recordSponsorSpend, type SponsorSpendRule } from "./sponsorSpend";
+import { encodeFunctionData as encodeCallData, type Address as EvmAddress } from "viem";
 import { getTransactionLoggingService } from "./TransactionLoggingService";
 import { coffeeNonce, encodeCoffeeSettle, parseSplitExtra, RECEIVE_WITH_AUTHORIZATION_TYPES } from "./coffeeSplit";
 
@@ -341,6 +343,23 @@ export class ExactSchemeService {
       // Execute transferWithAuthorization via Para server wallet
       // Retry once with a delay if we get "authorization is used or canceled" error
       // (can happen due to RPC state sync timing issues)
+      // Spend caps on the matched sponsor rule, judged before anything is sent.
+      const transferData = encodeCallData({
+        abi: TRANSFER_WITH_AUTHORIZATION_ABI,
+        functionName: "transferWithAuthorization",
+        args: [authorization.from, authorization.to, BigInt(authorization.value), BigInt(authorization.validAfter), BigInt(authorization.validBefore), authorization.nonce as Hex, sig.v, sig.r, sig.s],
+      });
+      const spendGuard = await guardSponsorSpend({
+        network: this.network,
+        sponsorWalletId: sponsorWallet.id,
+        sponsorAddress: sponsorWallet.sponsor_address as EvmAddress,
+        rule: sponsorWallet.rule,
+        to: requirements.asset,
+        data: transferData,
+      });
+      if (!spendGuard.ok) {
+        return { success: false, errorReason: spendGuard.reason, payer: authorization.from, transaction: null, network: this.getNetworkCAIP2() };
+      }
       let result = await paraTxService.executeTransferWithAuthorization({
         network: this.network,
         tokenAddress: requirements.asset,
@@ -508,6 +527,7 @@ export class ExactSchemeService {
       }
 
       if (result.success && result.transactionHash) {
+        void recordSponsorSpend({ sponsorWalletId: sponsorWallet.id, ruleId: sponsorWallet.rule?.id, network: this.network, transactionHash: result.transactionHash, gasCostWei: result.gasCostWei });
         logger.info("Exact scheme payment settled via Para", {
           txHash: result.transactionHash,
           from: authorization.from,
@@ -604,7 +624,7 @@ export class ExactSchemeService {
     payload: ExactPayload,
     requirements: PaymentRequirements,
     split: ReturnType<typeof parseSplitExtra> extends { split: infer S } ? NonNullable<S> : never,
-    sponsorWallet: { id: string; para_wallet_id: string; para_user_share?: string; sponsor_address: string },
+    sponsorWallet: { id: string; para_wallet_id: string; para_user_share?: string; sponsor_address: string; rule?: SponsorSpendRule | null },
     sig: { v: number; r: Hex; s: Hex }
   ): Promise<SettleResponse> {
     const { authorization } = payload;
@@ -630,6 +650,17 @@ export class ExactSchemeService {
       sponsorWallet: sponsorWallet.sponsor_address,
     });
 
+    const spendGuard = await guardSponsorSpend({
+      network: this.network,
+      sponsorWalletId: sponsorWallet.id,
+      sponsorAddress: sponsorWallet.sponsor_address as EvmAddress,
+      rule: sponsorWallet.rule,
+      to: split.contract,
+      data,
+    });
+    if (!spendGuard.ok) {
+      return { success: false, errorReason: spendGuard.reason, payer: authorization.from, transaction: null, network: this.getNetworkCAIP2() };
+    }
     let result = await paraTxService.executeContractCall({
       network: this.network,
       to: split.contract,
@@ -658,6 +689,9 @@ export class ExactSchemeService {
         transaction: null,
         network: this.getNetworkCAIP2(),
       };
+    }
+    if (result.transactionHash) {
+      void recordSponsorSpend({ sponsorWalletId: sponsorWallet.id, ruleId: sponsorWallet.rule?.id, network: this.network, transactionHash: result.transactionHash, gasCostWei: result.gasCostWei });
     }
 
     const chainId = this.getChainIdForNetwork(this.network);

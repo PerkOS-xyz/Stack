@@ -1,4 +1,5 @@
 import { firebaseAdmin } from "../db/firebase";
+import type { SponsorSpendRule } from "./sponsorSpend";
 import { logger } from "../utils/logger";
 import { CHAIN_IDS, getChainById, chains } from "../utils/chains";
 import { getParaService } from "./ParaService";
@@ -9,6 +10,8 @@ import { getRpcUrl, type SupportedNetwork } from "../utils/config";
 import type { Address, Hex } from "../types/x402";
 
 interface SponsorWallet {
+  /** The rule that matched this wallet, with its spend caps (absent for the direct fallback). */
+  rule?: SponsorSpendRule | null;
   id: string;
   user_wallet_address: string;
   network: string;
@@ -17,6 +20,13 @@ interface SponsorWallet {
   sponsor_address: string;
   smart_wallet_address?: string;
   balance: string;
+}
+
+/** The spend caps a matched rule carries, in the shape the guard reads. */
+function spendRuleOf(rule: Record<string, unknown> | undefined | null): SponsorSpendRule | null {
+  if (!rule || typeof rule.id !== "string") return null;
+  const pick = (k: string) => (rule[k] === undefined ? null : (rule[k] as string | number | null));
+  return { id: rule.id, per_transaction_limit_wei: pick("per_transaction_limit_wei"), daily_limit_wei: pick("daily_limit_wei"), monthly_limit_wei: pick("monthly_limit_wei") };
 }
 
 export function domainMatchesRule(candidate: string, rule: string): boolean {
@@ -34,7 +44,7 @@ export function domainMatchesRule(candidate: string, rule: string): boolean {
 }
 
 // EIP-3009 transferWithAuthorization ABI
-const TRANSFER_WITH_AUTHORIZATION_ABI = [
+export const TRANSFER_WITH_AUTHORIZATION_ABI = [
   {
     name: "transferWithAuthorization",
     type: "function",
@@ -118,7 +128,7 @@ export class ParaTransactionService {
 
       const { data: agentRules, error: agentRuleError } = await firebaseAdmin
         .from("perkos_sponsor_rules")
-        .select("id, sponsor_wallet_id, agent_address, priority, created_at")
+        .select("id, sponsor_wallet_id, agent_address, priority, created_at, per_transaction_limit_wei, daily_limit_wei, monthly_limit_wei")
         .eq("rule_type", "agent_whitelist")
         .eq("agent_address", normalizedAddress)
         .eq("enabled", true);
@@ -140,7 +150,7 @@ export class ParaTransactionService {
       if (!agentRule && !agentRuleError) {
         const { data: legacyRules, error: legacyRuleError } = await firebaseAdmin
           .from("perkos_sponsor_rules")
-          .select("id, sponsor_wallet_id, agent_address, priority, created_at")
+          .select("id, sponsor_wallet_id, agent_address, priority, created_at, per_transaction_limit_wei, daily_limit_wei, monthly_limit_wei")
           .eq("rule_type", "agent_whitelist")
           .eq("enabled", true);
         if (legacyRuleError) {
@@ -171,7 +181,7 @@ export class ParaTransactionService {
             agentAddress: normalizedAddress,
             sponsorAddress: wallet.sponsor_address,
           });
-          return wallet as SponsorWallet;
+          return { ...(wallet as SponsorWallet), rule: spendRuleOf(agentRule as unknown as Record<string, unknown>) };
         }
       }
 
@@ -180,7 +190,7 @@ export class ParaTransactionService {
         // Try exact domain match first, then partial match (for subdomains)
         const { data: domainRules, error: domainRuleError } = await firebaseAdmin
           .from("perkos_sponsor_rules")
-          .select("sponsor_wallet_id, domain")
+          .select("id, sponsor_wallet_id, domain, priority, per_transaction_limit_wei, daily_limit_wei, monthly_limit_wei")
           .eq("rule_type", "domain_whitelist")
           .eq("enabled", true)
           .order("priority", { ascending: false });
@@ -229,7 +239,7 @@ export class ParaTransactionService {
                 domain: normalizedDomain,
                 sponsorAddress: wallet.sponsor_address,
               });
-              return wallet as SponsorWallet;
+              return { ...(wallet as SponsorWallet), rule: spendRuleOf(matchingRule as unknown as Record<string, unknown>) };
             }
           }
         }
