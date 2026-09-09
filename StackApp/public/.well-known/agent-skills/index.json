@@ -21,6 +21,13 @@
       "description": "Prepare an ERC-8004 on-chain agent identity with Stack and check whether it is discoverable.",
       "url": "https://stack.perkos.xyz/.well-known/agent-skills/erc8004-registration/SKILL.md",
       "digest": "sha256:52e083aa337555f7927c009ada91bf85c97c2df49afdab142a6a6d8edc9e4168"
+    },
+    {
+      "name": "stack-paid-api",
+      "type": "skill-md",
+      "description": "Buy data from PerkOS Stack over x402: ERC-8004 agent reports and x402 payer trust profiles, one cent each, paid in USDC on Base.",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/stack-paid-api/SKILL.md",
+      "digest": "sha256:e64e189a5db45699fe938d59434dbcc4d471d5e890ac62776e2c176e31507759"
     }
   ]
 }

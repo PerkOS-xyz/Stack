@@ -61,6 +61,17 @@
       ]
     },
     {
+      "identifier": "urn:air:stack.perkos.xyz:skill:stack-paid-api",
+      "displayName": "Buy data from Stack over x402",
+      "type": "text/markdown",
+      "url": "https://stack.perkos.xyz/.well-known/agent-skills/stack-paid-api/SKILL.md",
+      "representativeQueries": [
+        "get a verified report on ERC-8004 agent 42 on Base",
+        "is this wallet a trustworthy x402 payer",
+        "pay one cent in USDC for agent data"
+      ]
+    },
+    {
       "identifier": "urn:air:stack.perkos.xyz:api:stack",
       "displayName": "PerkOS Stack API (x402, agents, ERC-8004)",
       "type": "application/vnd.oai.openapi+json",
