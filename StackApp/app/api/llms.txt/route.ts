@@ -32,6 +32,9 @@ GET /api/v2/agents/oauth/nonce?address=0x…, sign it, then POST it to the issue
 with grant_type urn:perkos:oauth:grant-type:wallet-signature and resource https://stack.perkos.xyz.
 Metadata: /.well-known/oauth-protected-resource. Full flow: /auth.md.
 
+The MCP server at /mcp accepts the same Bearer token: stack_me, stack_list_wallets,
+stack_create_wallet, stack_list_services and stack_register_service forward it to these endpoints.
+
 ## Endpoints
 
 ### POST /api/v2/agents/register

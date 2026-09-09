@@ -5,7 +5,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/middleware/rateLimit";
-import { facilitatorInfo, MCP_TOOLS, type McpToolName } from "@/lib/agents/readiness";
+import { AUTHENTICATED_TOOLS, facilitatorInfo, MCP_TOOLS, type McpToolName } from "@/lib/agents/readiness";
+import { OAUTH_RESOURCE } from "@/lib/agents/oauth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -60,14 +61,43 @@ async function call(origin: string, name: McpToolName, args: Record<string, unkn
     }
     case "facilitator_info":
       return text(facilitatorInfo());
+    case "stack_me":
+      return authed(await json(await get("/api/v2/agents/me")));
+    case "stack_list_wallets":
+      return authed(await json(await get("/api/v2/agents/wallets")));
+    case "stack_create_wallet":
+      return authed(await json(await post("/api/v2/agents/wallets", { network: args.network ?? "evm", name: args.name })));
+    case "stack_list_services":
+      return authed(await json(await get("/api/v2/agents/services")));
+    case "stack_register_service":
+      return authed(await json(await post("/api/v2/agents/services", { url: args.url, name: args.name, description: args.description, priceUsd: args.priceUsd, network: args.network ?? "base" })));
   }
 }
 
-/** Headers to carry into same-origin calls: Vercel's deployment-protection bypass on previews. */
+const PRM_URL = `${OAUTH_RESOURCE}/.well-known/oauth-protected-resource`;
+
+/** Turns a REST 401/403 into a tool error that tells the client how to authenticate. */
+function authed(r: { status: number; body: unknown }) {
+  if (r.status === 401) {
+    return text(`Authentication required. Send Authorization: Bearer <token>. Get a token from the authorization server named in ${PRM_URL} (OAuth wallet-signature grant, resource ${OAUTH_RESOURCE}) or use a Stack API key. Details: ${OAUTH_RESOURCE}/auth.md`, true);
+  }
+  if (r.status === 403) return text({ error: "insufficient_scope", detail: r.body, scopes: "stack:read for reads, stack:write for creates" }, true);
+  return text(r.body, r.status >= 400);
+}
+
+/**
+ * Headers to carry into same-origin calls: the caller's Authorization (OAuth
+ * access token or API key, verified by the REST endpoint) and Vercel's
+ * deployment-protection bypass on previews.
+ */
 function passthroughHeaders(req: NextRequest): Record<string, string> {
   const out: Record<string, string> = {};
   const bypass = req.headers.get("x-vercel-protection-bypass");
   if (bypass) out["x-vercel-protection-bypass"] = bypass;
+  const auth = req.headers.get("authorization");
+  if (auth) out["authorization"] = auth;
+  const apiKey = req.headers.get("x-api-key");
+  if (apiKey) out["x-api-key"] = apiKey;
   return out;
 }
 
@@ -79,7 +109,7 @@ async function handle(origin: string, m: Rpc, passthrough: Record<string, string
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "stack.perkos.xyz", version: "1.0.0" },
         instructions:
-          "PerkOS Stack: x402 facilitator and ERC-8004 registration. Tools are read-only or verification-only; settlement and authenticated agent endpoints stay on the REST API (see facilitator_info). No authentication.",
+          "PerkOS Stack: x402 facilitator and ERC-8004 registration. Read and verify tools need no authentication. The stack_* tools act on your agent account and need Authorization: Bearer (an OAuth access token for https://stack.perkos.xyz from oauth.perkos.xyz, or a Stack API key); see /.well-known/oauth-protected-resource and /auth.md.",
       });
     case "ping":
       return ok(m.id, {});
@@ -90,6 +120,9 @@ async function handle(origin: string, m: Rpc, passthrough: Record<string, string
       const args = (m.params?.arguments as Record<string, unknown>) || {};
       const tool = MCP_TOOLS.find((t) => t.name === name);
       if (!tool) return err(m.id, -32602, `unknown tool: ${name}`);
+      if (AUTHENTICATED_TOOLS.has(tool.name) && !passthrough.authorization && !passthrough["x-api-key"]) {
+        return ok(m.id, text(`${tool.name} needs authentication. Send Authorization: Bearer <token>; see ${PRM_URL} and ${OAUTH_RESOURCE}/auth.md.`, true));
+      }
       try {
         return ok(m.id, await call(origin, tool.name, args, passthrough));
       } catch (e) {

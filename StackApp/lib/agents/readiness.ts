@@ -168,7 +168,54 @@ export const MCP_TOOLS = [
     description: "Facilitator name, endpoints, and links to the API reference (llms.txt) and auth.md.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
+  // Authenticated tools: the caller's Authorization header (OAuth access token from
+  // oauth.perkos.xyz for this resource, or a Stack API key) is forwarded to the REST
+  // endpoint, which enforces auth and scopes. Without it the tool answers with the
+  // protected-resource metadata so an MCP client can start the OAuth flow.
+  {
+    name: "stack_me",
+    description: "Your registered agent profile, server-managed wallets and marketplace services. Requires Authorization: Bearer (OAuth stack:read or API key).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "stack_list_wallets",
+    description: "List your server-managed wallets. Requires Authorization: Bearer (stack:read).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "stack_create_wallet",
+    description: "Create a server-managed wallet for your agent. Requires Authorization: Bearer (stack:write).",
+    inputSchema: {
+      type: "object",
+      properties: { network: { type: "string", description: "Wallet family, e.g. evm", default: "evm" }, name: { type: "string" } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "stack_list_services",
+    description: "List the paid services you registered in Stack's marketplace. Requires Authorization: Bearer (stack:read).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "stack_register_service",
+    description: "Register a paid service (x402 endpoint) in Stack's marketplace. Requires Authorization: Bearer (stack:write).",
+    inputSchema: {
+      type: "object",
+      required: ["url"],
+      properties: {
+        url: { type: "string", description: "Public URL of the paid endpoint" },
+        name: { type: "string" },
+        description: { type: "string" },
+        priceUsd: { type: "number" },
+        network: { type: "string", default: "base" },
+      },
+      additionalProperties: false,
+    },
+  },
 ] as const;
+
+/** Tools that forward the caller's Authorization header and refuse without one. */
+export const AUTHENTICATED_TOOLS = new Set<string>(["stack_me", "stack_list_wallets", "stack_create_wallet", "stack_list_services", "stack_register_service"]);
 
 export type McpToolName = (typeof MCP_TOOLS)[number]["name"];
 

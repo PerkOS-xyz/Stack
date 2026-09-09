@@ -1,18 +1,81 @@
 {
-  "serverInfo": { "name": "stack.perkos.xyz", "version": "1.0.0", "title": "PerkOS Stack" },
-  "description": "x402 facilitator and ERC-8004 registration tools: list supported payment kinds, verify a payment, prepare an on-chain agent registration, check whether an agent is indexed. No authentication.",
+  "serverInfo": {
+    "name": "stack.perkos.xyz",
+    "version": "1.0.0",
+    "title": "PerkOS Stack"
+  },
+  "description": "x402 facilitator and ERC-8004 registration tools: list supported payment kinds, verify a payment, prepare an on-chain agent registration, check whether an agent is indexed, and, with a Bearer token, manage your agent's wallets and marketplace services.",
   "protocolVersion": "2025-06-18",
-  "transport": { "type": "streamable-http", "endpoint": "https://stack.perkos.xyz/mcp" },
+  "transport": {
+    "type": "streamable-http",
+    "endpoint": "https://stack.perkos.xyz/mcp"
+  },
   "endpoint": "https://stack.perkos.xyz/mcp",
-  "capabilities": { "tools": { "listChanged": false } },
+  "capabilities": {
+    "tools": {
+      "listChanged": false
+    }
+  },
   "tools": [
-    { "name": "x402_supported_kinds", "description": "Payment schemes and CAIP-2 networks this facilitator verifies and settles." },
-    { "name": "x402_verify_payment", "description": "Verify an x402 payment payload against payment requirements without settling it." },
-    { "name": "prepare_erc8004_registration", "description": "Unsigned calldata to register an ERC-8004 identity on a supported network." },
-    { "name": "check_agent_discovery", "description": "Whether an ERC-8004 agent (chainId, agentId) is indexed by 8004scan." },
-    { "name": "facilitator_info", "description": "Facilitator name, endpoints, and links to the API reference and auth.md." }
+    {
+      "name": "x402_supported_kinds",
+      "description": "Payment schemes and CAIP-2 networks this facilitator verifies and settles."
+    },
+    {
+      "name": "x402_verify_payment",
+      "description": "Verify an x402 payment payload against payment requirements without settling it."
+    },
+    {
+      "name": "prepare_erc8004_registration",
+      "description": "Unsigned calldata to register an ERC-8004 identity on a supported network."
+    },
+    {
+      "name": "check_agent_discovery",
+      "description": "Whether an ERC-8004 agent (chainId, agentId) is indexed by 8004scan."
+    },
+    {
+      "name": "facilitator_info",
+      "description": "Facilitator name, endpoints, and links to the API reference and auth.md."
+    },
+    {
+      "name": "stack_me",
+      "description": "Your agent profile, wallets and services (authenticated).",
+      "authentication": "bearer"
+    },
+    {
+      "name": "stack_list_wallets",
+      "description": "List your server-managed wallets (authenticated).",
+      "authentication": "bearer"
+    },
+    {
+      "name": "stack_create_wallet",
+      "description": "Create a server-managed wallet (authenticated, stack:write).",
+      "authentication": "bearer"
+    },
+    {
+      "name": "stack_list_services",
+      "description": "List your marketplace services (authenticated).",
+      "authentication": "bearer"
+    },
+    {
+      "name": "stack_register_service",
+      "description": "Register a paid service in the marketplace (authenticated, stack:write).",
+      "authentication": "bearer"
+    }
   ],
-  "authentication": { "type": "none" },
+  "authentication": {
+    "type": "oauth2",
+    "required": false,
+    "description": "Read and verify tools are open. stack_* tools need Authorization: Bearer: an OAuth 2.0 access token for https://stack.perkos.xyz (RFC 9728 metadata below; wallet-signature grant at oauth.perkos.xyz) or a Stack API key.",
+    "protectedResourceMetadata": "https://stack.perkos.xyz/.well-known/oauth-protected-resource",
+    "scopes": [
+      "stack:read",
+      "stack:write"
+    ]
+  },
   "documentationUrl": "https://stack.perkos.xyz/llms.txt",
-  "provider": { "name": "PerkOS", "url": "https://perkos.xyz" }
+  "provider": {
+    "name": "PerkOS",
+    "url": "https://perkos.xyz"
+  }
 }
