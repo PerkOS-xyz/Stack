@@ -40,6 +40,10 @@ export function getChainId(network: string): number | null {
 }
 
 export function networkToCAIP2(network: string): string | null {
+  // Pass through non-EVM CAIP-2 networks (Solana / Stellar).
+  if (network.startsWith("solana:") || network.startsWith("stellar:")) {
+    return network;
+  }
   const chainId = getChainId(network);
   return chainId ? `eip155:${chainId}` : null;
 }
