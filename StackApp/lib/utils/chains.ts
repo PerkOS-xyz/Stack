@@ -270,8 +270,12 @@ export function getAddressUrl(chainId: number, address: string): string | undefi
 export const EXTENDED_SUPPORTED_NETWORKS = [
   ...SUPPORTED_NETWORKS,
   "stellar:pubnet" as const,
+  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" as const,
+  "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" as const,
 ] as const;
 
 export type ExtendedSupportedNetwork =
   | SupportedNetwork
-  | "stellar:pubnet";
+  | "stellar:pubnet"
+  | "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+  | "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";

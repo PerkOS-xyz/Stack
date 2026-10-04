@@ -9,6 +9,10 @@ import type {
 import { ExactSchemeService } from "./ExactSchemeService";
 import { DeferredSchemeService } from "./DeferredSchemeService";
 import { StellarExactSchemeService } from "./StellarExactSchemeService";
+import {
+  configuredSolanaNetworks,
+  getSolanaExactScheme,
+} from "./SolanaExactSchemeService";
 import { config, type SupportedNetwork } from "../utils/config";
 import { SUPPORTED_NETWORKS } from "../utils/chains";
 import { logger } from "../utils/logger";
@@ -41,6 +45,9 @@ export class X402Service {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+
+    // Kick Solana lazy init (async; shared module singleton)
+    void getSolanaExactScheme();
 
     // Initialize deferred scheme for networks with escrow configured
     if (config.deferredEnabled) {
@@ -86,6 +93,10 @@ export class X402Service {
     if (network === "stellar:pubnet") {
       return "stellar:pubnet" as SupportedNetwork;
     }
+    // Solana CAIP-2 (mainnet/devnet/custom)
+    if (network.startsWith("solana:")) {
+      return network as SupportedNetwork;
+    }
     // If in CAIP-2 format, convert to legacy
     if (network.includes(":")) {
       return this.caip2ToLegacyNetwork(network);
@@ -95,6 +106,10 @@ export class X402Service {
 
   private isStellarNetwork(network: string): boolean {
     return network.startsWith("stellar:");
+  }
+
+  private isSolanaNetwork(network: string): boolean {
+    return network.startsWith("solana:");
   }
 
   private hasPaymentAsset(network: SupportedNetwork): boolean {
@@ -193,6 +208,19 @@ export class X402Service {
           };
         }
         return this.stellarExactScheme.verify(paymentPayload as any, paymentRequirements);
+      }
+
+      // Route Solana CAIP-2 networks to SolanaExactSchemeService
+      if (this.isSolanaNetwork(network)) {
+        const solana = await getSolanaExactScheme();
+        if (!solana) {
+          return {
+            isValid: false,
+            invalidReason: "Solana exact scheme not initialized",
+            payer: null,
+          };
+        }
+        return solana.verify(paymentPayload as any, paymentRequirements);
       }
 
       const exactScheme = this.getExactScheme(network);
@@ -313,6 +341,21 @@ export class X402Service {
         return this.stellarExactScheme.settle(paymentPayload as any, paymentRequirements);
       }
 
+      // Route Solana CAIP-2 networks to SolanaExactSchemeService
+      if (this.isSolanaNetwork(network)) {
+        const solana = await getSolanaExactScheme();
+        if (!solana) {
+          return {
+            success: false,
+            errorReason: "Solana exact scheme not initialized",
+            payer: null,
+            transaction: null,
+            network,
+          };
+        }
+        return solana.settle(paymentPayload as any, paymentRequirements);
+      }
+
       const exactScheme = this.getExactScheme(network);
       return exactScheme.settle(
         paymentPayload.payload as any,
@@ -362,6 +405,13 @@ export class X402Service {
     // Add Stellar exact scheme
     if (this.stellarExactScheme) {
       kinds.push({ scheme: "exact", network: "stellar:pubnet" as SupportedNetwork });
+    }
+
+    // Advertise Solana when facilitator secret is configured (scheme inits async).
+    if (process.env.SOLANA_FACILITATOR_SECRET_KEY) {
+      for (const network of configuredSolanaNetworks()) {
+        kinds.push({ scheme: "exact", network: network as SupportedNetwork });
+      }
     }
 
     // Add deferred scheme for networks with escrow configured
