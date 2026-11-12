@@ -276,7 +276,7 @@ const price = await pricingService.calculatePriceForEndpoint(
 | **Scale**    | $299          | 5,000,000    | All + Priority | 1,000/min   | 100             |
 | **Enterprise** | Custom      | Unlimited    | All + SLA      | 5,000+/min  | Unlimited       |
 
-**Accepted payments:** USDC, $PerkOS, $SelfClaw
+**Accepted payments:** USDC
 
 **Features by Tier:**
 - Webhook notifications (Starter+)
@@ -681,7 +681,7 @@ FROM perkos_sponsor_wallet_analytics;
 | **Scale**    | $299          | 5,000,000    | All + Priority | 1,000/min   | 100             |
 | **Enterprise** | Custom      | Unlimited    | All + SLA      | 5,000+/min  | Unlimited       |
 
-**Accepted payments:** USDC, $PerkOS, $SelfClaw
+**Accepted payments:** USDC
 
 **Features by Tier:**
 - Webhook notifications (Starter+)
