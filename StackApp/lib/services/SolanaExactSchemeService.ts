@@ -75,7 +75,7 @@ export class SolanaExactSchemeService {
 
     const facilitatorSigner = toFacilitatorSvmSigner(
       keypair,
-      rpcUrl ? { url: rpcUrl } : undefined,
+      rpcUrl ? { defaultRpcUrl: rpcUrl } : undefined,
     );
 
     const scheme = new ExactSvmScheme(facilitatorSigner);
