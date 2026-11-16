@@ -24,6 +24,19 @@ export interface PlanPaymentClaim {
   expiresAt: Date;
 }
 
+/**
+ * True when an ERC-20 Transfer log moved tokens out of `wallet`
+ * (Transfer(address indexed from, address indexed to, uint256 value): from is topics[1]).
+ */
+export function transferIsFrom(log: { topics: readonly string[] }, wallet: string): boolean {
+  const from = log.topics[1];
+  return (
+    typeof from === "string" &&
+    from.length === 66 &&
+    `0x${from.slice(26)}`.toLowerCase() === wallet.toLowerCase()
+  );
+}
+
 /** One record per chain and transaction hash. */
 export function subscriptionPaymentId(chainId: number, transactionHash: string): string {
   return `${chainId}_${transactionHash.toLowerCase()}`;

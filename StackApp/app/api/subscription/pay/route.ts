@@ -6,6 +6,7 @@ import { getChainByNetwork, getUSDCAddress, getChainIdFromNetwork, type Supporte
 import { config } from "@/lib/utils/config";
 import { subscriptionPaySchema, validateBody } from "@/lib/validation/schemas";
 import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
+import { transferIsFrom } from "@/lib/services/subscriptionPayments";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,15 @@ export async function POST(req: NextRequest) {
     if (toAddress !== paymentReceiver) {
       return NextResponse.json(
         { error: "Payment was not sent to the correct receiver" },
+        { status: 400 }
+      );
+    }
+
+    // The transfer must come from the wallet being upgraded, so a payment
+    // made by one wallet cannot be claimed for another.
+    if (!transferIsFrom(transferLog, userWalletAddress)) {
+      return NextResponse.json(
+        { error: "Payment was not sent from the wallet being upgraded" },
         { status: 400 }
       );
     }

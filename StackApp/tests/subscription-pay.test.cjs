@@ -149,3 +149,19 @@ test("a transfer pays for a plan once: a second claim of the same hash grants no
   assert.equal(upgrade.status, 200);
   assert.deepEqual(planOf(PAYER), ["pro"]);
 });
+
+test("a transfer only pays for the wallet that sent it", async (t) => {
+  const { db, pay, claim, planOf } = await setup(t);
+  const other = "0x00000000000000000000000000000000000000b2";
+  const paid = pay(3, "starter"); // sent by PAYER
+
+  const taken = await claim(paid, other, "starter");
+  assert.equal(taken.status, 400);
+  assert.deepEqual(planOf(other), []);
+  assert.equal(db.docs.size, 0, "a refused claim neither grants a plan nor uses up the hash");
+
+  // The wallet that paid can still claim it, however its address is cased.
+  const own = await claim(paid, PAYER.toUpperCase().replace("0X", "0x"), "starter");
+  assert.equal(own.status, 200);
+  assert.deepEqual(planOf(PAYER), ["starter"]);
+});
