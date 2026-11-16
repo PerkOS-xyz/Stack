@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSubscriptionService } from "@/lib/services/SubscriptionService";
-import { SUBSCRIPTION_TIERS, getAllTiers, SubscriptionTier } from "@/lib/config/subscriptions";
+import { SUBSCRIPTION_TIERS, getAllTiers, type SubscriptionTier } from "@/lib/config/subscriptions";
 import { createPublicClient, http, parseUnits, formatUnits, type Address } from "viem";
 import { getChainByNetwork, getUSDCAddress, getChainIdFromNetwork, type SupportedNetwork } from "@/lib/utils/chains";
 import { config } from "@/lib/utils/config";
 import { subscriptionPaySchema, validateBody } from "@/lib/validation/schemas";
 import { getPaymentTokenSymbol } from "@/lib/utils/x402-payment";
+import { transferIsFrom } from "@/lib/services/subscriptionPayments";
 
 export const dynamic = "force-dynamic";
 
@@ -178,6 +179,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // The transfer must come from the wallet being upgraded, so a payment
+    // made by one wallet cannot be claimed for another.
+    if (!transferIsFrom(transferLog, userWalletAddress)) {
+      return NextResponse.json(
+        { error: "Payment was not sent from the wallet being upgraded" },
+        { status: 400 }
+      );
+    }
+
     // Extract and verify amount (supported stablecoins have 6 decimals).
     const transferredAmount = BigInt(transferLog.data);
     const expectedAmount = parseUnits(expectedPrice.toString(), 6);
@@ -202,15 +212,26 @@ export async function POST(req: NextRequest) {
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     }
 
-    // Create or update subscription
+    // Grant the plan and record the transaction hash as used in one write,
+    // so the same transfer cannot pay for a plan twice.
     const subscriptionService = getSubscriptionService();
-    const subscription = await subscriptionService.createOrUpdateSubscription(
+    const subscription = await subscriptionService.grantPaidSubscription({
+      chainId,
+      network,
+      transactionHash,
       userWalletAddress,
-      tier as SubscriptionTier,
-      {
-        expiresAt,
-      }
-    );
+      tier: tier as SubscriptionTier,
+      billingCycle,
+      amount: formatUnits(transferredAmount, 6),
+      expiresAt,
+    });
+
+    if (!subscription) {
+      return NextResponse.json(
+        { error: "This transaction has already been used to pay for a plan" },
+        { status: 409 }
+      );
+    }
 
     console.log(`Subscription payment processed for ${userWalletAddress}:`);
     console.log(`   Tier: ${tier}`);

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSubscriptionService } from "@/lib/services/SubscriptionService";
-import { SUBSCRIPTION_TIERS, getAllTiers, SubscriptionTier } from "@/lib/config/subscriptions";
+import { SUBSCRIPTION_TIERS, getAllTiers, type SubscriptionTier } from "@/lib/config/subscriptions";
 import { enforceRateLimit } from "@/lib/middleware/rateLimiter";
+import { verifyAdminRequest } from "@/lib/middleware/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +87,8 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/subscription
- * Create or update a subscription (admin use / webhook handler)
+ * Create or update a subscription. Admin only: it grants a plan without a
+ * payment, so it takes the same signed headers as /api/admin/* (X-Admin-*).
  *
  * Body: {
  *   userWalletAddress: string,
@@ -99,6 +101,11 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       userWalletAddress,
@@ -122,9 +129,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    // TODO: Add authentication/authorization check here
-    // This endpoint should only be callable by admin or Stripe webhook
 
     const subscriptionService = getSubscriptionService();
     const subscription = await subscriptionService.createOrUpdateSubscription(

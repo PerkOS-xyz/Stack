@@ -8,15 +8,16 @@
  * - Validate resource access based on tier
  */
 
-import { firebaseAdmin } from "../db/firebase";
+import { firebaseAdmin, getAdminFirestoreDb } from "../db/firebase";
 import {
-  SubscriptionTier,
-  TierLimits,
+  type SubscriptionTier,
+  type TierLimits,
   getTierLimits,
   getTierConfig,
   DEFAULT_TIER,
   tierAtLeast,
 } from "../config/subscriptions";
+import { grantPlanForPayment, type PlanPaymentClaim } from "./subscriptionPayments";
 
 // Types for subscription data
 export interface UserSubscription {
@@ -621,6 +622,19 @@ export class SubscriptionService {
       this.clearCache(address);
       return data as UserSubscription;
     }
+  }
+
+  /**
+   * Grant the plan an on-chain transfer paid for. The transaction hash is
+   * recorded as used in the same write, so it returns null (and changes
+   * nothing) when that hash already paid for a plan.
+   */
+  async grantPaidSubscription(claim: PlanPaymentClaim): Promise<UserSubscription | null> {
+    const subscription = await grantPlanForPayment(getAdminFirestoreDb(), claim);
+    if (subscription) {
+      this.clearCache(claim.userWalletAddress);
+    }
+    return subscription;
   }
 
   /**
