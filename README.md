@@ -1045,7 +1045,7 @@ PROXY_ADDRESS=0x... npm run upgrade:base
 | Method  | Endpoint                  | Description                  |
 | ------- | ------------------------- | ---------------------------- |
 | `GET`   | `/api/subscription`       | Get user subscription status |
-| `POST`  | `/api/subscription`       | Create/update subscription   |
+| `POST`  | `/api/subscription`       | Set a plan (admin only)      |
 | `POST`  | `/api/subscription/pay`   | Process subscription payment |
 | `GET`   | `/api/profile/invoices`   | Get user invoices            |
 
